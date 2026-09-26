@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 import sqlite3
-from datetime import date
+from datetime import date, datetime
+import shutil
+import os
 
 app = Flask(__name__)
 app.secret_key = "modo-milagritos-activo"  # necesario para usar session
@@ -180,6 +182,22 @@ def historial_cliente():
                         detalles_por_trabajo= detalles_por_trabajo,
                         periodo_seleccionado=periodo_seleccionado)
 
+@app.route('/backup')
+def hacer_backup():
+    # 1. Armamos un nombre único con fecha y hora
+    fecha_hora = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    nombre_archivo = f"backup_gomeria_{fecha_hora}.db"
+
+    # 2. Creamos una carpeta para guardar copias (si no existe)
+    os.makedirs("backups", exist_ok=True)
+    ruta_copia = os.path.join("backups", nombre_archivo)
+
+    # 3. Copiamos la base de datos actual a esa carpeta
+    shutil.copy("sg_gomeria.db", ruta_copia)
+
+    # 4. Le mandamos el archivo al navegador para que lo descargue
+    return send_file(ruta_copia, as_attachment=True, download_name=nombre_archivo)
+
 
 @app.route('/actualizar-estado', methods=['POST'])
 def actualizar_estado():
@@ -207,6 +225,9 @@ def enviar_trabajo():
     id_cliente = request.form.get('empresa')
     tipo_lista = request.form.get('tipo_lista', '1')  # 1, 2 o 3
 
+    if not id_cliente:
+        return "Error: Debes seleccionar una empresa", 400
+    
     columnas_precio = {'1': 'precio', '2': 'precio2', '3': 'precio3'}
     columna_elegida = columnas_precio.get(tipo_lista, 'precio')  # Por defecto, 'precio'
 
@@ -295,6 +316,32 @@ def agregar_cliente():
         conexion.close()
 
     return redirect(url_for('clientes'))
+
+@app.route('/agregar-tarea', methods=['POST'])
+def agregar_tarea():
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    #Capturamos datos de la nueva tarea
+    nom_tar = request.form.get('nombre')
+    precio1 = request.form.get('precio1-form')
+    precio2 = request.form.get('precio2-form')
+    precio3 = request.form.get('precio3-form')
+
+    try:
+        cursor.execute("""
+            INSERT INTO tareas (nom_tar, precio, precio2, precio3)
+            VALUES (?, ?, ?, ?)
+        """, (nom_tar, precio1, precio2, precio3))
+        conexion.commit()
+        print(f"[EXITO] Trea '{nom_tar}' agregada correctamente.")
+    except sqlite3.IntegrityError as e:
+        print(f"[ERROR] No se pudo agregar la tarea: {e}")
+        return f"Error: No se pudo agregar la tarea '{nom_tar}'.", 400
+    finally:
+        conexion.close()
+
+    return redirect(url_for('mataburros'))
 
 if __name__ == '__main__':
     app.run(debug=True)

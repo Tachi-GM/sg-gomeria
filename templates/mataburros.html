@@ -6,6 +6,7 @@
     <title>Nuevo Remito</title>
     <!-- Bootstrap 5 CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/styles/choices.min.css">
     <link rel="stylesheet" href="/static/css/estilos.css">
 </head>
 <body class="{{ 'modo-milagritos' if milagritos else '' }}">
@@ -15,6 +16,9 @@
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <a href="/" class="btn btn-sm btn-outline-light px-3 fw-bold rounded-pill">
                 &larr; ATRÁS
+            </a>
+            <a href="/backup" class="btn btn-capsula">
+                💾
             </a>
             <h1 class="h4 mb-0 text-uppercase fw-bold letter-spacing-1">
                 Registro de Trabajos
@@ -29,23 +33,56 @@
     <!-- CONTENEDOR PRINCIPAL -->
     <main class="container py-3 d-flex justify-content-center">
         <div class="tarjeta-formulario p-4 p-md-5">
-            <h2 class="fs-4 fw-bold mb-4 text-dark text-start border-bottom pb-3">
-                <span class="hada-decorativa">✨</span>Nuevo Remito de Trabajo<span class="hada-decorativa">✨</span>            
-            </h2>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h2 class="fs-4 fw-bold mb-4 text-dark text-start border-bottom pb-3">
+                    <span class="hada-decorativa">✨</span>Nuevo Remito de Trabajo<span class="hada-decorativa">✨</span>            
+                </h2>
+                <button class="btn btn-success px-4 fw-bold rounded-pill shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formNuevaTarea">
+                    + AGREGAR NUEVA TAREA
+                </button>
+            </div>
+
+            <!-- Formulario desplegable para agregar tarea -->
+            <div class="collapse mb-4" id="formNuevaTarea">
+                <div class="card card-body p-4 border-0 shadow-sm rounded-4 bg-white">
+                    <h5 class="fw-bold mb-3 text-primary">Agregar una nueva tarea</h5>
+                    <form action="/agregar-tarea" method="POST" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Arme y Desarme" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Precio 1</label>
+                            <input type="number" name="precio1-form" class="form-control" placeholder="Ej: 1000" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Precio 2</label>
+                            <input type="number" name="precio2-form" class="form-control" placeholder="Ej: 2000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Precio 3</label>
+                            <input type="number" name="precio3-form" class="form-control" placeholder="3000">
+                        </div>
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold rounded-pill">Guardar Tarea</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
             
             <form action="/enviar-trabajo" method="POST">
                 
                 <!-- 1. Número de Remito -->
                 <div class="mb-4">
-                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Número de Remito (Talonario)</label>
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">OI N°</label>
                     <input type="text" name="remito" class="form-control input-personalizado" placeholder="Ej: 20213" required>
                 </div>
 
                 <!-- 2. Nombre de Empresa -->
                 <div class="mb-4">
-                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Empresa / Cliente</label>
-                    <select name="empresa" class="form-select input-personalizado" required>
-                        <option value="" selected disabled>Selecciona una empresa...</option>
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Clientes</label>
+                    <select name="empresa" id="select-empresa" class="form-select input-personalizado" required>
+                        <option value="" selected disabled>Selecciona un cliente...</option>
                         {% for e in empresas %}
                             <option value="{{ e['id_cliente'] }}">{{ e['nom_cli'] }} (CUIT: {{ e['cuit'] }})</option>
                         {% endfor %}
@@ -74,24 +111,32 @@
                     <input type="hidden" name="tipo_lista" id="tipo_lista" value="1">
 
                     <div id="contenedor-tareas" class="d-flex flex-column gap-2 mt-2">
-                        <div class="d-flex gap-2 align-items-center fila-tarea">
-                            <select name="tareas" class="form-select input-personalizado" required>
-                                <option value="" selected disabled data-nombre="Selecciona una tarea realizada..." data-precio1="precio1" data-precio2="precio2" data-precio3="precio3">
-                                    Selecciona una tarea realizada...
-                                </option>
-                                {% for t in tareas %}
-                                    <option value="{{ t['id_tarea'] }} " data-nombre="{{ t['nom_tar'] }}" data-precio1="{{ t['precio'] }}" data-precio2="{{ t['precio2'] }}" data-precio3="{{ t['precio3'] }}">
-                                        {{ t['nom_tar'] }} &mdash; ${{ "{:,.2f}".format(t['precio']) }}
+                        <input type="hidden" name="tipo_lista" id="tipo_lista" value="1">
+
+                        <!-- Plantilla oculta: el navegador NUNCA la muestra ni la ejecuta, solo la clonamos por JS -->
+                        <template id="plantilla-fila-tarea">
+                            <div class="d-flex gap-2 align-items-center fila-tarea">
+                                <select name="tareas" class="form-select input-personalizado" required>
+                                    <option value="" selected disabled data-nombre="Selecciona una tarea realizada..." data-precio1="precio1" data-precio2="precio2" data-precio3="precio3">
+                                        Selecciona una tarea realizada...
                                     </option>
-                                {% endfor %}
-                            </select>
-                        
-                            <!-- Control de cantidad -->
-                            <div class="input-group" style="width: 130px;">
-                                <button type="button" class="btn btn-outline-primary" onclick="modificarCantidad(this, -1)">-</button>
-                                <input type="number" name="cantidades" class="form-control text-center input-cantidad" value="1" min="1" readonly>
-                                <button type="button" class="btn btn-outline-primary" onclick="modificarCantidad(this, 1)">+</button>
+                                    {% for t in tareas %}
+                                        <option value="{{ t['id_tarea'] }} " data-nombre="{{ t['nom_tar'] }}" data-precio1="{{ t['precio'] }}" data-precio2="{{ t['precio2'] }}" data-precio3="{{ t['precio3'] }}">
+                                            {{ t['nom_tar'] }} &mdash; ${{ "{:,.2f}".format(t['precio']) }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                                <div class="input-group" style="width: 100px;">
+                                    <button type="button" class="btn btn-outline-primary" onclick="modificarCantidad(this, -1)">-</button>
+                                    <input type="number" name="cantidades" class="form-control text-center input-cantidad" value="1" min="1" readonly>
+                                    <button type="button" class="btn btn-outline-primary" onclick="modificarCantidad(this, 1)">+</button>
+                                </div>
                             </div>
+                        </template>
+
+                        <div id="contenedor-tareas" class="d-flex flex-column gap-2 mt-2">
+                            <!-- Las filas se generan por JS, no quedan escritas acá directamente -->
                         </div>
                     </div>
                 </div>
@@ -106,10 +151,11 @@
                         Guardar Remito y Calcular Total
                     </button>
                 </div>
-                
             </form>
         </div>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
     <script src="/static/js/mataburros.js"></script>
 </body>
 </html>

@@ -16,6 +16,9 @@
             <a href="{{ url_for('clientes') }}" class="btn btn-sm btn-outline-light px-3 fw-bold rounded-pill">
                 &larr; ATRÁS
             </a>
+            <a href="/backup" class="btn btn-capsula">
+                💾
+            </a>
             <h1 class="h4 mb-0 text-uppercase fw-bold letter-spacing-1">
                 {{ cliente['nom_cli'] }} (CUIT: {{ cliente['cuit'] }})
             </h1>
@@ -63,8 +66,8 @@
                     <thead class="table-light">
                         <tr class="text-secondary small text-uppercase">
                             <th class="py-3 px-4">Fecha</th>
-                            <th class="py-3">N° Remito</th>
-                            <th class="py-3">Empresa</th>
+                            <th class="py-3">OI N°</th>
+                            <th class="py-3">Cliente</th>
                             <th class="py-3 text-end">Total</th>
                             <th class="py-3 text-center">Estado</th>
                         </tr>

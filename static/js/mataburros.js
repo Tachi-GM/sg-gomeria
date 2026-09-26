@@ -1,24 +1,49 @@
+// Guardamos referencias a las instancias de Choices para poder actualizarlas o destruirlas después
+let instanciaChoicesEmpresa = null;
+let instanciasChoicesTareas = [];
+
+// Función auxiliar: convierte cualquier <select> en un combobox buscable
+function crearChoicesParaSelect(select) {
+    return new Choices(select, {
+        searchEnabled: true,
+        searchPlaceholderValue: 'Escribí para buscar...',
+        noResultsText: 'No se encontró ninguna coincidencia',
+        shouldSort: false // respeta el orden en el que vienen de la base de datos
+    });
+}
+
 function agregarFilaTarea() {
     const contenedor = document.getElementById('contenedor-tareas');
-    const primerFila = contenedor.querySelector('.fila-tarea');
-    
-    const nuevaFila = primerFila.cloneNode(true);
-    nuevaFila.querySelector('select').selectedIndex = 0;
-    
-    // 1️⃣ PRIMERO insertamos la fila en la página
+    const plantilla = document.getElementById('plantilla-fila-tarea');
+
+    // 1️⃣ Clonamos el contenido de la plantilla (nunca de una fila ya existente)
+    const fragmento = plantilla.content.cloneNode(true);
+    const nuevaFila = fragmento.querySelector('.fila-tarea');
+
+    // 2️⃣ PRIMERO la insertamos en la página
     contenedor.appendChild(nuevaFila);
-    
-    // 2️⃣ RECIÉN AHORA tocamos su valor, cuando ya está "conectada" y visible
+
+    // 3️⃣ RECIÉN AHORA tocamos su valor, cuando ya está "conectada" y visible
     const inputCantidad = nuevaFila.querySelector('.input-cantidad');
     inputCantidad.value = 1;
-    
+
+    // 4️⃣ Convertimos el <select> de esta fila en un combobox buscable
+    const selectNuevo = nuevaFila.querySelector('select');
+    const instancia = crearChoicesParaSelect(selectNuevo);
+    instanciasChoicesTareas.push(instancia);
+
     calcularTotal();
 }
 
 function quitarFilaTarea() {
     const contenedor = document.getElementById('contenedor-tareas');
     const filas = contenedor.querySelectorAll('.fila-tarea');
+
     if (filas.length > 1) {
+        // Destruimos la instancia de Choices de la última fila antes de borrarla del DOM
+        const instanciaAEliminar = instanciasChoicesTareas.pop();
+        if (instanciaAEliminar) instanciaAEliminar.destroy();
+
         contenedor.removeChild(filas[filas.length - 1]);
     }
 
@@ -27,31 +52,34 @@ function quitarFilaTarea() {
 
 function cambiarLista(numeroLista) {
     document.getElementById('tipo_lista').value = numeroLista;
-    const contenedor = document.querySelectorAll('#contenedor-tareas select');
-    for (let select of contenedor) {
-        for (let opcion of select.options) {
-            const precio1 = opcion.getAttribute('data-precio1');
-            const precio2 = opcion.getAttribute('data-precio2');
-            const precio3 = opcion.getAttribute('data-precio3');
+
+    // Recorremos cada combobox de tarea y le reconstruimos la lista de opciones
+    instanciasChoicesTareas.forEach(instancia => {
+        const selectOriginal = instancia.passedElement.element; // el <select> real, escondido por Choices
+        const valorActual = selectOriginal.value; // qué tenía elegido antes de redibujar
+
+        const nuevasOpciones = Array.from(selectOriginal.querySelectorAll('option')).map(opcion => {
             const nombre = opcion.getAttribute('data-nombre');
-            if (numeroLista === 1) {
-                opcion.textContent = `${nombre} — $${parseFloat(precio1).toFixed(2)}`;
-            } else if (numeroLista === 2) {
-                opcion.textContent = `${nombre} — $${parseFloat(precio2).toFixed(2)}`;
-            } else if (numeroLista === 3) {
-                opcion.textContent = `${nombre} — $${parseFloat(precio3).toFixed(2)}`;
-            }
-            if (opcion.value === "") {
-                opcion.textContent = "Selecciona una tarea realizada...";
-            }
-        }
-    }
-    // 1. A todos los botones de lista les quitamos el azul relleno y les ponemos el borde
+            const esPlaceholder = opcion.value === "";
+            const precio = parseFloat(opcion.getAttribute(`data-precio${numeroLista}`)) || 0;
+
+            return {
+                value: opcion.value,
+                label: esPlaceholder ? nombre : `${nombre} — $${precio.toFixed(2)}`,
+                disabled: esPlaceholder,
+                selected: opcion.value === valorActual
+            };
+        });
+
+        // Le pedimos a Choices que redibuje su lista con los nuevos precios
+        instancia.setChoices(nuevasOpciones, 'value', 'label', true);
+    });
+
+    // Repintado de los botones L1/L2/L3 (esto no cambia)
     document.querySelectorAll('.btn-lista').forEach(btn => {
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-outline-primary');
     });
-    // 2. Al botón presionado le ponemos el azul relleno
     const botonActivo = document.getElementById(`btn-l${numeroLista}`);
     botonActivo.classList.remove('btn-outline-primary');
     botonActivo.classList.add('btn-primary');
@@ -60,12 +88,9 @@ function cambiarLista(numeroLista) {
 }
 
 function modificarCantidad(boton, cambio) {
-    // Buscamos el input de cantidad que está al lado de este botón
     const input = boton.parentElement.querySelector('.input-cantidad');
     let valorActual = parseInt(input.value) || 1;
     let nuevoValor = valorActual + cambio;
-    
-    // Evitamos que baje de 1
     if (nuevoValor >= 1) {
         input.value = nuevoValor;
     }
@@ -74,7 +99,7 @@ function modificarCantidad(boton, cambio) {
 
 function calcularTotal() {
     const filas = document.querySelectorAll('#contenedor-tareas .fila-tarea');
-    const listaActual = document.getElementById('tipo_lista').value; // "1", "2" o "3"
+    const listaActual = document.getElementById('tipo_lista').value;
     let total = 0;
 
     filas.forEach(fila => {
@@ -92,8 +117,21 @@ function calcularTotal() {
         `$${total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-document.getElementById('contenedor-tareas').addEventListener('change', function(e) {
-if (e.target.tagName === 'SELECT') {
-    calcularTotal();
-}
+// Todo lo que necesita que la página ya esté cargada, va acá adentro
+document.addEventListener('DOMContentLoaded', function () {
+    // Combobox buscable para Empresa
+    const selectEmpresa = document.getElementById('select-empresa');
+    if (selectEmpresa) {
+        instanciaChoicesEmpresa = crearChoicesParaSelect(selectEmpresa);
+    }
+
+    // Creamos la primera fila de tareas (antes estaba escrita a mano en el HTML)
+    agregarFilaTarea();
+
+    // Escuchamos cambios en cualquier select de tarea (incluidos los clonados)
+    document.getElementById('contenedor-tareas').addEventListener('change', function (e) {
+        if (e.target.tagName === 'SELECT') {
+            calcularTotal();
+        }
+    });
 });

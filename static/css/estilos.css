@@ -376,3 +376,37 @@ body.modo-milagritos .btn-modo-milagritos {
 body.modo-milagritos .hada-decorativa {
     display: inline;
 }
+
+/* Que el combobox de Choices.js se vea como el resto de tus inputs */
+.choices__inner {
+    background-color: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    min-height: unset;
+    overflow: hidden;
+}
+.choices.is-focused .choices__inner {
+    border-color: #1a42b8;
+    box-shadow: 0 0 0 4px rgba(26, 66, 184, 0.15);
+}
+.choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: #1a42b8;
+    color: white;
+}
+.choices__list--single .choices__item {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+/* Le ganamos la pulseada de capas al .input-group de Bootstrap (que usa z-index: 2) */
+.choices__list--dropdown {
+    z-index: 1000;
+}
+
+/* Corrige el ancho del combobox de tareas dentro de su fila flex */
+.fila-tarea .choices {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+}
