@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 import sqlite3
 from datetime import date, datetime
 import shutil
@@ -38,40 +38,42 @@ def salir():
 def clientes():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
-    
-    #Texto del buscador
+
     buscar = request.args.get('buscar', '').strip()
-    
-    #Buscar si se escribio algo
+    periodo_seleccionado = request.args.get('periodo', 'todos')
+
     if buscar:
         empresas = cursor.execute("""
             SELECT id_cliente, nom_cli, cuit, tel, mail 
             FROM clientes 
-            WHERE nom_cli LIKE ?
-               OR cuit LIKE ?
-               OR tel LIKE ?
+            WHERE nom_cli LIKE ? OR cuit LIKE ? OR tel LIKE ?
             ORDER BY nom_cli
-        """, (
-            f'%{buscar}%',
-            f'%{buscar}%',
-            f'%{buscar}%'
-        )).fetchall()
-
+        """, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%')).fetchall()
     else:
         empresas = cursor.execute("""
             SELECT id_cliente, nom_cli, cuit, tel, mail 
             FROM clientes 
             ORDER BY nom_cli
         """).fetchall()
-    
-    remitos = cursor.execute("""
+
+    # Armamos la consulta de remitos, sumando el filtro de mes si corresponde
+    query_remitos = """
         SELECT t.id_trabajo, t.remito, t.fecha, c.nom_cli, t.total, t.estado
         FROM trabajos t
         JOIN clientes c ON t.id_cliente = c.id_cliente
-        ORDER BY t.fecha DESC, t.id_trabajo DESC
-    """).fetchall()
+    """
+    parametros_remitos = []
 
-    # Traemos el detalle de tareas de TODOS los trabajos
+    if periodo_seleccionado and periodo_seleccionado != 'todos':
+        query_remitos += " WHERE strftime('%Y-%m', t.fecha) = ?"
+        parametros_remitos.append(periodo_seleccionado)
+
+    query_remitos += " ORDER BY t.fecha DESC, t.id_trabajo DESC"
+
+    remitos = cursor.execute(query_remitos, parametros_remitos).fetchall()
+
+    meses_disponibles = obtener_meses_disponibles(cursor)  # sin id_cliente = todos los clientes
+
     detalles_raw = cursor.execute("""
         SELECT dt.id_trabajo, tar.nom_tar, dt.cantidad, dt.subtotal
         FROM detalle_trabajos dt
@@ -79,18 +81,19 @@ def clientes():
         ORDER BY dt.id_trabajo
     """).fetchall()
 
-    # Agrupamos por id_trabajo en un diccionario: {id_trabajo: [detalle1, detalle2, ...]}
     detalles_por_trabajo = {}
     for d in detalles_raw:
         detalles_por_trabajo.setdefault(d['id_trabajo'], []).append(d)
-    
+
     conexion.close()
     return render_template('clientes.html',
                         empresas=empresas,
                         remitos=remitos,
-                        buscar= buscar,
-                        detalles_por_trabajo=detalles_por_trabajo
-                        ,milagritos=modo_activo())
+                        buscar=buscar,
+                        periodo_seleccionado=periodo_seleccionado,
+                        meses_disponibles=meses_disponibles,
+                        detalles_por_trabajo=detalles_por_trabajo,
+                        milagritos=modo_activo())
 
 # Pantalla del Formulario Mataburros
 @app.route('/mataburros')
@@ -101,7 +104,7 @@ def mataburros():
     tareas = conexion.execute("SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas").fetchall()
     
     conexion.close()
-    return render_template('mataburros.html', empresas=empresas, tareas=tareas, milagritos=modo_activo())
+    return render_template('mataburros.html', empresas=empresas, tareas=tareas, tareas_json=[dict(t) for t in tareas], milagritos=modo_activo())
 
 @app.route('/precios')
 def precios():
@@ -134,12 +137,7 @@ def historial_cliente():
     parametros = [id_cliente]
 
     # Buscamos qué meses/años tienen trabajos para crear las pestañas
-    meses_disponibles = cursor.execute("""
-        SELECT DISTINCT strftime('%Y-%m', fecha) AS periodo
-        FROM trabajos
-        WHERE id_cliente = ?
-        ORDER BY periodo DESC
-    """, (id_cliente,)).fetchall()
+    meses_disponibles = obtener_meses_disponibles(cursor, id_cliente)
 
     # 2. Si eligió un mes específico (y no "todos"), le sumamos la condición:
     if periodo_seleccionado and periodo_seleccionado != 'todos':
@@ -181,6 +179,42 @@ def historial_cliente():
                         meses_disponibles=meses_disponibles,
                         detalles_por_trabajo= detalles_por_trabajo,
                         periodo_seleccionado=periodo_seleccionado)
+
+MESES_ABREVIADOS = {
+    '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr',
+    '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Ago',
+    '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic'
+}
+
+def formatear_periodo(periodo):
+    """Convierte 'YYYY-MM' (ej: '2026-09') en 'Sep 26' para mostrar en las pestañas."""
+    anio, mes = periodo.split('-')
+    return f"{MESES_ABREVIADOS[mes]} {anio[2:]}"
+
+def obtener_meses_disponibles(cursor, id_cliente=None):
+    """
+    Devuelve la lista de meses con trabajos registrados, listos para las pestañas.
+    Si se pasa id_cliente, filtra solo los meses de ese cliente.
+    Si no, trae los meses de TODOS los clientes (para el historial general).
+    """
+    if id_cliente:
+        filas = cursor.execute("""
+            SELECT DISTINCT strftime('%Y-%m', fecha) AS periodo
+            FROM trabajos
+            WHERE id_cliente = ?
+            ORDER BY periodo DESC
+        """, (id_cliente,)).fetchall()
+    else:
+        filas = cursor.execute("""
+            SELECT DISTINCT strftime('%Y-%m', fecha) AS periodo
+            FROM trabajos
+            ORDER BY periodo DESC
+        """).fetchall()
+
+    return [
+        {'periodo': fila['periodo'], 'etiqueta': formatear_periodo(fila['periodo'])}
+        for fila in filas
+    ]
 
 @app.route('/backup')
 def hacer_backup():
@@ -324,9 +358,17 @@ def agregar_tarea():
 
     #Capturamos datos de la nueva tarea
     nom_tar = request.form.get('nombre')
-    precio1 = request.form.get('precio1-form')
-    precio2 = request.form.get('precio2-form')
-    precio3 = request.form.get('precio3-form')
+    precio1 = float(request.form.get('precio1-form') or 0)
+    precio2 = float(request.form.get('precio2-form') or 0)
+    precio3 = float(request.form.get('precio3-form') or 0)
+
+    #Advertencia
+    if not (precio1 <= precio2 <= precio3):
+        flash(f"⚠️ Revisa los precios de \"{nom_tar}\", ya que algún precio no es el esperado. Se guardó igual.", "warning")
+
+    if precio3 >= precio2*1.5 or precio2 >= precio1*1.5:
+        flash(f"⚠️ Revisa los precios de \"{nom_tar}\", ya que algún precio no es el esperado. Se guardó igual.", "warning")
+
 
     try:
         cursor.execute("""

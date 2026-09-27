@@ -42,11 +42,11 @@
             </li>
 
             <!-- 2. Pestañas dinámicas por cada mes que tenga trabajos -->
-            {% for m in meses_disponibles %}
+           {% for m in meses_disponibles %}
             <li class="nav-item">
                 <a class="nav-link {% if periodo_seleccionado == m['periodo'] %}active fw-bold{% endif %}" 
                 href="/historial-cliente?id_cliente={{ cliente['id_cliente'] }}&periodo={{ m['periodo'] }}">
-                    {{ m['periodo'] }}
+                    {{ m['etiqueta'] }}
                 </a>
             </li>
             {% endfor %}

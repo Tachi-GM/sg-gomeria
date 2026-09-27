@@ -410,3 +410,10 @@ body.modo-milagritos .hada-decorativa {
     min-width: 0;
     margin-bottom: 0;
 }
+
+.alert-warning-gomeria {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1.5px solid #ffe69c;
+    font-weight: 500;
+}

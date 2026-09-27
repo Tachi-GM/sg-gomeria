@@ -50,32 +50,36 @@ function quitarFilaTarea() {
     calcularTotal();
 }
 
+const COLUMNA_PRECIO = { 1: 'precio', 2: 'precio2', 3: 'precio3' };
+
 function cambiarLista(numeroLista) {
     document.getElementById('tipo_lista').value = numeroLista;
+    const columna = COLUMNA_PRECIO[numeroLista];
 
-    // Recorremos cada combobox de tarea y le reconstruimos la lista de opciones
     instanciasChoicesTareas.forEach(instancia => {
-        const selectOriginal = instancia.passedElement.element; // el <select> real, escondido por Choices
-        const valorActual = selectOriginal.value; // qué tenía elegido antes de redibujar
+        const selectOriginal = instancia.passedElement.element;
+        const valorActual = selectOriginal.value.trim(); // .trim() por si quedó algún espacio de más
 
-        const nuevasOpciones = Array.from(selectOriginal.querySelectorAll('option')).map(opcion => {
-            const nombre = opcion.getAttribute('data-nombre');
-            const esPlaceholder = opcion.value === "";
-            const precio = parseFloat(opcion.getAttribute(`data-precio${numeroLista}`)) || 0;
+        const nuevasOpciones = [
+            {
+                value: "",
+                label: "Selecciona una tarea realizada...",
+                disabled: true,
+                selected: valorActual === ""
+            },
+            ...TAREAS_DATA.map(tarea => {
+                const precio = tarea[columna] || 0;
+                return {
+                    value: String(tarea.id_tarea),
+                    label: `${tarea.nom_tar} — $${precio.toFixed(2)}`,
+                    selected: String(tarea.id_tarea) === valorActual
+                };
+            })
+        ];
 
-            return {
-                value: opcion.value,
-                label: esPlaceholder ? nombre : `${nombre} — $${precio.toFixed(2)}`,
-                disabled: esPlaceholder,
-                selected: opcion.value === valorActual
-            };
-        });
-
-        // Le pedimos a Choices que redibuje su lista con los nuevos precios
         instancia.setChoices(nuevasOpciones, 'value', 'label', true);
     });
 
-    // Repintado de los botones L1/L2/L3 (esto no cambia)
     document.querySelectorAll('.btn-lista').forEach(btn => {
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-outline-primary');
@@ -100,14 +104,17 @@ function modificarCantidad(boton, cambio) {
 function calcularTotal() {
     const filas = document.querySelectorAll('#contenedor-tareas .fila-tarea');
     const listaActual = document.getElementById('tipo_lista').value;
+    const columna = COLUMNA_PRECIO[listaActual];
     let total = 0;
 
     filas.forEach(fila => {
         const select = fila.querySelector('select');
         const cantidadInput = fila.querySelector('.input-cantidad');
-        const opcionSeleccionada = select.options[select.selectedIndex];
 
-        const precio = parseFloat(opcionSeleccionada.getAttribute(`data-precio${listaActual}`)) || 0;
+        const idSeleccionado = select.value.trim();
+        const tarea = TAREAS_DATA.find(t => String(t.id_tarea) === idSeleccionado);
+
+        const precio = tarea ? (tarea[columna] || 0) : 0;
         const cantidad = parseInt(cantidadInput.value) || 0;
 
         total += precio * cantidad;

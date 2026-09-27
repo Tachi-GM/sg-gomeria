@@ -31,7 +31,18 @@
     </header>
 
     <!-- CONTENEDOR PRINCIPAL -->
-    <main class="container py-3 d-flex justify-content-center">
+    <main class="container py-3 d-flex flex-column align-items-center">
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                {% for categoria, mensaje in mensajes %}
+                    <div class="alert alert-warning-gomeria alert-dismissible fade show rounded-4 shadow-sm mb-4 col-12 col-md-8" role="alert">
+                        {{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <div class="tarjeta-formulario p-4 p-md-5">
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                 <h2 class="fs-4 fw-bold mb-4 text-dark text-start border-bottom pb-3">
@@ -121,7 +132,7 @@
                                         Selecciona una tarea realizada...
                                     </option>
                                     {% for t in tareas %}
-                                        <option value="{{ t['id_tarea'] }} " data-nombre="{{ t['nom_tar'] }}" data-precio1="{{ t['precio'] }}" data-precio2="{{ t['precio2'] }}" data-precio3="{{ t['precio3'] }}">
+                                        <option value="{{ t['id_tarea'] }}" data-nombre="{{ t['nom_tar'] }}" data-precio1="{{ t['precio'] }}" data-precio2="{{ t['precio2'] }}" data-precio3="{{ t['precio3'] }}">
                                             {{ t['nom_tar'] }} &mdash; ${{ "{:,.2f}".format(t['precio']) }}
                                         </option>
                                     {% endfor %}
@@ -154,6 +165,10 @@
             </form>
         </div>
     </main>
+    <script>
+        // Fuente de verdad de los precios — vive en JS, ajena a lo que Choices.js haga con el <select>
+        const TAREAS_DATA = {{ tareas_json | tojson }};
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
     <script src="/static/js/mataburros.js"></script>
