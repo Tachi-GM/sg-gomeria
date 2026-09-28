@@ -85,13 +85,19 @@
                 
                 <!-- 1. Número de Remito -->
                 <div class="mb-4">
-                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">OI N°</label>
-                    <input type="text" name="remito" class="form-control input-personalizado" placeholder="Ej: 20213" required>
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">N° Remito</label>
+                    <div class="input-group">
+                        <select name="tipo" class="form-select input-personalizado" style="max-width: 110px;">
+                            <option value="OI" selected>OI</option>
+                            <option value="OIB">OIB</option>
+                        </select>
+                        <input type="text" name="remito" class="form-control input-personalizado" placeholder="Ej: 20213" required>
+                    </div>
                 </div>
 
                 <!-- 2. Nombre de Empresa -->
                 <div class="mb-4">
-                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Clientes</label>
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Cliente</label>
                     <select name="empresa" id="select-empresa" class="form-select input-personalizado" required>
                         <option value="" selected disabled>Selecciona un cliente...</option>
                         {% for e in empresas %}
@@ -122,7 +128,6 @@
                     <input type="hidden" name="tipo_lista" id="tipo_lista" value="1">
 
                     <div id="contenedor-tareas" class="d-flex flex-column gap-2 mt-2">
-                        <input type="hidden" name="tipo_lista" id="tipo_lista" value="1">
 
                         <!-- Plantilla oculta: el navegador NUNCA la muestra ni la ejecuta, solo la clonamos por JS -->
                         <template id="plantilla-fila-tarea">
@@ -145,10 +150,6 @@
                                 </div>
                             </div>
                         </template>
-
-                        <div id="contenedor-tareas" class="d-flex flex-column gap-2 mt-2">
-                            <!-- Las filas se generan por JS, no quedan escritas acá directamente -->
-                        </div>
                     </div>
                 </div>
 
@@ -158,7 +159,7 @@
                         <span class="fw-bold text-secondary text-uppercase small">Total Parcial</span>
                         <span id="total-parcial" class="fw-bold fs-5" style="color:#1a42b8;">$0.00</span>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow" style="background-color: #1a42b8; border: none; font-size: 1.05rem;">
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow" style="background-color: #1a42b8; border: none; font-size: 1.05rem; margin-top: 26px;">
                         Guardar Remito y Calcular Total
                     </button>
                 </div>

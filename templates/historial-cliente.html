@@ -76,7 +76,7 @@
                         {% for r in remitos %}
                         <tr class="fila-remito" onclick="toggleDetalle(this)">
                             <td class="py-3 px-4 fw-medium">{{ r['fecha'] }}</td>
-                            <td class="py-3 fw-bold text-primary">#{{ r['remito'] }}</td>
+                            <td class="py-3 fw-bold text-primary">{{ r['tipo'] }} #{{ r['remito'] }}</td>
                             <td class="py-3 fw-bold">{{ r['nom_cli'] }}</td>
                             <td class="py-3 text-end fw-bold text-dark fs-6">${{ "{:,.2f}".format(r['total']) }}</td>
                             <td class="py-3 text-center" onclick="event.stopPropagation()">

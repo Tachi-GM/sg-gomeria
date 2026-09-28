@@ -58,7 +58,7 @@ def clientes():
 
     # Armamos la consulta de remitos, sumando el filtro de mes si corresponde
     query_remitos = """
-        SELECT t.id_trabajo, t.remito, t.fecha, c.nom_cli, t.total, t.estado
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.estado
         FROM trabajos t
         JOIN clientes c ON t.id_cliente = c.id_cliente
     """
@@ -127,11 +127,12 @@ def historial_cliente():
     cliente = cursor.execute("SELECT id_cliente, nom_cli, cuit FROM clientes WHERE id_cliente = ?", (id_cliente,)).fetchone()
     # 1. Armamos la consulta base y la lista de parámetros
     query = """
-        SELECT t.id_trabajo, t.remito, t.fecha, t.total, t.estado,
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.estado,
                GROUP_CONCAT(tar.nom_tar, ', ') AS detalle_tareas
         FROM trabajos t
         LEFT JOIN detalle_trabajos dt ON t.id_trabajo = dt.id_trabajo
         LEFT JOIN tareas tar ON dt.id_tarea = tar.id_tarea
+        LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
         WHERE t.id_cliente = ?
     """
     parametros = [id_cliente]
@@ -179,6 +180,14 @@ def historial_cliente():
                         meses_disponibles=meses_disponibles,
                         detalles_por_trabajo= detalles_por_trabajo,
                         periodo_seleccionado=periodo_seleccionado)
+    
+@app.route('/cheques')
+def cheques():
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    conexion.close()
+    return render_template('cheques.html', cheques=cheques, milagritos=modo_activo())
 
 MESES_ABREVIADOS = {
     '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr',
@@ -297,10 +306,14 @@ def enviar_trabajo():
                 detalles_a_guardar.append((id_t, cantidad, precio, subtotal))
         
         # B. GUARDAR CABECERA en 'trabajos'
+        tipo = request.form.get('tipo', 'OI')
+        if tipo not in ('OI', 'OIB'):
+            return "Error: tipo de remito inválido", 400
+
         cursor.execute("""
-            INSERT INTO trabajos (remito, fecha, id_cliente, total, estado)
-            VALUES (?, ?, ?, ?, 'PENDIENTE')
-        """, (remito, fecha_hoy, id_cliente, total_trabajo))
+            INSERT INTO trabajos (remito, tipo, fecha, id_cliente, total, estado)
+            VALUES (?, ?, ?, ?, ?, 'PENDIENTE')
+        """, (remito, tipo, fecha_hoy, id_cliente, total_trabajo))
         
         # Obtenemos el id del trabajo recién insertado
         id_trabajo = cursor.lastrowid
