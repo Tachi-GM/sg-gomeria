@@ -5,7 +5,7 @@ import shutil
 import os
 
 app = Flask(__name__)
-app.secret_key = "modo-milagritos-activo"  # necesario para usar session
+app.secret_key = "modo-milagritos-activo"
 
 def obtener_conexion():
     conexion = sqlite3.connect("sg_gomeria.db")
@@ -14,7 +14,6 @@ def obtener_conexion():
     return conexion
 
 def modo_activo():
-    # Devuelve True/False según si Milagritos está prendido
     return session.get('modo_milagritos', False)
 
 # Ruta para prender/apagar el modo, y volver a donde estabas
@@ -32,6 +31,10 @@ def home():
 @app.route('/salir')
 def salir():
     return render_template('salir.html', milagritos=modo_activo())
+
+@app.route('/acerca-de')
+def acerca_de():
+    return render_template('acerca-de.html',milagritos=modo_activo())
 
 # Pantalla de Gestión de Clientes y Dashboard General
 @app.route('/clientes')
@@ -111,7 +114,7 @@ def precios():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
-    tareas = cursor.execute("SELECT nom_tar, precio, precio2, precio3 FROM tareas").fetchall()
+    tareas = cursor.execute("SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas").fetchall()
     
     conexion.close()
     return render_template('precios.html', tareas=tareas , milagritos=modo_activo())
@@ -397,6 +400,28 @@ def agregar_tarea():
         conexion.close()
 
     return redirect(url_for('mataburros'))
+
+@app.route('/modificar-tarea', methods=['POST'])
+def modificar_tarea():
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    id_tarea = request.form.get('id_tarea')
+    nom_tar = request.form.get('nombre')
+    precio1 = request.form.get('precio1')
+    precio2 = request.form.get('precio2')
+    precio3 = request.form.get('precio3')
+
+    cursor.execute("""
+        UPDATE tareas
+        SET nom_tar = ?, precio = ?, precio2 = ?, precio3 = ?
+        WHERE id_tarea = ?
+    """, (nom_tar, precio1, precio2, precio3, id_tarea))
+    conexion.commit()
+    conexion.close()
+
+    return redirect(url_for('precios'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

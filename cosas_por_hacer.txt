@@ -1,19 +1,18 @@
 AGREGAR O MODIFICAR AL PROGRAMA:
 
-1. Botón de modificar tareas en ventana "tareas".
-2. Aumentar tamaño de listas de precios en ventana "nuevo remito".
-3. Algún detalle propio de "mi empresa".
-4. Opción de ordenar por algún valor de la lista. Ej: Remito.
-5. Cálculo de IVA a parte (con subtotal como en la foto).
-6. Función para cargar foto de remito con trabajos por si se solicitan.
-7. "Acerca de" para información del programa.
-8. Excel o imagen para el total mensual en la ventana "historial-cliente" con todos los remitos de ese mes.
-9. Buscar como hacer un host para la página
-10. Agregar con IVA factura A con nro factura (remito), empresa y precio (sin descontar 21%).
-11. Otro sin IVA donde se descuente el 21% para las empresas que de cargan sin IVA.
-12. Opción para agregar OIB en vez de OI para otras empresas que tienen triplicado con un "nro de remito distinto".
+1. Algún detalle propio de "mi empresa".
+2. Opción de ordenar por algún valor de la lista. Ej: Remito.
+3. Cálculo de IVA a parte (con subtotal como en la foto).
+4. Función para cargar foto de remito con trabajos por si se solicitan.
+5. Excel o imagen para el total mensual en la ventana "historial-cliente" con todos los remitos de ese mes.
+6. Buscar como hacer un host para la página
+7. Agregar con IVA factura A con nro factura (remito), empresa y precio (sin descontar 21%).
+8. Otro sin IVA donde se descuente el 21% para las empresas que de cargan sin IVA.
+9. Opción para agregar OIB en vez de OI para otras empresas que tienen triplicado con un "nro de remito distinto".
 No se cargan con el mismo ID, son distintos y tienen otro número (los remitos tienen formato XXXXX y el otro con 00XXXX)
-13. Poner en index ventana cheques, donde se agregan los e-checks con 
+10. Poner en index ventana cheques, donde se agregan los e-checks con 
 Número de cheque, banco, nombre de cliente, a quien se endoso (el reenvío a otro cliente o empresa) y fecha de cobro
-14. Apartado de detalles para poner texto (ej: Remis) en Nuevo Remito
-15. Opción que al agregar nueva tarea no se guarde en el sistema con un tilde para aceptar o no que se guarde.
+11. Apartado de detalles para poner texto (ej: Remis) en Nuevo Remito
+12. Opción que al agregar nueva tarea no se guarde en el sistema con un tilde para aceptar o no que se guarde.
+13. Inicio de sesion.
+14. Poner estado de remitos en cheques y quitarlos de remitos.

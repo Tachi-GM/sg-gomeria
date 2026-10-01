@@ -24,3 +24,53 @@ function cambiarEstado(select, idTrabajo) {
         console.error(err);
     });
 }
+
+// Variable para recordar la dirección del orden (ascendente o descendente)
+let ordenAscendente = true;
+let ultimaColumna = -1;
+
+function ordenarTabla(nColumna, esNumero = false) {
+    const tabla = document.querySelector(".tabla-remitos table");
+    const tbody = tabla.querySelector("tbody");
+    
+    // 1. Buscamos solo las filas de remito principales
+    const filasRemito = Array.from(tbody.querySelectorAll("tr.fila-remito"));
+    if (filasRemito.length <= 1) return;
+    // 2. Alternamos dirección
+    if (ultimaColumna === nColumna) {
+        ordenAscendente = !ordenAscendente;
+    } else {
+        ordenAscendente = true;
+        ultimaColumna = nColumna;
+    }
+    // 3. Emparejamos cada remito con su fila de detalle siguiente
+    const pares = filasRemito.map(fila => ({
+        remito: fila,
+        detalle: fila.nextElementSibling // Su fila-detalle correspondiente
+    }));
+    // 4. Ordenamos las parejas basándonos en la fila de remito
+    pares.sort((a, b) => {
+        let celdaA = a.remito.children[nColumna];
+        let celdaB = b.remito.children[nColumna];
+        // Si es la columna del select de Estado (columna 4):
+        let selectA = celdaA.querySelector("select");
+        let selectB = celdaB.querySelector("select");
+        let textoA = selectA ? selectA.value : celdaA.innerText.trim();
+        let textoB = selectB ? selectB.value : celdaB.innerText.trim();
+        if (esNumero) {
+            // Limpiamos $ , . y # para que quede solo el número
+            let numA = parseFloat(textoA.replace(/[^0-9,-]+/g, "").replace(",", ".")) || 0;
+            let numB = parseFloat(textoB.replace(/[^0-9,-]+/g, "").replace(",", ".")) || 0;
+            return ordenAscendente ? numA - numB : numB - numA;
+        } else {
+            return ordenAscendente 
+                ? textoA.localeCompare(textoB) 
+                : textoB.localeCompare(textoA);
+        }
+    });
+    // 5. Volvemos a insertar ambos en orden: remito y luego su detalle
+    pares.forEach(par => {
+        tbody.appendChild(par.remito);
+        if (par.detalle) tbody.appendChild(par.detalle);
+    });
+}

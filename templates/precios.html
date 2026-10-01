@@ -53,6 +53,18 @@
                             <td><span class="chip-precio chip-l1">${{ "{:,.2f}".format(t['precio']) if t['precio'] else '0.00' }}</span></td>
                             <td><span class="chip-precio chip-l2">${{ "{:,.2f}".format(t['precio2']) if t['precio2'] else '0.00' }}</span></td>
                             <td><span class="chip-precio chip-l3">${{ "{:,.2f}".format(t['precio3']) if t['precio3'] else '0.00' }}</span></td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
+                                    data-bs-toggle="modal" data-bs-target="#modalEditarTarea"
+                                    onclick="cargarDatosTarea(this)"
+                                    data-id="{{ t['id_tarea'] }}"
+                                    data-nombre="{{ t['nom_tar'] }}"
+                                    data-precio1="{{ t['precio'] }}"
+                                    data-precio2="{{ t['precio2'] }}"
+                                    data-precio3="{{ t['precio3'] }}">
+                                    Editar
+                                </button>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
@@ -65,8 +77,42 @@
                 </table>
             </div>
         </div>
-
+    <div class="modal fade" id="modalEditarTarea" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <form action="/modificar-tarea" method="POST">
+                <div class="modal-header">
+                <h5 class="modal-title">Editar Tarea</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                <input type="hidden" name="id_tarea" id="edit-id">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Nombre</label>
+                    <input type="text" name="nombre" id="edit-nombre" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Precio 1</label>
+                    <input type="number" name="precio1" id="edit-precio1" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Precio 2</label>
+                    <input type="number" name="precio2" id="edit-precio2" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Precio 3</label>
+                    <input type="number" name="precio3" id="edit-precio3" class="form-control">
+                </div>
+                </div>
+                <div class="modal-footer">
+                <button type="submit" class="btn btn-primary rounded-pill">Guardar Cambios</button>
+                </div>
+            </form>
+            </div>
+        </div>
+        </div>
     </main>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/precios.js"></script>
 </body>
 </html>

@@ -3,3 +3,9 @@ __pycache__/
 .env
 venv/
 .vscode/
+# Datos de clientes (nunca al repositorio)
+datos_privados/
+*.db
+backups/
+*.xls
+*.xlsx

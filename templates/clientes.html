@@ -142,11 +142,26 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr class="text-secondary small text-uppercase">
-                            <th class="py-3 px-4">Fecha</th>
-                            <th class="py-3">OI N°</th>
-                            <th class="py-3">Cliente</th>
-                            <th class="py-3 text-end">Total</th>
-                            <th class="py-3 text-center">Estado</th>
+                            <!-- Columna 0: Fecha (se ordena como texto ISO) -->
+                            <th class="py-3 px-4" onclick="ordenarTabla(0)" style="cursor: pointer;">
+                                Fecha ⇅
+                            </th>
+                            <!-- Columna 1: N° Remito (numérico) -->
+                            <th class="py-3" onclick="ordenarTabla(1, true)" style="cursor: pointer;">
+                                N° Remito ⇅
+                            </th>
+                            <!-- Columna 2: Empresa (texto) -->
+                            <th class="py-3" onclick="ordenarTabla(2)" style="cursor: pointer;">
+                                Empresa ⇅
+                            </th>
+                            <!-- Columna 3: Total (numérico/precio) -->
+                            <th class="py-3 text-end" onclick="ordenarTabla(3, true)" style="cursor: pointer;">
+                                Total ⇅
+                            </th>
+                            <!-- Columna 4: Estado (texto) -->
+                            <th class="py-3 text-center" onclick="ordenarTabla(4)" style="cursor: pointer;">
+                                Estado ⇅
+                            </th>
                         </tr>
                     </thead>
                     <tbody>

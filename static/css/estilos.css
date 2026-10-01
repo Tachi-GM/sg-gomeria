@@ -65,6 +65,7 @@
     color: #000;
     transform: scale(1.03);
 }
+
 body {
     background-color: var(--crema);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -138,9 +139,16 @@ body {
 .btn-accion-tarea {
     font-weight: 600;
     border-radius: 50px;
-    padding: 6px 16px;    /* antes: 6px 18px → reduce el "alto" y "ancho" del botón */
-    font-size: 0.8rem;   /* antes: 0.85rem → reduce el tamaño del texto */
+    padding: 2px 12px;
+    font-size: 0.8rem;
 }
+
+.btn-lista {
+    font-size: 0.95rem;
+    padding: 8px 18px;
+    margin-right: 15px;
+}
+
 .tarjeta-precios {
     background-color: var(--blanco);
     border-radius: 15px;
