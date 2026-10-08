@@ -1,14 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash, jsonify
 import sqlite3
 from datetime import date, datetime
 import shutil
 import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
-app.secret_key = "modo-milagritos-activo"
+
+load_dotenv()  # Carga el archivo .env
+
+# Lee la variable de entorno, y si por algún motivo no existe, usa "sg_gomeria.db" por defecto
+DB_PATH = os.getenv("DATABASE_PATH", "sg_gomeria.db")
 
 def obtener_conexion():
-    conexion = sqlite3.connect("sg_gomeria.db")
+    # Si la carpeta contenedora no existiera, sqlite intentaría crear el archivo y podría fallar si falta el directorio
+    directorio = os.path.dirname(DB_PATH)
+    if directorio:
+        os.makedirs(directorio, exist_ok=True)
+    conexion = sqlite3.connect(DB_PATH)
     conexion.row_factory = sqlite3.Row
     conexion.execute("PRAGMA foreign_keys = ON")
     return conexion
@@ -61,7 +70,7 @@ def clientes():
 
     # Armamos la consulta de remitos, sumando el filtro de mes si corresponde
     query_remitos = """
-        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.estado
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle
         FROM trabajos t
         JOIN clientes c ON t.id_cliente = c.id_cliente
     """
@@ -130,7 +139,7 @@ def historial_cliente():
     cliente = cursor.execute("SELECT id_cliente, nom_cli, cuit FROM clientes WHERE id_cliente = ?", (id_cliente,)).fetchone()
     # 1. Armamos la consulta base y la lista de parámetros
     query = """
-        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.estado,
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle,
                GROUP_CONCAT(tar.nom_tar, ', ') AS detalle_tareas
         FROM trabajos t
         LEFT JOIN detalle_trabajos dt ON t.id_trabajo = dt.id_trabajo
@@ -188,9 +197,75 @@ def historial_cliente():
 def cheques():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
-
+    filas = cursor.execute("""
+        SELECT id_cheque, numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado
+        FROM cheques
+        ORDER BY fecha_pago ASC, id_cheque DESC
+    """).fetchall()
+    
+    lista_cheques = [dict(f) for f in filas]
+    
+    # También obtenemos la lista de clientes para facilitar sugerencias de endosado si se quiere
+    clientes = cursor.execute("SELECT nom_cli FROM clientes ORDER BY nom_cli ASC").fetchall()
     conexion.close()
-    return render_template('cheques.html', cheques=cheques, milagritos=modo_activo())
+    return render_template('cheques.html', cheques=lista_cheques, clientes=clientes, milagritos=modo_activo())
+
+@app.route('/agregar-cheque', methods=['POST'])
+def agregar_cheque():
+    numero = request.form.get('number', '').strip()
+    cliente = request.form.get('client', '').strip()
+    banco = request.form.get('bank', '').strip()
+    fecha_emision = request.form.get('issue', '')
+    fecha_pago = request.form.get('payment', '')
+    importe = float(request.form.get('amount', 0) or 0)
+    estado = request.form.get('status', 'Pendiente')
+    endosado = request.form.get('endorsed', '').strip()
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+    cursor.execute("""
+        INSERT INTO cheques (numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado))
+    conexion.commit()
+    id_nuevo = cursor.lastrowid
+    conexion.close()
+    return jsonify({
+        'id_cheque': id_nuevo,
+        'numero': numero,
+        'cliente': cliente,
+        'banco': banco,
+        'fecha_emision': fecha_emision,
+        'fecha_pago': fecha_pago,
+        'importe': importe,
+        'estado': estado,
+        'endosado': endosado
+    })
+
+@app.route('/actualizar-estado-cheque', methods=['POST'])
+def actualizar_estado_cheque():
+    id_cheque = request.form.get('id_cheque')
+    nuevo_estado = request.form.get('estado')
+    estados_validos = ['Pendiente', 'Cobrado', 'Rechazado']
+    if nuevo_estado not in estados_validos:
+        return "Estado inválido", 400
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+    cursor.execute("UPDATE cheques SET estado = ? WHERE id_cheque = ?", (nuevo_estado, id_cheque))
+    conexion.commit()
+    conexion.close()
+    return "OK", 200
+
+@app.route('/eliminar-cheque', methods=['POST'])
+def eliminar_cheque():
+    id_cheque = request.form.get('id_cheque')
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+    cursor.execute("DELETE FROM cheques WHERE id_cheque = ?", (id_cheque,))
+    conexion.commit()
+    conexion.close()
+    return "OK", 200
 
 MESES_ABREVIADOS = {
     '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr',
@@ -245,31 +320,13 @@ def hacer_backup():
     return send_file(ruta_copia, as_attachment=True, download_name=nombre_archivo)
 
 
-@app.route('/actualizar-estado', methods=['POST'])
-def actualizar_estado():
-    id_trabajo = request.form.get('id_trabajo')
-    nuevo_estado = request.form.get('estado')
-
-    estados_validos=['PENDIENTE', 'EN PROCESO', 'PAGADO']
-
-    if nuevo_estado not in estados_validos:
-        return "Estado invalido", 400
-
-    conexion = obtener_conexion()
-    cursor = conexion.cursor()
-
-    cursor.execute('UPDATE trabajos SET estado = ? WHERE id_trabajo = ?', (nuevo_estado, id_trabajo))
-    conexion.commit()
-    conexion.close()
-
-    return "OK", 200
-
 @app.route('/enviar-trabajo', methods=['POST'])
 def enviar_trabajo():
     # 1. Capturamos los datos del formulario
     remito = request.form.get('remito')
     id_cliente = request.form.get('empresa')
     tipo_lista = request.form.get('tipo_lista', '1')  # 1, 2 o 3
+    detalle = request.form.get('detalles') or request.form.get('detalle', '')
 
     if not id_cliente:
         return "Error: Debes seleccionar una empresa", 400
@@ -314,9 +371,9 @@ def enviar_trabajo():
             return "Error: tipo de remito inválido", 400
 
         cursor.execute("""
-            INSERT INTO trabajos (remito, tipo, fecha, id_cliente, total, estado)
-            VALUES (?, ?, ?, ?, ?, 'PENDIENTE')
-        """, (remito, tipo, fecha_hoy, id_cliente, total_trabajo))
+            INSERT INTO trabajos (remito, tipo, fecha, id_cliente, total, detalle)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (remito, tipo, fecha_hoy, id_cliente, total_trabajo, detalle))
         
         # Obtenemos el id del trabajo recién insertado
         id_trabajo = cursor.lastrowid

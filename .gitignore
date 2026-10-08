@@ -9,3 +9,4 @@ datos_privados/
 backups/
 *.xls
 *.xlsx
+.env

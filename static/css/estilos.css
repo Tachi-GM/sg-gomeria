@@ -39,6 +39,7 @@
     height: auto;
     filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
 }
+
 .select-estado {
     border: none;
     border-radius: 20px;
@@ -426,8 +427,21 @@ body.modo-milagritos .hada-decorativa {
     text-overflow: ellipsis;
 }
 /* Le ganamos la pulseada de capas al .input-group de Bootstrap (que usa z-index: 2) */
+.choices.is-open {
+    z-index: 1050 !important;
+}
+
 .choices__list--dropdown {
-    z-index: 1000;
+    z-index: 1050 !important;
+    background-color: var(--blanco) !important;
+    border: 1.5px solid var(--gris-borde) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Si se abre el selector dentro de una fila de tareas, elevamos la fila entera */
+.fila-tarea:focus-within {
+    position: relative;
+    z-index: 1050;
 }
 
 /* Corrige el ancho del combobox de tareas dentro de su fila flex */
