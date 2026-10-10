@@ -2,6 +2,24 @@
 let instanciaChoicesEmpresa = null;
 let instanciasChoicesTareas = [];
 
+// Constantes
+const TAREAS_DATA = JSON.parse(document.getElementById('tareas-data').textContent);
+const COLUMNA_PRECIO = { 1: 'precio', 2: 'precio2', 3: 'precio3' };
+const TASA_IVA = 1.21;
+const CLIENTES_DATA = JSON.parse(document.getElementById('clientes-data').textContent);
+let clienteSinIva = false;
+
+function formatearPesos(valor) {
+    return `$${valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+document.getElementById('select-empresa').addEventListener('change', function () {
+    const cliente = CLIENTES_DATA.find(c => String(c.id_cliente) === this.value);
+    clienteSinIva = cliente ? cliente.con_iva === 0 : false;
+    document.getElementById('aviso-sin-iva').classList.toggle('d-none', !clienteSinIva);
+    calcularTotal();
+});
+
 // Función auxiliar: convierte cualquier <select> en un combobox buscable
 function crearChoicesParaSelect(select) {
     return new Choices(select, {
@@ -50,7 +68,7 @@ function quitarFilaTarea() {
     calcularTotal();
 }
 
-const COLUMNA_PRECIO = { 1: 'precio', 2: 'precio2', 3: 'precio3' };
+
 
 function cambiarLista(numeroLista) {
     document.getElementById('tipo_lista').value = numeroLista;
@@ -120,8 +138,17 @@ function calcularTotal() {
         total += precio * cantidad;
     });
 
-    document.getElementById('total-parcial').textContent =
-        `$${total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (clienteSinIva) {
+        const totalFinal = total / TASA_IVA;
+        document.getElementById('subtotal-parcial').textContent = formatearPesos(total);
+        document.getElementById('iva-parcial').textContent = '-' + formatearPesos(total - totalFinal);
+        document.getElementById('total-parcial').textContent = formatearPesos(totalFinal);
+    } else {
+        const neto = total / TASA_IVA;
+        document.getElementById('subtotal-parcial').textContent = formatearPesos(neto);
+        document.getElementById('iva-parcial').textContent = formatearPesos(total - neto);
+        document.getElementById('total-parcial').textContent = formatearPesos(total);
+    }
 }
 
 // Todo lo que necesita que la página ya esté cargada, va acá adentro

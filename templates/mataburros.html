@@ -140,9 +140,22 @@
 
                 <!-- 5. Botón Guardar / Enviar -->
                 <div class="mt-5">
-                    <div class="d-flex justify-content-between align-items-center mt-3 p-3 rounded-3" style="background-color:#eef2ff;">
-                        <span class="fw-bold text-secondary text-uppercase small">Total Parcial</span>
-                        <span id="total-parcial" class="fw-bold fs-5" style="color:#1a42b8;">$0.00</span>
+                    <div class="mt-3 p-3 rounded-3" style="background-color:#eef2ff;">
+                        <div class="d-flex justify-content-between small text-secondary">
+                            <span class="fw-bold text-uppercase">Subtotal (sin IVA)</span>
+                            <span id="subtotal-parcial">$0,00</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-secondary mb-2">
+                            <span class="fw-bold text-uppercase">IVA 21%</span>
+                            <span id="iva-parcial">$0,00</span>
+                        </div>
+                        <div id="aviso-sin-iva" class="alert alert-warning py-2 small fw-bold d-none">
+                            Este cliente va SIN IVA: se descuenta el 21%.
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                            <span class="fw-bold text-secondary text-uppercase small">Total Parcial</span>
+                            <span id="total-parcial" class="fw-bold fs-5" style="color:#1a42b8;">$0,00</span>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow" style="background-color: #1a42b8; border: none; font-size: 1.05rem; margin-top: 26px;">
                         Guardar Remito y Calcular Total
@@ -154,10 +167,8 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        // Fuente de verdad de los precios — vive en JS, ajena a lo que Choices.js haga con el <select>
-        const TAREAS_DATA = {{ tareas_json | tojson }};
-    </script>
+    <script id="clientes-data" type="application/json">{{ clientes_json | tojson }}</script>
+    <script id="tareas-data" type="application/json">{{ tareas_json | tojson }}</script>
     <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
     <script src="/static/js/mataburros.js"></script>
 {% endblock %}

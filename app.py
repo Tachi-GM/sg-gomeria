@@ -112,11 +112,13 @@ def clientes():
 def mataburros():
     conexion = obtener_conexion()
     
-    empresas = conexion.execute("SELECT id_cliente, nom_cli, cuit FROM clientes").fetchall()
+    empresas = conexion.execute("SELECT id_cliente, nom_cli, cuit, con_iva FROM clientes").fetchall()
     tareas = conexion.execute("SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas").fetchall()
+    clientes_json = [dict(e) for e in empresas]
+    tareas_json=[dict(t) for t in tareas]
     
     conexion.close()
-    return render_template('mataburros.html', empresas=empresas, tareas=tareas, tareas_json=[dict(t) for t in tareas], milagritos=modo_activo())
+    return render_template('mataburros.html', empresas=empresas, tareas=tareas, tareas_json=tareas_json, clientes_json=clientes_json,milagritos=modo_activo())
 
 @app.route('/precios')
 def precios():
@@ -370,6 +372,12 @@ def enviar_trabajo():
         if tipo not in ('OI', 'OIB'):
             return "Error: tipo de remito inválido", 400
 
+        cliente = cursor.execute("SELECT con_iva FROM clientes WHERE id_cliente = ?", (id_cliente,)).fetchone()
+        if cliente is None:
+            return "Error: cliente inexistente", 400
+        if cliente['con_iva'] == 0:
+            total_trabajo = round(total_trabajo / 1.21, 2)
+        
         cursor.execute("""
             INSERT INTO trabajos (remito, tipo, fecha, id_cliente, total, detalle)
             VALUES (?, ?, ?, ?, ?, ?)
