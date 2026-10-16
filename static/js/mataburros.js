@@ -151,6 +151,30 @@ function calcularTotal() {
     }
 }
 
+function validarFormularioRemito(e) {
+    const errores = [];
+
+    if (!document.querySelector('[name="remito"]').value.trim()) {
+        errores.push('Falta el número de OI.');
+    }
+    if (!document.getElementById('select-empresa').value) {
+        errores.push('Elegí un cliente.');
+    }
+    document.querySelectorAll('#contenedor-tareas .fila-tarea').forEach((fila, i) => {
+        if (!fila.querySelector('select').value) {
+            errores.push(`Elegí la tarea de la fila ${i + 1}.`);
+        }
+    });
+
+    const caja = document.getElementById('errores-form');
+    if (errores.length > 0) {
+        e.preventDefault(); // frena el envío del formulario
+        caja.innerHTML = errores.map(t => `<div>${t}</div>`).join('');
+        caja.classList.remove('d-none');
+        caja.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
 // Todo lo que necesita que la página ya esté cargada, va acá adentro
 document.addEventListener('DOMContentLoaded', function () {
     // Combobox buscable para Empresa
@@ -168,4 +192,5 @@ document.addEventListener('DOMContentLoaded', function () {
             calcularTotal();
         }
     });
+    document.getElementById('form-remito').addEventListener('submit', validarFormularioRemito);
 });

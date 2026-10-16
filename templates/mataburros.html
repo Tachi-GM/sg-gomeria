@@ -14,11 +14,8 @@
 
         {% with mensajes = get_flashed_messages(with_categories=true) %}
             {% if mensajes %}
-                {% for categoria, mensaje in mensajes %}
-                    <div class="alert alert-warning-gomeria alert-dismissible fade show rounded-4 shadow-sm mb-4 col-12 col-md-8" role="alert">
-                        {{ mensaje }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                    </div>
+                {% for categoria, texto in mensajes %}
+                    <div class="alert alert-{{ categoria }}">{{ texto }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
@@ -60,8 +57,9 @@
                 </div>
             </div>
             
-            <form action="/enviar-trabajo" method="POST">
-                
+            <form action="/enviar-trabajo" method="POST" id="form-remito" novalidate>
+            <div id="errores-form" class="alert alert-danger d-none" role="alert"></div>
+            
                 <!-- 1. Número de Remito -->
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">N° Remito</label>

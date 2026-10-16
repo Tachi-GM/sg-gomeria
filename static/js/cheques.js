@@ -1,5 +1,5 @@
 // Cheques cargados desde el backend / base de datos
-let checks = {{ cheques | tojson }};
+let checks = JSON.parse(document.getElementById('cheques-data').textContent);
 
 const rows = document.getElementById('rows');
 const modal = document.getElementById('modal');

@@ -1,8 +1,8 @@
 # Sistema de Gestión - Gomería "El Puente" 🔧🐾
 
-Aplicación web local para gestionar la operatoria diaria de una gomería/taller: carga de trabajos (remitos), administración de clientes y consulta de precios.
+Aplicación web para la gestión integral de la operatoria diaria de un taller mecánico / gomería enfocado en flotas corporativas: facturación de trabajos (remitos OI y OIB), administración de clientes y vehículos, 3 listas de precios simultáneas, módulo de cartera de cheques, y cálculo automático de IVA.
 
-Desarrollada como proyecto de la Tecnicatura Superior en Programación (UTN), pensada para uso real en el mostrador de la gomería.
+Desarrollada para la materia **Programación 4** de la **Tecnicatura Superior en Programación (UTN)**.
 
 ---
 
@@ -11,248 +11,203 @@ Desarrollada como proyecto de la Tecnicatura Superior en Programación (UTN), pe
 - [Funcionalidades](#-funcionalidades)
 - [Tecnologías utilizadas](#-tecnologías-utilizadas)
 - [Estructura del proyecto](#-estructura-del-proyecto)
+- [Variables de entorno](#-variables-de-entorno)
 - [Requisitos previos](#-requisitos-previos)
 - [Instalación y puesta en marcha](#-instalación-y-puesta-en-marcha)
+- [Ejecución de Pruebas Automáticas](#-ejecución-de-pruebas-automáticas)
+- [Arquitectura y Buenas Prácticas](#-arquitectura-y-buenas-prácticas)
 - [Cómo usar el sistema](#-cómo-usar-el-sistema)
-- [Cómo subir el proyecto a Git/GitHub](#-cómo-subir-el-proyecto-a-gitgithub)
-- [Próximos pasos](#-próximos-pasos)
 
 ---
 
 ## ✨ Funcionalidades
 
-- **Mataburros (registro de trabajos):** formulario para cargar un remito nuevo, elegir cliente, agregar varias tareas con cantidad, y seleccionar entre 3 listas de precios (L1/L2/L3). El total se calcula automáticamente.
-- **Clientes:** alta de nuevas empresas (razón social, CUIT, teléfono, email) y vista en tarjetas de todos los clientes registrados.
-- **Historial de remitos:** tabla general con todos los trabajos facturados (fecha, N° remito, empresa, total, estado).
-- **Historial por cliente:** pestañas por mes/año para ver cuánto se facturó a cada empresa en un período determinado.
-- **Lista de precios:** pantalla de consulta con las 3 listas de precios de cada tarea/servicio.
-- **Modo Milagritos 🧚:** modo visual alternativo (paleta rosa) que se activa/desactiva con un botón, pensado como detalle personalizado del sistema.
+- **Mataburros (Emisión de Remitos):**
+  - Registro de órdenes de trabajo con soporte para comprobantes oficiales (**OI**) y adicionales (**OIB**).
+  - Selección de cliente con asignación automática de lista de precios por defecto y condición de IVA.
+  - Selección múltiple de tareas con controles interactivos de incremento/decremento de cantidades (+ / -).
+  - Tres listas de precios diferenciadas por política comercial (L1: Lista base / L2: Clientes frecuentes / L3: Pago diferido).
+  - Cálculo automático de subtotales, recargo por IVA (21%) y total final del trabajo.
+
+- **Módulo de Clientes:**
+  - Alta y consulta de empresas (Razón Social, CUIT con validación única, teléfono, email).
+  - Asignación de condición impositiva (Con IVA / Sin IVA) y lista de precios habitual (1, 2 o 3).
+  - Listado de clientes con buscador en tiempo real y vista en tarjetas.
+  - Historial detallado por empresa con navegación mensual por pestañas y totales acumulados.
+
+- **Historial General y Remitos:**
+  - Tabla interactiva de remitos con ordenamiento dinámico por cualquier columna (fecha, número de remito, cliente, total y estado).
+  - Despliegue en acordeón de los renglones de tareas realizadas por remito sin recargar la página.
+  - Actualización inline del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
+
+- **Módulo de Cheques:**
+  - Registro y seguimiento de cartera de cheques recibidos de clientes (número, banco emisor, cliente asociado, fecha de emisión, fecha de cobro e importe).
+  - Control de estados: `Pendiente`, `Cobrado`, `Rechazado` y registro de endosos.
+
+- **Autenticación y Control de Acceso por Roles:**
+  - Inicio y cierre de sesión seguro (`/login`, `/logout`) con contraseñas protegidas mediante **hashing criptográfico con sal** (`werkzeug.security`).
+  - Control de acceso por roles: `admin` (acceso total y generación de backups) y `usuario` (operador de mostrador).
+  - Decoradores `@login_requerido` y `@solo_admin` para proteger rutas contra accesos no autorizados.
+  - Credenciales demo para evaluación: `admin` / `admin123` y `operador` / `operador123`.
+
+- **Herramientas de Mantenimiento y Seguridad:**
+  - Resguardo automático de base de datos (`/backup`) exclusivo para administradores con timestamp en `backups/`.
+  - Páginas de error personalizadas (`404` y `500`) con registro de eventos anómalos en `errores.log`.
+  - **Modo Milagritos 🧚:** Personalización visual accesible vía sesión HTTP.
 
 ---
 
 ## 🛠 Tecnologías utilizadas
 
-| Capa | Tecnología |
-|---|---|
-| Backend | Python 3 + Flask |
-| Base de datos | SQLite |
-| Frontend | HTML5 + Jinja2 (motor de plantillas de Flask) |
-| Estilos | CSS3 + Bootstrap 5 (vía CDN) |
-
-**¿Por qué estas herramientas?**
-- **Flask** es un microframework: no impone una estructura rígida como Django, así que es liviano y fácil de entender mientras se aprende.
-- **SQLite** guarda toda la base en un único archivo (`sg_gomeria.db`), sin necesidad de instalar un servidor de base de datos aparte — ideal para una app local de un solo taller.
-- **Jinja2** es el motor de plantillas que usa Flask por defecto: permite insertar lógica de Python (`{% for %}`, `{% if %}`, variables `{{ }}`) directamente dentro del HTML.
+| Capa | Tecnología | Justificación |
+|---|---|---|
+| **Backend** | Python 3 + Flask 3.1 | Microframework ágil, modular y de bajo consumo de recursos. |
+| **Base de Datos** | SQLite 3 | Base de datos relacional serverless, ACID, con foreign keys activadas. |
+| **Frontend** | HTML5 + Jinja2 | Herencia de plantillas modular (`base.html`), lógica declarativa segura. |
+| **Estilos** | CSS3 + Bootstrap 5.3 | Diseño responsivo con componentes modernos y hojas CSS modulares. |
+| **Interactividad** | JavaScript (ES6) | Asincronismo con `fetch`, manipulación del DOM y ordenamiento cliente. |
+| **Configuración** | `python-dotenv` | Separación estricta entre código y configuración de entorno (.env). |
 
 ---
 
 ## 📁 Estructura del proyecto
 
+El proyecto implementa una arquitectura modular con separación de responsabilidades:
+
 ```
 SG - Gomería/
 │
-├── app.py                     # Servidor Flask: rutas, lógica y consultas SQL
-├── sg_gomeria.db              # Base de datos SQLite (se genera/usa en tiempo de ejecución)
-├── requirements.txt           # Librerías de Python necesarias
-├── .gitignore                 # Archivos/carpetas que Git debe ignorar
+├── app.py                      # Punto de entrada de la aplicación y controladores de rutas
+├── requirements.txt            # Dependencias del proyecto en formato estándar UTF-8
+├── .env.example                # Plantilla de variables de entorno para desarrollo
+├── .gitignore                  # Exclusión de archivos sensibles, entornos y bases de datos
+├── README.md                   # Documentación técnica y guía de instalación
 │
-├── database/
-│   ├── connection.py           # Conexión reutilizable a la base (context manager)
-│   └── init_db.py              # Script para crear tablas y cargar datos de prueba
+├── database/                   # Módulo de persistencia y base de datos
+│   ├── connection.py           # Conexión centralizada a SQLite (FK ON, row_factory)
+│   └── init_db.py              # Script DDL de inicialización y datos semilla
 │
-├── templates/                  # Plantillas HTML (Jinja2)
-│   ├── index.html              # Pantalla de inicio
-│   ├── clientes.html           # Gestión de clientes + historial general
-│   ├── mataburros.html         # Formulario de carga de trabajos
-│   ├── historial-cliente.html  # Historial filtrado por cliente/mes
-│   └── precios.html            # Lista de precios
+├── templates/                  # Plantillas Jinja2
+│   ├── base/
+│   │   └── base.html           # Layout base compartido (Navbar, CDN Bootstrap, estilos)
+│   ├── index.html              # Pantalla principal de acceso rápido
+│   ├── mataburros.html         # Formulario de carga de trabajos y cálculo de remitos
+│   ├── clientes.html           # Dashboard de empresas y tabla de remitos interactiva
+│   ├── historial-cliente.html  # Vista mensual consolidada por cliente
+│   ├── precios.html            # Gestión y consulta de tarifas (L1, L2, L3)
+│   ├── cheques.html            # Cartera y seguimiento de cheques
+│   ├── acerca-de.html          # Información del sistema
+│   ├── salir.html              # Pantalla de confirmación de salida
+│   └── error.html              # Vista unificada de errores HTTP (404, 500)
 │
-└── static/
-    ├── estilos.css              # Estilos propios (paleta de colores, Modo Milagritos)
-    └── logo.png                 # Logo de la gomería
+├── static/                     # Archivos estáticos
+│   ├── css/
+│   │   ├── estilos.css         # Reglas visuales globales y tema Modo Milagritos
+│   │   └── cheques.css         # Estilos específicos del módulo de cheques
+│   ├── js/
+│   │   ├── clientes.js         # Filtros, ordenamiento de tablas y actualización AJAX
+│   │   ├── mataburros.js       # Dinámica de cantidades, tareas y listas de precios
+│   │   ├── cheques.js          # Control de estados y acciones de cheques
+│   │   └── precios.js          # Edición modal de tareas y precios
+│   └── logo.png                # Isotipo del taller
+│
+└── tests/                      # Suite de pruebas automatizadas
+    └── test_rutas.py           # Pruebas de integración sobre los endpoints principales
 ```
 
-> **Nota sobre `templates/` y `static/`:** Flask busca automáticamente los archivos `.html` dentro de una carpeta llamada `templates/`, y los archivos CSS/imágenes dentro de `static/`. Por eso el proyecto está organizado así — es una convención que el framework espera, no un capricho de estilo.
+---
+
+## ⚙ Variables de entorno
+
+El sistema utiliza variables de entorno para evitar datos sensibles en el código fuente. Se incluye un archivo `.env.example` de referencia:
+
+| Variable | Descripción | Valor por defecto |
+|---|---|---|
+| `SECRET_KEY` | Clave criptográfica para firmas de sesión Flask | Valor de respaldo para desarrollo |
+| `DATABASE_PATH` | Ruta al archivo de base de datos SQLite | `sg_gomeria.db` |
+| `FLASK_DEBUG` | Activa o desactiva el modo de depuración (`True`/`False`) | `True` |
 
 ---
 
 ## ✅ Requisitos previos
 
-Antes de instalar el proyecto necesitás tener instalado:
-
-1. **Python 3.10 o superior** → [python.org/downloads](https://www.python.org/downloads/)
-   - Al instalar en Windows, marcá la casilla "Add Python to PATH".
-2. **Git** (para clonar/versionar el proyecto) → [git-scm.com](https://git-scm.com/downloads)
-3. Un navegador web (Chrome, Edge, Firefox).
-
-Para verificar que están instalados, abrí una terminal (CMD, PowerShell o Git Bash) y ejecutá:
-
-```bash
-python --version
-git --version
-```
+- **Python 3.10 o superior** ([python.org](https://www.python.org/))
+- **Git** ([git-scm.com](https://git-scm.com/))
+- Navegador web moderno (Chrome, Edge, Firefox, Brave)
 
 ---
 
 ## 🚀 Instalación y puesta en marcha
 
-### 1. Cloná o descargá el proyecto
-
-Si ya lo tenés en tu carpeta local, salteá este paso. Si lo estás bajando desde un repositorio de Git:
-
+### 1. Clonar el repositorio
 ```bash
-git clone <URL-del-repositorio>
-cd "SG - Gomería"
+git clone https://github.com/Tachi-GM/sg-gomeria.git
+cd "sg-gomeria"
 ```
 
-### 2. Creá un entorno virtual (recomendado)
-
-Un **entorno virtual** es una carpeta aislada donde se instalan las librerías de Python *solo para este proyecto*, sin mezclarlas con otros proyectos de tu computadora.
-
+### 2. Crear y activar el entorno virtual
+En Windows (PowerShell / CMD):
 ```bash
 python -m venv venv
+venv\Scripts\activate
+```
+En Linux / macOS:
+```bash
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-Activalo:
-
-- **Windows (CMD/PowerShell):**
-  ```bash
-  venv\Scripts\activate
-  ```
-- **Mac/Linux:**
-  ```bash
-  source venv/bin/activate
-  ```
-
-Vas a ver que el nombre `(venv)` aparece al principio de la línea de la terminal — eso indica que está activo.
-
-### 3. Instalá las dependencias
-
+### 3. Instalar las dependencias
 ```bash
 pip install -r requirements.txt
 ```
 
-Esto lee el archivo `requirements.txt` (incluido en este proyecto) e instala automáticamente Flask y todo lo necesario.
+### 4. Configurar las variables de entorno
+Copiá la plantilla de variables de entorno:
+- En Windows (PowerShell):
+  ```powershell
+  Copy-Item .env.example .env
+  ```
+- En Linux / macOS / CMD:
+  ```bash
+  copy .env.example .env   # CMD
+  cp .env.example .env     # Bash
+  ```
 
-### 4. Inicializá la base de datos (solo la primera vez)
-
+### 5. Inicializar la base de datos
+Ejecutá el script constructor del esquema relacional:
 ```bash
 python database/init_db.py
 ```
+*Este comando crea todas las tablas con sus restricciones y carga datos semilla de prueba si la base se encuentra vacía.*
 
-Este script crea las tablas (`clientes`, `tareas`, `trabajos`, `detalle_trabajos`, etc.) y, si la base está vacía, carga algunos datos de ejemplo para probar el sistema.
-
-### 5. Iniciá el servidor
-
+### 6. Iniciar el servidor
 ```bash
 python app.py
 ```
-
-Vas a ver en la terminal algo como:
-
-```
- * Running on http://127.0.0.1:5000
-```
-
-### 6. Abrí el sistema en el navegador
-
-Entrá a: **http://127.0.0.1:5000/**
-
-Para detener el servidor, volvé a la terminal y presioná `CTRL + C`.
+Abrí en tu navegador: **http://127.0.0.1:5000/**
 
 ---
 
-## 🖱 Cómo usar el sistema
+## 🧪 Ejecución de Pruebas Automáticas
 
-1. **Pantalla de inicio:** elegí entre "Mataburros", "Clientes" o "Precios".
-2. **Cargar un trabajo:** en Mataburros, completá el N° de remito, elegí la empresa, seleccioná la lista de precios (L1/L2/L3) y agregá las tareas realizadas con su cantidad. Al guardar, el sistema calcula el total solo.
-3. **Agregar un cliente nuevo:** en Clientes, tocá "+ AGREGAR NUEVA EMPRESA" y completá el formulario.
-4. **Ver historial de un cliente:** desde su tarjeta, tocá "Ver Historial" y navegá por las pestañas de cada mes.
-5. **Modo Milagritos 🧚:** tocá el botón con el hada para cambiar la paleta de colores a modo rosa.
-
----
-
-## 🔀 Cómo subir el proyecto a Git/GitHub
-
-Estos pasos sirven tanto para **empezar a versionar** el proyecto como para **subirlo por primera vez** a un repositorio remoto (GitHub, GitLab, etc.).
-
-### Conceptos rápidos
-
-- **Git** es el programa que registra el historial de cambios de tu código (versionado).
-- **GitHub** es un servicio en la nube donde alojás ese historial (el "repositorio remoto").
-- **Commit** es una "foto" del estado del código en un momento dado, con un mensaje que describe qué cambió.
-- **`.gitignore`** le dice a Git qué archivos/carpetas *no* debe versionar (por ejemplo `venv/`, que es pesada y se regenera con `pip install`).
-
-### Pasos
-
-**1. Inicializar el repositorio** (solo si el proyecto todavía no es un repo Git):
+El proyecto cuenta con un conjunto de pruebas automáticas desarrolladas con el módulo estándar `unittest` de Python para garantizar la estabilidad de las rutas principales y el manejo de errores:
 
 ```bash
-git init
+python -m unittest discover tests
 ```
 
-**2. Revisá tu `.gitignore`**
-
-El proyecto ya incluye uno con:
-
+Salida esperada:
 ```
-__pycache__/
-*.pyc
-.env
-venv/
-.vscode/
-```
-
-💡 **Tip:** te recomiendo agregar también `*.db` (o específicamente `sg_gomeria.db`) para no subir la base de datos real con información de clientes al repositorio. En su lugar, quien clone el proyecto corre `python database/init_db.py` para generar su propia base.
-
-**3. Agregar los archivos al área de preparación (staging)**
-
-```bash
-git add .
-```
-
-Esto le dice a Git "quiero incluir estos cambios en el próximo commit".
-
-**4. Crear el commit**
-
-```bash
-git commit -m "Versión inicial del sistema de gestión"
-```
-
-**5. Conectar con un repositorio remoto** (creá antes el repo vacío en GitHub):
-
-```bash
-git remote add origin https://github.com/tu-usuario/tu-repositorio.git
-```
-
-**6. Subir los cambios**
-
-```bash
-git branch -M main
-git push -u origin main
-```
-
-A partir de ahí, cada vez que hagas cambios, el flujo habitual es:
-
-```bash
-git add .
-git commit -m "Descripción breve del cambio"
-git push
+Ran 6 tests in 0.120s
+OK
 ```
 
 ---
 
-## 📌 Próximos pasos
+## 🏛 Arquitectura y Buenas Prácticas
 
-Algunas ideas para seguir mejorando el proyecto (no implementadas todavía):
-
-- Migrar los templates a **herencia de Jinja2** (`{% extends "base.html" %}`) para no repetir el `<head>` y la barra superior en cada archivo HTML.
-- Agregar cálculo de **IVA (21%)** sobre los totales, si la gomería lo necesita para facturar.
-- Registrar **pagos** de clientes y mostrar saldo pendiente por empresa (la tabla `pagos` ya existe en la base, pero todavía no tiene pantallas ni rutas).
-- Agregar **edición y eliminación** de clientes y tareas (por ahora solo se puede dar de alta).
-- Un botón para **exportar el historial a PDF o Excel**, útil para mandarle un resumen a un cliente.
-- Validaciones más claras en los formularios (por ejemplo, avisar si un CUIT ya existe antes de enviarlo).
-
----
-
-*Proyecto desarrollado para la Gomería "El Puente".*
+1. **Separación de Persistencia:** Toda la lógica de conexión vive en `database/connection.py`. Los controladores obtienen conexiones de corta duración y liberan recursos al finalizar cada solicitud.
+2. **Integridad Referencial:** Claves foráneas activas (`PRAGMA foreign_keys = ON`) y restricciones `CHECK` a nivel de motor para garantizar la validez de precios, cantidades y estados.
+3. **Frontend Componentizado:** Las plantillas extienden de `templates/base/base.html`, reduciendo código duplicado y asegurando consistencia visual.
+4. **Seguridad y Resguardo:** Exclusión de bases de datos operativas del repositorio Git mediante `.gitignore` y parametrización segura de credenciales mediante `python-dotenv`.

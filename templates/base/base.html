@@ -16,15 +16,27 @@
                 &larr; ATRÁS
             </a>
             {% endblock %}
-            <a href="/backup" class="btn btn-capsula">
+            {% if session.get('rol') == 'admin' %}
+            <a href="/backup" class="btn btn-capsula" title="Generar copia de seguridad">
                 💾
             </a>
+            {% endif %}
             <h1 class="h4 mb-0 text-uppercase fw-bold letter-spacing-1">
                 {% block subtitle %}{% endblock %}
             </h1>
-            <a href="/toggle-milagritos" class="btn btn-modo-milagritos">
-                🧚
-            </a>
+            <div class="d-flex align-items-center gap-2">
+                {% if session.get('usuario') %}
+                <span class="badge bg-white text-dark py-2 px-3 fw-medium d-none d-md-inline" style="font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+                    👤 {{ session['usuario'] }} <span class="text-secondary small">({{ session['rol'] }})</span>
+                </span>
+                <a href="/logout" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold" style="font-size: 0.78rem;" title="Cerrar sesión">
+                    SALIR ⏻
+                </a>
+                {% endif %}
+                <a href="/toggle-milagritos" class="btn btn-modo-milagritos" title="Modo Milagritos">
+                    🧚
+                </a>
+            </div>
             <img src="/static/logo.png" alt="Gomería El Puente" class="logo-nav">
         </div>
     </header>

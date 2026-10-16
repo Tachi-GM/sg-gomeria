@@ -1,125 +1,163 @@
 # ==============================================================================
-# MANUAL DE USUARIO Y DOCUMENTACIÓN DEL SISTEMA
-# SG - Gomería El Puente
+# MANUAL DE USUARIO Y DOCUMENTACIÓN OPERATIVA DEL SISTEMA
+# Sistema de Gestión - Gomería "El Puente" 🔧🐾
 # ==============================================================================
 
 1. INTRODUCCIÓN Y PROPÓSITO DEL SISTEMA
 ------------------------------------------------------------------------------
-El "Sistema de Gestión - Gomería El Puente" es una aplicación web local desarrollada 
-en Python (Flask) y SQLite diseñada para agilizar y organizar la operatoria diaria del 
-taller mecánico / gomería comercial.
+El "Sistema de Gestión - Gomería El Puente" es una solución web integral diseñada 
+para digitalizar y ordenar la operatoria cotidiana de un taller mecánico / gomería
+comercial, con especial foco en la atención y facturación a flotas de empresas.
 
-Su objetivo principal es simplificar:
-- La carga y cálculo rápido de trabajos/remitos de servicios.
-- La administración y registro de clientes y empresas.
-- El control de tarifas con múltiples listas de precios.
-- El seguimiento histórico de facturación por cliente y mes.
-
-
-2. CARACTERÍSTICAS PRINCIPALES ("QUÉ OFRECE")
-------------------------------------------------------------------------------
-* INTERFAZ INTUITIVA Y ÁGIL:
-  Diseño limpio y amigable optimizado para uso en mostrador o computadora del taller.
-
-* GENERADOR RÁPIDO DE TRABAJOS / MATABURROS:
-  - Formulario ágil para volcar remitos en papel al sistema.
-  - Selección de cliente desplegable con CUIT identificador.
-  - Selección de múltiples tareas y servicios con ajuste rápido de cantidades (+/-).
-  - Selector de listas de precios (L1, L2, L3) que recalcula y muestra los importes
-    en tiempo real para evitar errores de cobro o cotización.
-  - Cálculo automático y transparente del costo total del trabajo.
-
-* GESTIÓN DE CLIENTES Y EMPRESAS:
-  - Alta rápida de nuevas empresas (Razón Social, CUIT, Teléfono, Correo Electrónico).
-  - Vista en tarjetas con los datos de contacto directo de cada cliente.
-  - Acceso directo al historial individual de cada empresa.
-
-* HISTORIAL CENTRALIZADO DE REMITOS:
-  - Tabla general con todos los remitos emitidos (Fecha, N° Remito, Empresa, Total y Estado).
-  - Estados claros de seguimiento (PENDIENTE / PAGADO).
-
-* HISTORIAL DETALLADO POR CLIENTE Y FILTRADO MENSUAL:
-  - Pestañas dinámicas estilo carpetas/hoja de cálculo por período (mes/año).
-  - Cálculo instantáneo del "TOTAL FACTURADO" para el período seleccionado.
-  - Detalle de cada remito emitido para esa empresa.
-
-* CONSULTA DE LISTA DE PRECIOS:
-  - Pantalla dedicada para visualizar las tarifas vigentes de todos los servicios 
-    y productos en sus 3 modalidades de precio (Precio 1, Precio 2 y Precio 3).
-
-* MODO MILAGRITOS (EASTER EGG / MODO ESPECIAL):
-  - Botón interactivo (icono de hada 🧚) en el encabezado que permite alternar 
-    un estilo visual alternativo y personalizado.
+Sus objetivos centrales son:
+- Agilizar la emisión y cálculo de remitos en el mostrador (talonarios OI y OIB).
+- Mantener actualizadas 3 listas de precios simultáneas según el perfil del cliente.
+- Automatizar el cálculo de recargos por IVA (21%) según la condición fiscal.
+- Administrar la cartera de clientes, vehículos asociados y cuentas corrientes.
+- Gestionar la recepción, vencimiento, cobro y endoso de cheques comerciales.
+- Ofrecer trazabilidad histórica mediante reportes mensuales y ordenamiento dinámico.
+- Proteger la información del taller mediante copias de seguridad automáticas.
 
 
-3. GUÍA DE USO PASO A PASO (MANUAL DE USUARIO)
+2. MÓDULOS DEL SISTEMA Y CARACTERÍSTICAS
 ------------------------------------------------------------------------------
 
-3.1. PANTALLA PRINCIPAL (INICIO)
-- Al abrir el sistema, se muestra el menú central con acceso a los 3 módulos:
-  1. Mataburros: Cargar un nuevo trabajo / remito.
-  2. Clientes: Ver empresas, cargar nuevas y consultar el historial general.
-  3. Precios: Ver la lista de precios completa.
+2.1. GENERADOR DE TRABAJOS Y REMITOS ("MATABURROS")
+- Formulario de alta rápida diseñado para transcribir el trabajo físico al sistema.
+- Soporte para comprobantes oficiales:
+  * Remitos OI (Oficial / Comprobante de Entrega de mercadería o servicio).
+  * Remitos OIB (Comprobantes con detalle o internos).
+- Detección inteligente del cliente: al seleccionar la empresa, el sistema precarga
+  automáticamente su lista de precios habitual y su condición de IVA.
+- Selector dinámico de listas de precios (L1, L2, L3) con recalculo visual de tarifas.
+- Selector interactivo de tareas y servicios con botones de incremento/decremento (+ / -).
+- Cálculo en tiempo real de subtotales, discriminación del 21% de IVA y total final.
+- Campo de observaciones/detalle para aclaraciones técnicas del trabajo realizado.
 
-3.2. CÓMO REGISTRAR UN NUEVO TRABAJO ("MATABURROS")
-- Acceder haciendo clic en "Mataburros".
-- Paso 1: Ingresar el "Número de Remito" (por ejemplo, el número del talonario en papel).
-- Paso 2: Seleccionar la Empresa / Cliente en el menú desplegable.
-- Paso 3 (Opcional): Elegir la lista de precios a aplicar haciendo clic en L1, L2 o L3 
-  según el acuerdo con el cliente. Las opciones del menú actualizarán sus valores.
-- Paso 4: Seleccionar la tarea realizada. Si hubo más de una unidad, utilizar los 
-  botones "+" o "-" para ajustar la cantidad.
-- Paso 5: Si el remito contiene más tareas, presionar el botón verde "+ Agregar Tarea".
-  Si se agregó una de más, usar "- Quitar Tarea".
-- Paso 6: Presionar "Guardar Remito y Calcular Total". El sistema calculará el 
-  subtotal de cada tarea, el total del remito y lo almacenará con estado "PENDIENTE".
+2.2. GESTIÓN INTEGRAL DE CLIENTES (EMPRESAS)
+- Ficha completa de cliente: Razón Social, CUIT (con validación de unicidad),
+  teléfono de contacto y correo electrónico.
+- Configuración impositiva por cliente: opción de emitir con o sin IVA (21%).
+- Asignación de lista de precios predeterminada (Lista 1, 2 o 3).
+- Buscador interactivo en vivo por nombre, CUIT o teléfono.
+- Visualización en tarjetas con acceso directo a llamada, email y cuenta histórica.
 
-3.3. CÓMO ADMINISTRAR CLIENTES Y VER REMITOS
-- Acceder haciendo clic en "Clientes".
-- Para registrar un cliente nuevo:
-  1. Presionar el botón verde "+ AGREGAR NUEVA EMPRESA".
-  2. Completar: Razón Social / Nombre, CUIT, Teléfono y Email.
-  3. Presionar "Guardar Empresa". La nueva empresa aparecerá inmediatamente en las tarjetas.
-- Para consultar el historial de un cliente:
-  1. Buscar la tarjeta de la empresa deseada.
-  2. Presionar el botón "Ver Historial ->".
-- Para consultar el historial general:
-  1. En la parte inferior de la pantalla se listan todos los remitos cronológicamente.
+2.3. HISTORIAL DE TRABAJOS Y REMITOS (TABLA INTELIGENTE)
+- Vista general de todos los remitos emitidos ordenados cronológicamente.
+- Ordenamiento dinámico en cliente (haciendo clic en los encabezados):
+  * Fecha de emisión (cronológico inverso/directo).
+  * Número de remito (numérico).
+  * Nombre de la empresa (alfabético).
+  * Total facturado (numérico por importe).
+  * Estado de cobro.
+- Despliegue en acordeón: al hacer clic sobre cualquier remito, se despliegan debajo
+  las tareas específicas que componen el trabajo con cantidades y subtotales.
+- Cambio de estado instantáneo vía menú desplegable (PENDIENTE, EN PROCESO, PAGADO)
+  sin recargar la pantalla (mediante peticiones asíncronas fetch).
 
-3.4. CÓMO REVISAR EL HISTORIAL Y TOTAL FACTURADO DE UN CLIENTE
-- En la vista del cliente:
-  - Se visualizan pestañas en la parte superior: "Ver Todos" y pestañas por mes (ej. 2026-09).
-  - Al hacer clic en un mes determinado, la tarjeta superior mostrará inmediatamente 
-    la suma total facturada en ese período ("TOTAL FACTURADO (AAAA-MM)").
-  - En la tabla inferior se detallan los números de remito, fechas y montos correspondientes.
+2.4. HISTORIAL CONSOLIDADO POR CLIENTE
+- Vista mensualizada con navegación por pestañas (pestaña "Ver Todos" y pestañas
+  individuales para cada período, ej. 2026-09, 2026-10).
+- Cálculo instantáneo del acumulado facturado para el mes seleccionado.
 
-3.5. CÓMO CONSULTAR LA LISTA DE PRECIOS
-- Acceder a "Precios" desde el inicio.
-- Se presenta una tabla ordenada con todos los conceptos cargados en la base de datos 
-  junto a sus tres listas de precios (Precio 1, Precio 2 y Precio 3).
+2.5. ADMINISTRACIÓN DE TARIFAS Y PRECIOS
+- Catálogo de tareas con 3 listas de precios diferenciadas:
+  * Lista 1: Precio base de mostrador.
+  * Lista 2: Descuento especial para flotas frecuentes.
+  * Lista 3: Tarifa para cuenta corriente con pago diferido a 30/60 días.
+- Edición y actualización directa de precios desde la interfaz.
+- Alta de nuevas tareas o servicios.
+
+2.6. CARTERA Y SEGUIMIENTO DE CHEQUES
+- Registro de cheques recibidos de clientes:
+  * Número de cheque, banco emisor, cliente vinculado, fecha de emisión, fecha de cobro e importe.
+- Control de ciclo de vida del cheque:
+  * Estados: "Pendiente", "Cobrado" o "Rechazado".
+  * Registro de endosos a terceros o proveedores.
+- Métricas rápidas de cartera: total en cartera pendiente vs. total cobrado.
+
+2.7. SEGURIDAD, MANTENIMIENTO Y PERSONALIZACIÓN
+- Copias de seguridad automáticas (`/backup`): genera una copia de la base de datos
+  con marca temporal exacta dentro de la carpeta `backups/`.
+- Páginas de error amigables (`404` - No encontrado y `500` - Error interno).
+- Registro persistente de eventos anómalos en archivo `errores.log`.
+- Modo Milagritos 🧚: tema visual rosa alternativo persistido en la sesión del usuario.
 
 
-4. ESTRUCTURA TÉCNICA DEL SISTEMA
+3. GUÍA OPERATIVA PASO A PASO
 ------------------------------------------------------------------------------
-- Lenguaje: Python 3
-- Framework Web: Flask
-- Motor de Base de Datos: SQLite (`sg_gomeria.db`)
-- Frontend: HTML5, Jinja2, CSS3 y Bootstrap 5
 
-Archivos clave:
-- `app.py`: Servidor Flask, lógica de rutas, consultas SQL y procesamiento de formularios.
-- `sg_gomeria.db`: Base de datos relacional con tablas de `clientes`, `tareas`, `trabajos` y `detalle_trabajos`.
-- `templates/`: Plantillas visuales (index, clientes, mataburros, historial-cliente, precios).
-- `static/`: Hojas de estilo personalizadas (`estilos.css`) e imágenes/logos corporativos.
+3.1. CÓMO REGISTRAR UN REMITO DE TRABAJO
+1. En la pantalla principal, hacer clic en "Mataburros".
+2. Elegir el tipo de comprobante: "OI" u "OIB".
+3. Escribir el Número de Remito (del talonario en papel).
+4. Seleccionar el Cliente en el menú desplegable. El sistema cargará su lista habitual y condición de IVA.
+5. Si corresponde, modificar la lista de precios haciendo clic en los botones "L1", "L2" o "L3".
+6. Elegir la tarea realizada en el selector.
+7. Ajustar la cantidad con los botones "-" o "+" según los neumáticos o trabajos efectuados.
+8. Si se hicieron más tareas, presionar "+ Agregar Tarea". Para quitar una, presionar el cesto de basura.
+9. (Opcional) Completar el campo "Detalle" si hay notas sobre el trabajo o el chofer.
+10. Presionar "Guardar Remito y Calcular Total". El sistema calculará el total con/sin IVA y guardará el remito.
+
+3.2. CÓMO DAR DE ALTA UN CLIENTE
+1. Ingresar a "Clientes".
+2. Presionar el botón "+ AGREGAR NUEVA EMPRESA".
+3. Completar Razón Social, CUIT, Teléfono y Email.
+4. Seleccionar si los trabajos llevan IVA (21%) o no.
+5. Indicar la lista de precios habitual (1, 2 o 3).
+6. Presionar "Guardar Empresa".
+
+3.3. CÓMO CAMBIAR EL ESTADO DE UN REMITO
+1. En la pantalla "Clientes", desplazarse hasta la tabla de remitos.
+2. Ubicar el remito y modificar el menú desplegable de la columna "Estado".
+3. Seleccionar "Pendiente", "En Proceso" o "Pagado". El cambio se guarda automáticamente sin recargar la página.
+
+3.4. CÓMO REGISTRAR UN CHEQUE DE UN CLIENTE
+1. Ingresar a "Cheques" desde el menú superior.
+2. Completar el formulario con Número, Cliente, Banco, Fechas de emisión y cobro, e Importe.
+3. Presionar "Registrar Cheque".
+4. Para marcarlo como cobrado o endosarlo, usar las acciones rápidas de la tabla.
+
+3.5. CÓMO GENERAR UNA COPIA DE SEGURIDAD (BACKUP)
+1. Ingresar a la URL: `http://127.0.0.1:5000/backup`
+2. El sistema creará una copia segura de `sg_gomeria.db` en la carpeta `backups/` con fecha y hora, y descargará el archivo al navegador.
 
 
-5. CÓMO INICIAR EL PROGRAMA
+4. ARQUITECTURA TÉCNICA Y ESTRUCTURA DE ARCHIVOS
 ------------------------------------------------------------------------------
-1. Abrir una terminal o consola de comandos en la carpeta del proyecto:
+- Lenguaje: Python 3.10+
+- Framework Web: Flask 3.1 con extensiones Jinja2 y python-dotenv
+- Persistencia: SQLite 3 con control estricto de claves foráneas y tipos CHECK
+- Frontend: HTML5 semántico con herencia de plantillas (`base.html`), CSS3 modular y Bootstrap 5.3
+- JavaScript: Vanilla ES6 modular (sin frameworks pesados, con fetch API para peticiones asíncronas)
+
+Organización del código:
+- `app.py`: Punto de entrada del servidor, controladores HTTP, filtros de sesión y manejadores de error.
+- `database/connection.py`: Módulo centralizado de conexión SQLite con row_factory y FKs.
+- `database/init_db.py`: Script para creación de tablas DDL y siembra de datos de prueba.
+- `templates/base/base.html`: Esqueleto visual común con barra de navegación unificada.
+- `templates/`: Vistas de cada módulo (mataburros, clientes, historial, precios, cheques, error).
+- `static/css/`: Hojas de estilos modulares (estilos globales, Modo Milagritos, cheques).
+- `static/js/`: Lógica de cliente desacoplada (mataburros.js, clientes.js, cheques.js, precios.js).
+- `tests/test_rutas.py`: Suite de pruebas automatizadas con unittest.
+
+
+5. PUESTA EN MARCHA RÁPIDA
+------------------------------------------------------------------------------
+1. Abrir una terminal en el directorio del proyecto:
    cd "C:\Users\ignac\Desktop\SG - Gomería"
 
-2. Ejecutar el servidor con Python:
+2. Instalar dependencias:
+   pip install -r requirements.txt
+
+3. Inicializar la base de datos (solo primera vez o para reiniciar pruebas):
+   python database/init_db.py
+
+4. Correr la suite de pruebas automáticas:
+   python -m unittest discover tests
+
+5. Iniciar la aplicación:
    python app.py
 
-3. Abrir un navegador web (Chrome, Edge, Firefox) e ingresar a la dirección:
+6. Abrir en el navegador:
    http://127.0.0.1:5000/

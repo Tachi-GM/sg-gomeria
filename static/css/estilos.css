@@ -135,6 +135,7 @@ body {
     margin: 0;
 }
 .input-cantidad {
+    appearance: textfield;
     -moz-appearance: textfield;
 }
 .btn-accion-tarea {
@@ -456,4 +457,17 @@ body.modo-milagritos .hada-decorativa {
     color: var(--alerta-amarillo-texto);
     border: 1.5px solid #ffe69c;
     font-weight: 500;
+}
+
+/* ===== PÁGINA DE ERROR ===== */
+.codigo-error {
+    font-size: 5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: #1a42b8; /* mismo azul de la barra superior */
+}
+
+body.modo-milagritos .codigo-error {
+    color: #c9184a; /* coherencia con Modo Milagritos */
 }

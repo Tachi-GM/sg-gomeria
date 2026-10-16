@@ -1,43 +1,42 @@
 """
-Módulo de Conexión a la Base de Datos SQLite.
+Módulo de Conexión a la Base de Datos SQLite para 'Gomería El Puente'.
 
-Aplica buenas prácticas de Programación 4:
-1. Context Manager (@contextmanager): asegura que la conexión siempre se cierre,
-   incluso si ocurre un error (evita bloqueos de archivo en Windows).
-2. Transaccionalidad automática: si todo sale bien hace commit, si hay error hace rollback.
-3. PRAGMA foreign_keys = ON: activa el control de integridad referencial.
-4. conn.row_factory = sqlite3.Row: permite acceder a las columnas por nombre (ej: fila['nom_cli']).
+Centraliza la conexión a la base de datos para toda la aplicación (app.py, scripts, etc.),
+respetando la variable DATABASE_PATH del archivo .env o usando 'sg_gomeria.db' por defecto.
 """
-
+import os
 import sqlite3
-from contextlib import contextmanager
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Ubicación de la base de datos dentro de la carpeta database/
-DB_PATH = Path(__file__).resolve().parent / "gomeria.db"
+# Ubicación base del proyecto
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+# Obtener ruta configurada o usar 'sg_gomeria.db' por defecto
+db_env = os.getenv("DATABASE_PATH", "sg_gomeria.db")
+if os.path.isabs(db_env):
+    DB_PATH = Path(db_env)
+else:
+    DB_PATH = BASE_DIR / db_env
 
 
-@contextmanager
-def get_db_connection():
+def obtener_conexion() -> sqlite3.Connection:
     """
-    Generador de contexto para conexiones a la base de datos.
-    
-    Uso:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT ...")
+    Abre y retorna una conexión a la base de datos SQLite con:
+    - row_factory = sqlite3.Row (acceso a columnas por nombre: fila['nom_cli'])
+    - foreign_keys activadas (integridad referencial)
     """
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("PRAGMA foreign_keys = ON;")
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conexion = sqlite3.connect(str(DB_PATH))
+    conexion.row_factory = sqlite3.Row
+    conexion.execute("PRAGMA foreign_keys = ON;")
+    return conexion
+
+
+# Alias de conveniencia
+def get_db_connection() -> sqlite3.Connection:
+    return obtener_conexion()
 
 
 def get_db_path() -> Path:

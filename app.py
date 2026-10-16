@@ -3,27 +3,110 @@ import sqlite3
 from datetime import date, datetime
 import shutil
 import os
+from functools import wraps
+from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
+import logging
+from database.connection import obtener_conexion, DB_PATH
+
+# Configuración del sistema de Logs y Auditoría profesional
+logging.basicConfig(
+    filename='sistema.log',
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger('SG_Gomeria')
+
+def registrar_auditoria(accion, detalle=""):
+    """Registra en el log de auditoría la acción realizada y el usuario responsable."""
+    usuario = session.get('usuario', 'ANONIMO')
+    rol = session.get('rol', '-')
+    logger.info(f"AUDITORIA | Usuario: {usuario} ({rol}) | Accion: {accion} | {detalle}")
+
+def parse_int_seguro(valor, por_defecto=0):
+    """Convierte texto a entero sin lanzar excepciones."""
+    try:
+        if valor is None or str(valor).strip() == '':
+            return por_defecto
+        return int(valor)
+    except (ValueError, TypeError):
+        return por_defecto
+
+def parse_float_seguro(valor, por_defecto=0.0):
+    """Convierte texto a número decimal flotante con soporte para comas."""
+    try:
+        if valor is None or str(valor).strip() == '':
+            return por_defecto
+        limpio = str(valor).strip().replace(',', '.')
+        return float(limpio)
+    except (ValueError, TypeError):
+        return por_defecto
 
 app = Flask(__name__)
 
 load_dotenv()  # Carga el archivo .env
 
-# Lee la variable de entorno, y si por algún motivo no existe, usa "sg_gomeria.db" por defecto
-DB_PATH = os.getenv("DATABASE_PATH", "sg_gomeria.db")
-
-def obtener_conexion():
-    # Si la carpeta contenedora no existiera, sqlite intentaría crear el archivo y podría fallar si falta el directorio
-    directorio = os.path.dirname(DB_PATH)
-    if directorio:
-        os.makedirs(directorio, exist_ok=True)
-    conexion = sqlite3.connect(DB_PATH)
-    conexion.row_factory = sqlite3.Row
-    conexion.execute("PRAGMA foreign_keys = ON")
-    return conexion
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-gomeria-2026-cambiar-en-prod")
 
 def modo_activo():
     return session.get('modo_milagritos', False)
+
+# Decoradores de autenticación y autorización
+def login_requerido(f):
+    @wraps(f)
+    def funcion_decorada(*args, **kwargs):
+        if not session.get('usuario'):
+            flash("Debes iniciar sesión para acceder al sistema", "warning")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return funcion_decorada
+
+def solo_admin(f):
+    @wraps(f)
+    def funcion_decorada(*args, **kwargs):
+        if session.get('rol') != 'admin':
+            flash("Acceso restringido: requiere permisos de Administrador", "danger")
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return funcion_decorada
+
+# Autenticación: Login y Logout
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if session.get('usuario'):
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        usuario = request.form.get('usuario', '').strip()
+        clave = request.form.get('password', '')
+
+        conexion = obtener_conexion()
+        user = conexion.execute(
+            "SELECT * FROM usuarios WHERE usuario = ?", (usuario,)
+        ).fetchone()
+        conexion.close()
+
+        if user and check_password_hash(user['contraseña'], clave):
+            session['usuario'] = user['usuario']
+            session['rol'] = user['rol']
+            registrar_auditoria("LOGIN_EXITOSO", f"Acceso correcto al sistema")
+            flash(f"¡Bienvenido/a, {user['usuario']}!", "success")
+            return redirect(url_for('home'))
+        else:
+            logger.warning(f"AUDITORIA | Intento fallido de inicio de sesion para usuario: '{usuario}'")
+            flash("Usuario o contraseña incorrectos", "danger")
+
+    return render_template('login.html', milagritos=modo_activo())
+
+@app.route('/logout')
+def logout():
+    usuario_desconectado = session.pop('usuario', None)
+    session.pop('rol', None)
+    if usuario_desconectado:
+        logger.info(f"AUDITORIA | Usuario: {usuario_desconectado} | Accion: LOGOUT | Cierre de sesion voluntario")
+        flash("Has cerrado sesión exitosamente", "info")
+    return redirect(url_for('login'))
 
 # Ruta para prender/apagar el modo, y volver a donde estabas
 @app.route('/toggle-milagritos')
@@ -32,8 +115,34 @@ def toggle_milagritos():
     # request.referrer = la página desde la que vino el usuario
     return redirect(request.referrer or url_for('home'))
 
-# Pantalla de inicio (Botones Mataburros / Clientes)
+@app.after_request
+def registrar_errores(respuesta):
+    if respuesta.status_code >= 400:
+        logging.warning(f"{request.method} {request.path} -> {respuesta.status_code}")
+    return respuesta
+
+#Errores
+def pagina_error(codigo, mensaje):
+    return render_template('error.html',
+                           codigo=codigo,
+                           mensaje=mensaje,
+                           milagritos=modo_activo()), codigo
+
+@app.errorhandler(404)
+def error_404(e):
+    return pagina_error(404, "No encontramos esa página")
+
+@app.errorhandler(500)
+def error_500(e):
+    return pagina_error(500, "Algo salió mal de nuestro lado. Probá de nuevo en un rato")
+
+@app.route('/probar-error')
+def probar_error():
+    return 1 / 0  #Fuerza un ZeroDivisionError a propósito
+
+# Pantallas
 @app.route('/')
+@login_requerido
 def home():
     return render_template('index.html', milagritos=modo_activo())
 
@@ -43,10 +152,11 @@ def salir():
 
 @app.route('/acerca-de')
 def acerca_de():
-    return render_template('acerca-de.html',milagritos=modo_activo())
+    return render_template('acerca-de.html', milagritos=modo_activo())
 
 # Pantalla de Gestión de Clientes y Dashboard General
 @app.route('/clientes')
+@login_requerido
 def clientes():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -109,6 +219,7 @@ def clientes():
 
 # Pantalla del Formulario Mataburros
 @app.route('/mataburros')
+@login_requerido
 def mataburros():
     conexion = obtener_conexion()
     
@@ -121,6 +232,7 @@ def mataburros():
     return render_template('mataburros.html', empresas=empresas, tareas=tareas, tareas_json=tareas_json, clientes_json=clientes_json,milagritos=modo_activo())
 
 @app.route('/precios')
+@login_requerido
 def precios():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -131,6 +243,7 @@ def precios():
     return render_template('precios.html', tareas=tareas , milagritos=modo_activo())
 
 @app.route('/historial-cliente')
+@login_requerido
 def historial_cliente():
     id_cliente = request.args.get('id_cliente')
     periodo_seleccionado = request.args.get('periodo', 'todos')
@@ -196,6 +309,7 @@ def historial_cliente():
                         periodo_seleccionado=periodo_seleccionado)
     
 @app.route('/cheques')
+@login_requerido
 def cheques():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -213,13 +327,14 @@ def cheques():
     return render_template('cheques.html', cheques=lista_cheques, clientes=clientes, milagritos=modo_activo())
 
 @app.route('/agregar-cheque', methods=['POST'])
+@login_requerido
 def agregar_cheque():
     numero = request.form.get('number', '').strip()
     cliente = request.form.get('client', '').strip()
     banco = request.form.get('bank', '').strip()
     fecha_emision = request.form.get('issue', '')
     fecha_pago = request.form.get('payment', '')
-    importe = float(request.form.get('amount', 0) or 0)
+    importe = parse_float_seguro(request.form.get('amount'), 0.0)
     estado = request.form.get('status', 'Pendiente')
     endosado = request.form.get('endorsed', '').strip()
 
@@ -232,6 +347,9 @@ def agregar_cheque():
     conexion.commit()
     id_nuevo = cursor.lastrowid
     conexion.close()
+
+    registrar_auditoria("ALTA_CHEQUE", f"Cheque N° {numero} ({banco}) por ${importe:,.2f} para '{cliente}'")
+
     return jsonify({
         'id_cheque': id_nuevo,
         'numero': numero,
@@ -245,6 +363,7 @@ def agregar_cheque():
     })
 
 @app.route('/actualizar-estado-cheque', methods=['POST'])
+@login_requerido
 def actualizar_estado_cheque():
     id_cheque = request.form.get('id_cheque')
     nuevo_estado = request.form.get('estado')
@@ -257,9 +376,12 @@ def actualizar_estado_cheque():
     cursor.execute("UPDATE cheques SET estado = ? WHERE id_cheque = ?", (nuevo_estado, id_cheque))
     conexion.commit()
     conexion.close()
+
+    registrar_auditoria("ESTADO_CHEQUE", f"Cheque ID {id_cheque} actualizado a estado '{nuevo_estado}'")
     return "OK", 200
 
 @app.route('/eliminar-cheque', methods=['POST'])
+@login_requerido
 def eliminar_cheque():
     id_cheque = request.form.get('id_cheque')
     conexion = obtener_conexion()
@@ -267,6 +389,8 @@ def eliminar_cheque():
     cursor.execute("DELETE FROM cheques WHERE id_cheque = ?", (id_cheque,))
     conexion.commit()
     conexion.close()
+
+    registrar_auditoria("BAJA_CHEQUE", f"Cheque ID {id_cheque} eliminado")
     return "OK", 200
 
 MESES_ABREVIADOS = {
@@ -306,6 +430,8 @@ def obtener_meses_disponibles(cursor, id_cliente=None):
     ]
 
 @app.route('/backup')
+@login_requerido
+@solo_admin
 def hacer_backup():
     # 1. Armamos un nombre único con fecha y hora
     fecha_hora = datetime.now().strftime("%Y-%m-%d_%H-%M")
@@ -318,20 +444,28 @@ def hacer_backup():
     # 3. Copiamos la base de datos actual a esa carpeta
     shutil.copy("sg_gomeria.db", ruta_copia)
 
+    registrar_auditoria("BACKUP_BD", f"Generado resguardo de base de datos: {nombre_archivo}")
+
     # 4. Le mandamos el archivo al navegador para que lo descargue
     return send_file(ruta_copia, as_attachment=True, download_name=nombre_archivo)
 
 
 @app.route('/enviar-trabajo', methods=['POST'])
+@login_requerido
 def enviar_trabajo():
     # 1. Capturamos los datos del formulario
-    remito = request.form.get('remito')
+    remito = request.form.get('remito', '').strip()
     id_cliente = request.form.get('empresa')
     tipo_lista = request.form.get('tipo_lista', '1')  # 1, 2 o 3
     detalle = request.form.get('detalles') or request.form.get('detalle', '')
 
+    if not remito:
+        flash("Error: El número de remito es obligatorio", "danger")
+        return redirect(url_for('mataburros'))
+
     if not id_cliente:
-        return "Error: Debes seleccionar una empresa", 400
+        flash("Error: Debes seleccionar una empresa", "danger")
+        return redirect(url_for('mataburros'))
     
     columnas_precio = {'1': 'precio', '2': 'precio2', '3': 'precio3'}
     columna_elegida = columnas_precio.get(tipo_lista, 'precio')  # Por defecto, 'precio'
@@ -340,11 +474,12 @@ def enviar_trabajo():
     tareas_elegidas = request.form.getlist('tareas')
     cantidades = request.form.getlist('cantidades')
     
-    # Filtramos por si alguna quedó sin seleccionar
-    ids_tareas = [int(t) for t in tareas_elegidas if t]
+    # Filtramos de forma segura por si alguna quedó sin seleccionar o no es número
+    ids_tareas = [parse_int_seguro(t) for t in tareas_elegidas if parse_int_seguro(t) > 0]
     
     if not ids_tareas:
-        return "Error: Debes seleccionar al menos una tarea", 400
+        flash("Error: Debes seleccionar al menos una tarea válida", "danger")
+        return redirect(url_for('mataburros'))
 
     fecha_hoy = date.today().strftime("%Y-%m-%d") # Fecha en formato YYYY-MM-DD
     
@@ -355,26 +490,28 @@ def enviar_trabajo():
     try:
         # A. EL MATABURROS: Buscamos el precio real de cada tarea y calculamos el total
         total_trabajo = 0.0
-        detalles_a_guardar = [] # Guardará tuplas: (id_tarea, precio)
+        detalles_a_guardar = [] # Guardará tuplas: (id_tarea, cantidad, precio, subtotal)
         
         for id_t, cant in zip(ids_tareas, cantidades):
-            cantidad = int(cant) if cant else 1
+            cantidad = max(1, parse_int_seguro(cant, 1))
             cursor.execute(f"SELECT nom_tar, {columna_elegida} AS precio_final FROM tareas WHERE id_tarea = ?", (id_t,))
             fila = cursor.fetchone()
             if fila:
-                precio = fila['precio_final'] or 0.0 #Por si no tiene precio, lo ponemos en 0
+                precio = parse_float_seguro(fila['precio_final'], 0.0)
                 subtotal = precio * cantidad
                 total_trabajo += subtotal
                 detalles_a_guardar.append((id_t, cantidad, precio, subtotal))
         
         # B. GUARDAR CABECERA en 'trabajos'
-        tipo = request.form.get('tipo', 'OI')
+        tipo = request.form.get('tipo', 'OI').strip()
         if tipo not in ('OI', 'OIB'):
-            return "Error: tipo de remito inválido", 400
+            tipo = 'OI'
 
         cliente = cursor.execute("SELECT con_iva FROM clientes WHERE id_cliente = ?", (id_cliente,)).fetchone()
         if cliente is None:
-            return "Error: cliente inexistente", 400
+            flash("Error: Cliente inexistente", "danger")
+            return redirect(url_for('mataburros'))
+
         if cliente['con_iva'] == 0:
             total_trabajo = round(total_trabajo / 1.21, 2)
         
@@ -395,27 +532,35 @@ def enviar_trabajo():
         
         # D. CONFIRMAMOS LA TRANSACCIÓN
         conexion.commit()
-        print(f"[EXITO] Remito N° {remito} guardado. Total calculado: ${total_trabajo:,.2f}")
+        registrar_auditoria("EMISION_REMITO", f"Remito {tipo} #{remito} emitido para cliente ID {id_cliente}. Total: ${total_trabajo:,.2f}")
+        flash(f"Remito N° {remito} guardado. Total calculado: ${total_trabajo:,.2f}", "success")
+        return redirect(url_for('mataburros'))
         
-    except sqlite3.IntegrityError as e:
-        print(f"[ERROR] No se pudo guardar: el remito N° {remito} ya existe.")
-        return f"Error: El remito N° {remito} ya fue registrado anteriormente.", 400
+    except sqlite3.IntegrityError:
+        logger.warning(f"AUDITORIA | Intento de registrar remito duplicado: N° {remito}")
+        flash(f"Error: El remito N° {remito} ya fue registrado anteriormente.", "danger")
+        return redirect(url_for('mataburros'))
+    except Exception as e:
+        logger.exception(f"Error inesperado al emitir remito #{remito}: {e}")
+        flash("Ocurrió un error inesperado al procesar el remito. Intente nuevamente.", "danger")
+        return redirect(url_for('mataburros'))
     finally:
         conexion.close()
-        
-    # Redirigimos al inicio
-    return redirect(url_for('home'))
 
 @app.route('/agregar-cliente', methods=['POST'])
+@login_requerido
 def agregar_cliente():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
-    # Capturamos los datos del formulario
-    nom_cli = request.form.get('nombre')
-    cuit = request.form.get('cuit')
-    tel = request.form.get('tel')
-    mail = request.form.get('mail')
+    nom_cli = request.form.get('nombre', '').strip()
+    cuit = request.form.get('cuit', '').strip()
+    tel = request.form.get('tel', '').strip()
+    mail = request.form.get('mail', '').strip()
+
+    if not nom_cli:
+        flash("El nombre o razón social del cliente es obligatorio", "danger")
+        return redirect(url_for('clientes'))
 
     try:
         cursor.execute("""
@@ -423,33 +568,37 @@ def agregar_cliente():
             VALUES (?, ?, ?, ?)
         """, (nom_cli, cuit, tel, mail))
         conexion.commit()
-        print(f"[EXITO] Cliente '{nom_cli}' agregado correctamente.")
-    except sqlite3.IntegrityError as e:
-        print(f"[ERROR] No se pudo agregar el cliente: {e}")
-        return f"Error: No se pudo agregar el cliente '{nom_cli}'.", 400
+        registrar_auditoria("ALTA_CLIENTE", f"Empresa '{nom_cli}' (CUIT: {cuit}) agregada")
+        flash(f"Cliente '{nom_cli}' registrado correctamente.", "success")
+    except sqlite3.IntegrityError:
+        logger.warning(f"AUDITORIA | Intento de registrar cliente duplicado: '{nom_cli}' (CUIT: {cuit})")
+        flash(f"Error: Ya existe un cliente con ese CUIT o razón social.", "danger")
+    except Exception as e:
+        logger.exception(f"Error inesperado al agregar cliente: {e}")
+        flash("Ocurrió un error inesperado al registrar el cliente.", "danger")
     finally:
         conexion.close()
 
     return redirect(url_for('clientes'))
 
 @app.route('/agregar-tarea', methods=['POST'])
+@login_requerido
 def agregar_tarea():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
-    #Capturamos datos de la nueva tarea
-    nom_tar = request.form.get('nombre')
-    precio1 = float(request.form.get('precio1-form') or 0)
-    precio2 = float(request.form.get('precio2-form') or 0)
-    precio3 = float(request.form.get('precio3-form') or 0)
+    nom_tar = request.form.get('nombre', '').strip()
+    precio1 = parse_float_seguro(request.form.get('precio1-form'), 0.0)
+    precio2 = parse_float_seguro(request.form.get('precio2-form'), 0.0)
+    precio3 = parse_float_seguro(request.form.get('precio3-form'), 0.0)
 
-    #Advertencia
+    if not nom_tar:
+        flash("El nombre de la tarea no puede estar vacío", "danger")
+        return redirect(url_for('mataburros'))
+
+    # Advertencias de coherencia comercial
     if not (precio1 <= precio2 <= precio3):
-        flash(f"⚠️ Revisa los precios de \"{nom_tar}\", ya que algún precio no es el esperado. Se guardó igual.", "warning")
-
-    if precio3 >= precio2*1.5 or precio2 >= precio1*1.5:
-        flash(f"⚠️ Revisa los precios de \"{nom_tar}\", ya que algún precio no es el esperado. Se guardó igual.", "warning")
-
+        flash(f"⚠️ Revisa los precios de \"{nom_tar}\": los valores no siguen el orden habitual L1 <= L2 <= L3.", "warning")
 
     try:
         cursor.execute("""
@@ -457,39 +606,48 @@ def agregar_tarea():
             VALUES (?, ?, ?, ?)
         """, (nom_tar, precio1, precio2, precio3))
         conexion.commit()
-        print(f"[EXITO] Trea '{nom_tar}' agregada correctamente.")
-    except sqlite3.IntegrityError as e:
-        print(f"[ERROR] No se pudo agregar la tarea: {e}")
-        return f"Error: No se pudo agregar la tarea '{nom_tar}'.", 400
+        registrar_auditoria("ALTA_TAREA", f"Tarea '{nom_tar}' creada (L1: ${precio1}, L2: ${precio2}, L3: ${precio3})")
+        flash(f"Tarea '{nom_tar}' agregada correctamente.", "success")
+    except sqlite3.IntegrityError:
+        flash(f"Error: La tarea '{nom_tar}' ya existe en el tarifario.", "danger")
+    except Exception as e:
+        logger.exception(f"Error inesperado al agregar tarea: {e}")
+        flash("Ocurrió un error al registrar la tarea.", "danger")
     finally:
         conexion.close()
 
     return redirect(url_for('mataburros'))
 
 @app.route('/modificar-tarea', methods=['POST'])
+@login_requerido
 def modificar_tarea():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
-    id_tarea = request.form.get('id_tarea')
-    nom_tar = request.form.get('nombre')
-    precio1 = request.form.get('precio1')
-    precio2 = request.form.get('precio2')
-    precio3 = request.form.get('precio3')
+    id_tarea = parse_int_seguro(request.form.get('id_tarea'))
+    nom_tar = request.form.get('nombre', '').strip()
+    precio1 = parse_float_seguro(request.form.get('precio1'), 0.0)
+    precio2 = parse_float_seguro(request.form.get('precio2'), 0.0)
+    precio3 = parse_float_seguro(request.form.get('precio3'), 0.0)
 
-    cursor.execute("""
-        UPDATE tareas
-        SET nom_tar = ?, precio = ?, precio2 = ?, precio3 = ?
-        WHERE id_tarea = ?
-    """, (nom_tar, precio1, precio2, precio3, id_tarea))
-    conexion.commit()
-    conexion.close()
+    try:
+        cursor.execute("""
+            UPDATE tareas
+            SET nom_tar = ?, precio = ?, precio2 = ?, precio3 = ?
+            WHERE id_tarea = ?
+        """, (nom_tar, precio1, precio2, precio3, id_tarea))
+        conexion.commit()
+        registrar_auditoria("MODIFICACION_TAREA", f"Tarea ID {id_tarea} ('{nom_tar}') actualizada")
+        flash(f"Tarifas de '{nom_tar}' actualizadas con éxito.", "success")
+    except Exception as e:
+        logger.exception(f"Error al modificar tarea ID {id_tarea}: {e}")
+        flash("Ocurrió un error al actualizar las tarifas.", "danger")
+    finally:
+        conexion.close()
 
     return redirect(url_for('precios'))
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
-
-
+    debug_mode = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
+    app.run(debug=debug_mode)
