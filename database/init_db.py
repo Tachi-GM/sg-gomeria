@@ -87,8 +87,8 @@ def crear_tablas():
         importe REAL NOT NULL CHECK (importe >= 0),
         estado TEXT NOT NULL DEFAULT 'Pendiente', -- Pendiente, Cobrado, Rechazado
         endosado TEXT DEFAULT '',
-        id_cliente INTEGER,
-        FOREIGN KEY (id_cliente) REFERENCES clientes (id_cliente) ON DELETE SET NULL
+        id_cliente INTEGER NOT NULL,
+        FOREIGN KEY (id_cliente) REFERENCES clientes (id_cliente)
     );
 
     -- 7. Usuarios del sistema
@@ -116,83 +116,148 @@ def sembrar_datos_prueba():
         # Verificar si ya existen clientes cargados
         cursor.execute("SELECT COUNT(*) FROM clientes")
         if cursor.fetchone()[0] > 0:
-            print("[INFO] La base de datos ya contiene registros. No se duplican datos semilla.")
+            print(
+                "[INFO] La base de datos ya contiene registros. No se duplican datos semilla."
+            )
             return
 
         print("Cargando datos semilla iniciales...")
 
         # 1. Clientes iniciales
         clientes_iniciales = [
-            ('Toyota', '30-68312345-4', '011-4567-8900', 'flota@toyota.com.ar', 1, 1),
-            ('Transporte Gomez', '30-71239845-9', '03487-421122', 'taller@gomeztrans.com', 1, 2),
-            ('Logística Norte', '30-65498712-3', '011-4789-3322', 'administracion@lognorte.com', 0, 1),
+            ("Toyota", "30-68312345-4", "011-4567-8900", "flota@toyota.com.ar", 1, 1),
+            (
+                "Transporte Gomez",
+                "30-71239845-9",
+                "03487-421122",
+                "taller@gomeztrans.com",
+                1,
+                2,
+            ),
+            (
+                "Logística Norte",
+                "30-65498712-3",
+                "011-4789-3322",
+                "administracion@lognorte.com",
+                0,
+                1,
+            ),
         ]
-        cursor.executemany("""
+        cursor.executemany(
+            """
             INSERT INTO clientes (nom_cli, cuit, tel, mail, con_iva, lista_precios)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, clientes_iniciales)
+        """,
+            clientes_iniciales,
+        )
 
         id_toyota = 1
         id_gomez = 2
 
         # 2. Vehículos
-        cursor.execute("INSERT INTO vehiculos (patente, id_cliente) VALUES (?, ?)", ('ABC123', id_toyota))
+        cursor.execute(
+            "INSERT INTO vehiculos (patente, id_cliente) VALUES (?, ?)",
+            ("ABC123", id_toyota),
+        )
         id_veh1 = cursor.lastrowid
-        cursor.execute("INSERT INTO vehiculos (patente, id_cliente) VALUES (?, ?)", ('AF123JK', id_toyota))
-        cursor.execute("INSERT INTO vehiculos (patente, id_cliente) VALUES (?, ?)", ('AE987ZA', id_gomez))
+        cursor.execute(
+            "INSERT INTO vehiculos (patente, id_cliente) VALUES (?, ?)",
+            ("AF123JK", id_toyota),
+        )
+        cursor.execute(
+            "INSERT INTO vehiculos (patente, id_cliente) VALUES (?, ?)",
+            ("AE987ZA", id_gomez),
+        )
 
         # 3. Tareas con las 3 listas de precios
         tareas_iniciales = [
-            ('Cambio de cubierta', 60000.0, 54000.0, 48000.0, 1),
-            ('Pinchadura', 10000.0, 9000.0, 8000.0, 1),
-            ('Alineación y balanceo', 35000.0, 31500.0, 28000.0, 1),
-            ('Válvula nueva', 5000.0, 4500.0, 4000.0, 1),
-            ('Rotación de neumáticos', 15000.0, 13500.0, 12000.0, 1),
+            ("Cambio de cubierta", 60000.0, 54000.0, 48000.0, 1),
+            ("Pinchadura", 10000.0, 9000.0, 8000.0, 1),
+            ("Alineación y balanceo", 35000.0, 31500.0, 28000.0, 1),
+            ("Válvula nueva", 5000.0, 4500.0, 4000.0, 1),
+            ("Rotación de neumáticos", 15000.0, 13500.0, 12000.0, 1),
         ]
-        cursor.executemany("""
+        cursor.executemany(
+            """
             INSERT INTO tareas (nom_tar, precio, precio2, precio3, activa)
             VALUES (?, ?, ?, ?, ?)
-        """, tareas_iniciales)
+        """,
+            tareas_iniciales,
+        )
 
         # 4. Trabajos / Remitos iniciales
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO trabajos (remito, fecha, id_cliente, id_vehiculo, total, estado, tipo, con_iva)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, ('20213', '2026-08-20', id_toyota, id_veh1, 60000.0, 'PENDIENTE', 'OI', 1))
+        """,
+            ("20213", "2026-08-20", id_toyota, id_veh1, 60000.0, "PENDIENTE", "OI", 1),
+        )
         id_trabajo1 = cursor.lastrowid
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO detalle_trabajos (id_trabajo, id_tarea, cantidad, precio_unitario, subtotal)
             VALUES (?, ?, ?, ?, ?)
-        """, (id_trabajo1, 1, 1, 60000.0, 60000.0))
+        """,
+            (id_trabajo1, 1, 1, 60000.0, 60000.0),
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO trabajos (remito, fecha, id_cliente, id_vehiculo, total, estado, tipo, con_iva)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, ('20412', '2026-08-21', id_toyota, id_veh1, 20000.0, 'PENDIENTE', 'OI', 1))
+        """,
+            ("20412", "2026-08-21", id_toyota, id_veh1, 20000.0, "PENDIENTE", "OI", 1),
+        )
         id_trabajo2 = cursor.lastrowid
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO detalle_trabajos (id_trabajo, id_tarea, cantidad, precio_unitario, subtotal)
             VALUES (?, ?, ?, ?, ?)
-        """, (id_trabajo2, 2, 2, 10000.0, 20000.0))
+        """,
+            (id_trabajo2, 2, 2, 10000.0, 20000.0),
+        )
 
         # 5. Cheque de ejemplo
-        cursor.execute("""
-            INSERT INTO cheques (numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado, id_cliente)
+        cursor.execute(
+            """
+            INSERT INTO cheques (
+                numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado, id_cliente
+            )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, ('CH-00098231', 'Toyota', 'Banco Galicia', '2026-08-25', '2026-09-25', 80000.0, 'Pendiente', '', id_toyota))
+        """,
+            (
+                "CH-00098231",
+                "Toyota",
+                "Banco Galicia",
+                "2026-08-25",
+                "2026-09-25",
+                80000.0,
+                "Pendiente",
+                "",
+                id_toyota,
+            ),
+        )
 
         # 6. Usuarios iniciales con contraseñas hasheadas (seguridad criptográfica)
         from werkzeug.security import generate_password_hash
-        cursor.execute("""
+
+        cursor.execute(
+            """
             INSERT INTO usuarios (usuario, contraseña, rol)
             VALUES (?, ?, ?)
-        """, ('admin', generate_password_hash('admin123'), 'admin'))
-        cursor.execute("""
+        """,
+            ("admin", generate_password_hash("admin123"), "admin"),
+        )
+        cursor.execute(
+            """
             INSERT INTO usuarios (usuario, contraseña, rol)
             VALUES (?, ?, ?)
-        """, ('operador', generate_password_hash('operador123'), 'usuario'))
+        """,
+            ("operador", generate_password_hash("operador123"), "usuario"),
+        )
 
         conexion.commit()
         print("[OK] Datos semilla cargados con exito:")
@@ -205,7 +270,7 @@ def sembrar_datos_prueba():
         conexion.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("=== Inicializando Base de Datos 'Gomeria El Puente' ===")
     crear_tablas()
     sembrar_datos_prueba()

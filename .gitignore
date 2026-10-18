@@ -8,4 +8,6 @@ backups/
 *.xls
 *.xlsx
 .env
-*.log
+*.log
+.coverage
+htmlcov/

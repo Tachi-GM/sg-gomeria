@@ -45,17 +45,27 @@ def normalizar_nombre(nombre):
 
 
 def leer_clientes():
-    df = pd.read_excel(RUTA_EXCEL, sheet_name="CUIT", header=1, dtype=str, engine="xlrd")
+    df = pd.read_excel(
+        RUTA_EXCEL, sheet_name="CUIT", header=1, dtype=str, engine="xlrd"
+    )
     df = df.dropna(subset=["Cliente"])
     df = df[~df["Cliente"].str.startswith("http")]
     df = df.apply(lambda col: col.str.strip()).replace("", pd.NA)
 
-    df = df.rename(columns={
-        "Codigo": "codigo", "Cliente": "nom_cli", "CUIT": "cuit_crudo",
-        "Direccion": "direccion", "Localidad": "localidad", "Mail": "mail",
-        "Telefono": "tel", "Fact.": "tipo_factura",
-        "Condicion": "condicion_iva", "Contacto": "contacto",
-    })
+    df = df.rename(
+        columns={
+            "Codigo": "codigo",
+            "Cliente": "nom_cli",
+            "CUIT": "cuit_crudo",
+            "Direccion": "direccion",
+            "Localidad": "localidad",
+            "Mail": "mail",
+            "Telefono": "tel",
+            "Fact.": "tipo_factura",
+            "Condicion": "condicion_iva",
+            "Contacto": "contacto",
+        }
+    )
     df["fila_excel"] = df.index + 3  # para ubicar la fila en el Excel
     df["condicion_iva"] = df["condicion_iva"].str.lower().map(CONDICION)
     df["tipo_factura"] = df["tipo_factura"].str.upper()
@@ -66,9 +76,11 @@ def leer_clientes():
 
     # Un cliente sin CUIT con el mismo nombre que otro que sí lo tiene hereda ese CUIT
     df["nombre_norm"] = df["nom_cli"].apply(normalizar_nombre)
-    cuit_por_nombre = (df.dropna(subset=["cuit"])
-                         .drop_duplicates("nombre_norm")
-                         .set_index("nombre_norm")["cuit"])
+    cuit_por_nombre = (
+        df.dropna(subset=["cuit"])
+        .drop_duplicates("nombre_norm")
+        .set_index("nombre_norm")["cuit"]
+    )
     df["cuit"] = df["cuit"].fillna(df["nombre_norm"].map(cuit_por_nombre))
 
     # Primero las filas más completas: al fusionar, su nombre queda como principal
@@ -80,7 +92,9 @@ def leer_clientes():
 
     # .first() toma, por columna, el primer valor NO nulo de cada grupo => fusiona info
     fusionados = con_cuit.groupby("cuit", sort=False).first().reset_index()
-    nombres = con_cuit.groupby("cuit", sort=False)["nom_cli"].agg(lambda s: list(dict.fromkeys(s)))
+    nombres = con_cuit.groupby("cuit", sort=False)["nom_cli"].agg(
+        lambda s: list(dict.fromkeys(s))
+    )
     fusionados["aliases"] = fusionados["cuit"].map(nombres)
     sin_cuit["aliases"] = sin_cuit["nom_cli"].apply(lambda n: [n])
 
@@ -88,11 +102,13 @@ def leer_clientes():
 
     filas = con_cuit.groupby("cuit", sort=False).size()
     repetidos = filas[filas > 1].index  # CUIT que aparecían en más de una fila
-    resumen_fusiones = pd.DataFrame({
-        "cuit": repetidos,
-        "filas_en_excel": filas[repetidos].values,
-        "nombres_unificados": [" | ".join(nombres[c]) for c in repetidos],
-    })
+    resumen_fusiones = pd.DataFrame(
+        {
+            "cuit": repetidos,
+            "filas_en_excel": filas[repetidos].values,
+            "nombres_unificados": [" | ".join(nombres[c]) for c in repetidos],
+        }
+    )
     return clientes, resumen_fusiones, invalidos
 
 
@@ -119,43 +135,73 @@ def importar(dry_run=True):
     with pd.ExcelWriter(RUTA_REVISION) as w:
         fusiones.to_excel(w, sheet_name="Fusionados", index=False)
         invalidos[["fila_excel", "nom_cli", "cuit_crudo"]].to_excel(
-            w, sheet_name="CUIT invalido", index=False)
+            w, sheet_name="CUIT invalido", index=False
+        )
 
     if not dry_run:
         carpeta = BASE / "backups"
         carpeta.mkdir(exist_ok=True)
-        shutil.copy(RUTA_DB, carpeta / f"antes_import_{datetime.now():%Y-%m-%d_%H-%M}.db")
-
+        shutil.copy(
+            RUTA_DB, carpeta / f"antes_import_{datetime.now():%Y-%m-%d_%H-%M}.db"
+        )
 
     con = sqlite3.connect(RUTA_DB)
-    limpio = lambda x: None if pd.isna(x) else x
+
+    def limpio(x):
+        return None if pd.isna(x) else x
+
     nuevos = omitidos = 0
     try:
         if not dry_run:
             preparar_tablas(con)
-        cuits_db = {re.sub(r"\D", "", c) for (c,) in con.execute(
-            "SELECT cuit FROM clientes WHERE cuit IS NOT NULL")}
-        nombres_db = {normalizar_nombre(n) for (n,) in con.execute("SELECT nom_cli FROM clientes")}
+        cuits_db = {
+            re.sub(r"\D", "", c)
+            for (c,) in con.execute("SELECT cuit FROM clientes WHERE cuit IS NOT NULL")
+        }
+        nombres_db = {
+            normalizar_nombre(n) for (n,) in con.execute("SELECT nom_cli FROM clientes")
+        }
 
         for _, f in clientes.iterrows():
             cuit = limpio(f["cuit"])
-            ya_existe = (re.sub(r"\D", "", cuit) in cuits_db) if cuit \
+            ya_existe = (
+                (re.sub(r"\D", "", cuit) in cuits_db)
+                if cuit
                 else (normalizar_nombre(f["nom_cli"]) in nombres_db)
+            )
             if ya_existe:
                 omitidos += 1
                 continue
             nuevos += 1
             if dry_run:
                 continue
-            cur = con.execute("""
+            cur = con.execute(
+                """
                 INSERT INTO clientes (nom_cli, cuit, tel, mail, codigo, direccion,
                                       localidad, condicion_iva, tipo_factura, contacto)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, tuple(limpio(f[c]) for c in ["nom_cli", "cuit", "tel", "mail", "codigo",
-                        "direccion", "localidad", "condicion_iva", "tipo_factura", "contacto"]))
+            """,
+                tuple(
+                    limpio(f[c])
+                    for c in [
+                        "nom_cli",
+                        "cuit",
+                        "tel",
+                        "mail",
+                        "codigo",
+                        "direccion",
+                        "localidad",
+                        "condicion_iva",
+                        "tipo_factura",
+                        "contacto",
+                    ]
+                ),
+            )
             for alias in f["aliases"]:
-                con.execute("INSERT OR IGNORE INTO alias_clientes (alias, id_cliente) VALUES (?, ?)",
-                            (normalizar_nombre(alias), cur.lastrowid))
+                con.execute(
+                    "INSERT OR IGNORE INTO alias_clientes (alias, id_cliente) VALUES (?, ?)",
+                    (normalizar_nombre(alias), cur.lastrowid),
+                )
         if not dry_run:
             con.commit()
     except Exception:
@@ -164,8 +210,10 @@ def importar(dry_run=True):
     finally:
         con.close()
 
-    print(f"{'[PRUEBA] ' if dry_run else ''}Nuevos: {nuevos} | Ya existían: {omitidos} | "
-          f"Fusionados: {len(fusiones)} | CUIT inválidos (quedan NULL): {len(invalidos)}")
+    print(
+        f"{'[PRUEBA] ' if dry_run else ''}Nuevos: {nuevos} | Ya existían: {omitidos} | "
+        f"Fusionados: {len(fusiones)} | CUIT inválidos (quedan NULL): {len(invalidos)}"
+    )
 
 
 if __name__ == "__main__":

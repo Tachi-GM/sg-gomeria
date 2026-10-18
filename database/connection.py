@@ -4,6 +4,7 @@ Módulo de Conexión a la Base de Datos SQLite para 'Gomería El Puente'.
 Centraliza la conexión a la base de datos para toda la aplicación (app.py, scripts, etc.),
 respetando la variable DATABASE_PATH del archivo .env o usando 'sg_gomeria.db' por defecto.
 """
+
 import os
 import sqlite3
 from pathlib import Path
