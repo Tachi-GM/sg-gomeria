@@ -9,12 +9,16 @@ from dotenv import load_dotenv
 import logging
 from database.connection import obtener_conexion, DB_PATH
 
-# Configuración del sistema de Logs y Auditoría profesional
+# Configuración del sistema de Logs y Auditoría profesional:
+# Muestra los mensajes en la terminal y además los guarda en sistema.log
 logging.basicConfig(
-    filename='sistema.log',
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler('sistema.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger('SG_Gomeria')
 
@@ -44,6 +48,7 @@ def parse_float_seguro(valor, por_defecto=0.0):
         return por_defecto
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 load_dotenv()  # Carga el archivo .env
 
@@ -127,6 +132,16 @@ def pagina_error(codigo, mensaje):
                            codigo=codigo,
                            mensaje=mensaje,
                            milagritos=modo_activo()), codigo
+
+@app.errorhandler(401)
+def error_401(e):
+    logger.warning(f"AUDITORIA | Acceso no autorizado (401) a {request.path}")
+    return pagina_error(401, "No tienes autorización para acceder a esta pantalla. Por favor, inicia sesión."), 401
+
+@app.errorhandler(403)
+def error_403(e):
+    logger.warning(f"AUDITORIA | Permisos insuficientes (403) a {request.path} | Usuario: {session.get('usuario')}")
+    return pagina_error(403, "Acceso restringido: no cuentas con los permisos de Administrador necesarios."), 403
 
 @app.errorhandler(404)
 def error_404(e):
@@ -329,14 +344,14 @@ def cheques():
 @app.route('/agregar-cheque', methods=['POST'])
 @login_requerido
 def agregar_cheque():
-    numero = request.form.get('number', '').strip()
-    cliente = request.form.get('client', '').strip()
-    banco = request.form.get('bank', '').strip()
-    fecha_emision = request.form.get('issue', '')
-    fecha_pago = request.form.get('payment', '')
-    importe = parse_float_seguro(request.form.get('amount'), 0.0)
-    estado = request.form.get('status', 'Pendiente')
-    endosado = request.form.get('endorsed', '').strip()
+    numero = request.form.get('numero', '').strip()
+    cliente = request.form.get('cliente', '').strip()
+    banco = request.form.get('banco', '').strip()
+    fecha_emision = request.form.get('fecha_emision', '')
+    fecha_pago = request.form.get('fecha_pago', '')
+    importe = parse_float_seguro(request.form.get('importe'), 0.0)
+    estado = request.form.get('estado', 'Pendiente')
+    endosado = request.form.get('endosado', '').strip()
 
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -650,4 +665,4 @@ def modificar_tarea():
 
 if __name__ == '__main__':
     debug_mode = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
-    app.run(debug=debug_mode)
+    app.run(debug=debug_mode)

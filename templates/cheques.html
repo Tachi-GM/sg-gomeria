@@ -82,11 +82,11 @@
             <div class="fields">
                 <label>
                     Número de Cheque
-                    <input name="number" class="input-personalizado" required maxlength="30" placeholder="Ej: 84920184">
+                    <input name="numero" class="input-personalizado" required maxlength="30" placeholder="Ej: 84920184">
                 </label>
                 <label>
                     Cliente / Emisor
-                    <input name="client" list="clientes-list" class="input-personalizado" required maxlength="100" placeholder="Ej: Transporte SRL">
+                    <input name="cliente" list="clientes-list" class="input-personalizado" required maxlength="100" placeholder="Ej: Transporte SRL">
                     <datalist id="clientes-list">
                         {% for c in clientes %}
                             <option value="{{ c['nom_cli'] }}"></option>
@@ -95,33 +95,33 @@
                 </label>
                 <label>
                     Banco
-                    <input name="bank" class="input-personalizado" required maxlength="80" placeholder="Ej: Banco Galicia">
+                    <input name="banco" class="input-personalizado" required maxlength="80" placeholder="Ej: Banco Galicia">
                 </label>
                 <div class="row g-2">
                     <div class="col-6">
                         <label>
                             Emisión
-                            <input name="issue" type="date" class="input-personalizado" required>
+                            <input name="fecha_emision" type="date" class="input-personalizado" required>
                         </label>
                     </div>
                     <div class="col-6">
                         <label>
                             Fecha de Pago
-                            <input name="payment" type="date" class="input-personalizado" required>
+                            <input name="fecha_pago" type="date" class="input-personalizado" required>
                         </label>
                     </div>
                 </div>
                 <label>
                     Importe ($)
-                    <input name="amount" type="number" min="0.01" step="0.01" class="input-personalizado" required placeholder="0.00">
+                    <input name="importe" type="number" min="0.01" step="0.01" class="input-personalizado" required placeholder="0.00">
                 </label>
                 <label>
                     Endosado a (opcional)
-                    <input name="endorsed" class="input-personalizado" maxlength="100" placeholder="Ej: Proveedor Cubiertas SA">
+                    <input name="endosado" class="input-personalizado" maxlength="100" placeholder="Ej: Proveedor Cubiertas SA">
                 </label>
                 <label>
                     Estado
-                    <select name="status" class="input-personalizado">
+                    <select name="estado" class="input-personalizado">
                         <option value="Pendiente" selected>Pendiente</option>
                         <option value="Cobrado">Cobrado</option>
                         <option value="Rechazado">Rechazado</option>

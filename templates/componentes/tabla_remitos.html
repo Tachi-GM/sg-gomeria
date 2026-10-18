@@ -1,0 +1,53 @@
+ <table class="table table-hover align-middle mb-0">
+    <thead class="table-light">
+        <tr class="text-secondary small text-uppercase">
+            <!-- Columna 0: Fecha (se ordena como texto ISO) -->
+            <th class="py-3 px-4" onclick="ordenarTabla(0)" style="cursor: pointer;">
+                Fecha ⇅
+            </th>
+            <!-- Columna 1: N° Remito (numérico) -->
+            <th class="py-3" onclick="ordenarTabla(1, true)" style="cursor: pointer;">
+                N° Remito ⇅
+            </th>
+            <!-- Columna 2: Empresa (texto) -->
+            <th class="py-3" onclick="ordenarTabla(2)" style="cursor: pointer;">
+                Empresa ⇅
+            </th>
+            <!-- Columna 3: Detalles (texto) -->
+            <th class="py-3" onclick="ordenarTabla(3)" style="cursor: pointer;">
+                Detalles
+            </th>
+            <!-- Columna 4: Total (numérico/precio) -->
+            <th class="py-3 text-end" onclick="ordenarTabla(4, true)" style="cursor: pointer;">
+                Total ⇅
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in remitos %}
+        <tr class="fila-remito" onclick="toggleDetalle(this)">
+            <td class="py-3 px-4 fw-medium">{{ r['fecha'] }}</td>
+            <td class="py-3 fw-bold text-primary">{{ r['tipo'] }} #{{ r['remito'] }}</td>
+            <td class="py-3 fw-bold">{{ r['nom_cli'] }}</td>
+            <td class="py-3 text-secondary">{{ r['detalle'] | default('', true) }}</td>
+            <td class="py-3 text-end fw-bold text-dark fs-6">${{ "{:,.2f}".format(r['total']) }}</td>
+        </tr>
+        <tr class="fila-detalle d-none">
+            <td colspan="5" class="px-4 py-3">
+                <strong class="d-block mb-2 text-secondary text-uppercase small">Tareas realizadas</strong>
+                <ul class="mb-0 ps-3">
+                    {% for d in detalles_por_trabajo.get(r['id_trabajo'], []) %}
+                    <li>{{ d['nom_tar'] }} &times; {{ d['cantidad'] }} &mdash; ${{ "{:,.2f}".format(d['subtotal']) }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center py-5 text-muted">
+                Aún no se han registrado trabajos en el sistema.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
