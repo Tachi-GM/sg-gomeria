@@ -80,6 +80,7 @@ SG - Gomería/
 ├── iniciar.bat                 # Lanzador de un solo clic para Windows (inicia servidor y abre navegador)
 ├── requirements.txt            # Dependencias del proyecto
 ├── .env.example                # Plantilla de variables de entorno para desarrollo
+├── .flake8                     # Configuración de auditoría de código PEP 8
 ├── .gitignore                  # Exclusión de archivos sensibles, logs, entornos y base de datos
 ├── README.md                   # Documentación técnica y guía de uso
 │
@@ -94,7 +95,8 @@ SG - Gomería/
 │   ├── seguridad.py            # Decoradores login_requerido, solo_admin y auditoría
 │   └── formateadores.py        # Conversiones seguras de tipos (parse_int, parse_float) y filtros
 │
-├── services/                   # Servicios desacoplados de lógica de negocio
+├── services/                   # Capa de servicios y lógica de negocio desacoplada
+│   └── trabajos_service.py     # Procesamiento comercial, cálculo de IVA por tarea y persistencia
 │
 ├── database/                   # Persistencia y base de datos
 │   ├── connection.py           # Conexión centralizada a SQLite (FK ON, row_factory)
@@ -119,7 +121,8 @@ SG - Gomería/
 │   └── logo.png                # Logo del taller
 │
 └── tests/                      # Suite de pruebas automatizadas
-    └── test_rutas.py           # Pruebas de integración sobre endpoints, seguridad y roles
+    ├── test_rutas.py           # Pruebas de integración sobre endpoints, seguridad y roles
+    └── test_trabajos_service.py# Pruebas unitarias de cálculo de tarifas, IVA y persistencia
 ```
 
 ---
@@ -198,25 +201,45 @@ Y luego abrir en el navegador: **http://127.0.0.1:5000/login**
 
 ---
 
-## Ejecución de Pruebas Automáticas
+## Ejecución de Pruebas y Calidad de Código
 
-El proyecto incluye pruebas de integración desarrolladas con el módulo nativo `unittest` de Python para validar autenticación, permisos por rol, rutas protegidas y respuestas HTTP:
+El proyecto cuenta con **25 pruebas automatizadas** desarrolladas con el módulo nativo `unittest` de Python, alcanzando un **91% de cobertura de código**:
 
+### 1. Ejecutar las pruebas
 ```bash
 python -m unittest discover tests
 ```
 
 Salida esperada:
 ```
-Ran 13 tests in 0.399s
+Ran 25 tests in 0.664s
 OK
 ```
+
+### 2. Medir cobertura con Coverage
+```bash
+coverage run -m unittest discover tests
+coverage report -m
+coverage html
+```
+
+### 3. Estándares de calidad y formato (Black y Flake8)
+- **Formateo automático de código con Black:**
+  ```bash
+  black .
+  ```
+- **Auditoría de estilo y errores con Flake8:**
+  ```bash
+  flake8 . --count --statistics
+  ```
 
 ---
 
 ## Arquitectura y Buenas Prácticas
 
 1. **Modularización con Blueprints:** Rutas separadas por dominio funcional (`auth`, `clientes`, `trabajos`, `cheques`, `general`) en lugar de concentrar toda la aplicación en un único archivo.
-2. **Separación de Persistencia y Conexiones:** Conexión centralizada en `database/connection.py`, garantizando conexiones de vida corta y cierre explícito tras cada operación.
-3. **Integridad Referencial y Transacciones:** Claves foráneas activas (`PRAGMA foreign_keys = ON`) y transacciones atómicas para operaciones compuestas (ej. remito de cabecera y renglones de tareas).
-4. **Seguridad:** Contraseñas hasheadas con `werkzeug.security`, variables sensibles aisladas en `.env` y exclusión de archivos de datos y logs en `.gitignore`.
+2. **Capa de Servicios (`services/`):** Desacoplamiento estricto entre los controladores HTTP y la lógica comercial. El cálculo de precios e IVA por tarea y las transacciones se resuelven en `trabajos_service.py`.
+3. **Separación de Persistencia y Conexiones:** Conexión centralizada en `database/connection.py`, garantizando conexiones de vida corta y cierre explícito tras cada operación.
+4. **Integridad Referencial y Transacciones:** Claves foráneas activas (`PRAGMA foreign_keys = ON`), `id_cliente NOT NULL` en cheques y transacciones atómicas para operaciones compuestas (cabecera y renglones de tareas).
+5. **Seguridad:** Contraseñas hasheadas con `werkzeug.security`, variables sensibles aisladas en `.env` y exclusión de archivos de datos y logs en `.gitignore`.
+
