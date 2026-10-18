@@ -11,7 +11,7 @@
             <h2 class="h5 text-secondary fw-bold mb-0 text-uppercase"><span class="hada-decorativa">✨</span> Nuestras Empresas <span class="hada-decorativa">✨</span></h2>
 
             <!-- Buscador de empresas -->
-            <form action="{{ url_for('clientes') }}" method="GET" class="flex-grow-1 mx-md-4 buscador-form">
+            <form action="{{ url_for('clientes_bp.clientes') }}" method="GET" class="flex-grow-1 mx-md-4 buscador-form">
                 <input type="hidden" name="periodo" value="{{ periodo_seleccionado }}">
                 <div class="input-group input-group-lg shadow-sm buscador-clientes w-100">
                     <input
@@ -23,7 +23,7 @@
                     >
                     <button type="submit" class="btn btn-primary px-4">Buscar</button>
                     {% if buscar %}
-                        <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary px-4">Limpiar</a>
+                        <a href="{{ url_for('clientes_bp.clientes') }}" class="btn btn-outline-secondary px-4">Limpiar</a>
                     {% endif %}
                 </div>
             </form>
@@ -95,14 +95,14 @@
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
                 <a class="nav-link {% if periodo_seleccionado == 'todos' %}active fw-bold{% endif %}"
-                href="{{ url_for('clientes', periodo='todos', buscar=buscar) }}">
+                href="{{ url_for('clientes_bp.clientes', periodo='todos', buscar=buscar) }}">
                     Ver Todos
                 </a>
             </li>
             {% for m in meses_disponibles %}
             <li class="nav-item">
                 <a class="nav-link {% if periodo_seleccionado == m['periodo'] %}active fw-bold{% endif %}"
-                href="{{ url_for('clientes', periodo=m['periodo'], buscar=buscar) }}">
+                href="{{ url_for('clientes_bp.clientes', periodo=m['periodo'], buscar=buscar) }}">
                     {{ m['etiqueta'] }}
                 </a>
             </li>
