@@ -1,26 +1,25 @@
-# Sistema de Gestión - Gomería "El Puente" 🔧🐾
+# Sistema de Gestión - Gomería "El Puente"
 
-Aplicación web para la gestión integral de la operatoria diaria de un taller mecánico / gomería enfocado en flotas corporativas: facturación de trabajos (remitos OI y OIB), administración de clientes y vehículos, 3 listas de precios simultáneas, módulo de cartera de cheques, y cálculo automático de IVA.
+Aplicación web desarrollada para la administración integral de la operatoria diaria de un taller mecánico / gomería orientado a flotas corporativas. Incluye emisión de órdenes de trabajo y remitos (OI y OIB), gestión de clientes y condiciones impositivas, 3 listas de precios simultáneas, seguimiento de cheques y cálculo automático de IVA.
 
-Desarrollada para la materia **Programación 4** de la **Tecnicatura Superior en Programación (UTN)**.
-
----
-
-## 📋 Índice
-
-- [Funcionalidades](#-funcionalidades)
-- [Tecnologías utilizadas](#-tecnologías-utilizadas)
-- [Estructura del proyecto](#-estructura-del-proyecto)
-- [Variables de entorno](#-variables-de-entorno)
-- [Requisitos previos](#-requisitos-previos)
-- [Instalación y puesta en marcha](#-instalación-y-puesta-en-marcha)
-- [Ejecución de Pruebas Automáticas](#-ejecución-de-pruebas-automáticas)
-- [Arquitectura y Buenas Prácticas](#-arquitectura-y-buenas-prácticas)
-- [Cómo usar el sistema](#-cómo-usar-el-sistema)
+Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Superior en Programación (UTN)**.
 
 ---
 
-## ✨ Funcionalidades
+## Índice
+
+- [Funcionalidades](#funcionalidades)
+- [Tecnologías utilizadas](#tecnologías-utilizadas)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Variables de entorno](#variables-de-entorno)
+- [Requisitos previos](#requisitos-previos)
+- [Instalación y puesta en marcha](#instalación-y-puesta-en-marcha)
+- [Ejecución de Pruebas Automáticas](#ejecución-de-pruebas-automáticas)
+- [Arquitectura y Buenas Prácticas](#arquitectura-y-buenas-prácticas)
+
+---
+
+## Funcionalidades
 
 - **Mataburros (Emisión de Remitos):**
   - Registro de órdenes de trabajo con soporte para comprobantes oficiales (**OI**) y adicionales (**OIB**).
@@ -36,61 +35,75 @@ Desarrollada para la materia **Programación 4** de la **Tecnicatura Superior en
   - Historial detallado por empresa con navegación mensual por pestañas y totales acumulados.
 
 - **Historial General y Remitos:**
-  - Tabla interactiva de remitos con ordenamiento dinámico por cualquier columna (fecha, número de remito, cliente, total y estado).
+  - Tabla interactiva de remitos con ordenamiento dinámico por columnas (fecha, número de remito, cliente, total y estado).
   - Despliegue en acordeón de los renglones de tareas realizadas por remito sin recargar la página.
-  - Actualización inline del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
+  - Actualización del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
 
 - **Módulo de Cheques:**
   - Registro y seguimiento de cartera de cheques recibidos de clientes (número, banco emisor, cliente asociado, fecha de emisión, fecha de cobro e importe).
   - Control de estados: `Pendiente`, `Cobrado`, `Rechazado` y registro de endosos.
 
 - **Autenticación y Control de Acceso por Roles:**
-  - Inicio y cierre de sesión seguro (`/login`, `/logout`) con contraseñas protegidas mediante **hashing criptográfico con sal** (`werkzeug.security`).
+  - Inicio y cierre de sesión seguro (`/login`, `/logout`) con contraseñas protegidas mediante hashing criptográfico con sal (`werkzeug.security`).
   - Control de acceso por roles: `admin` (acceso total y generación de backups) y `usuario` (operador de mostrador).
   - Decoradores `@login_requerido` y `@solo_admin` para proteger rutas contra accesos no autorizados.
   - Credenciales demo para evaluación: `admin` / `admin123` y `operador` / `operador123`.
 
-- **Herramientas de Mantenimiento y Seguridad:**
-  - Resguardo automático de base de datos (`/backup`) exclusivo para administradores con timestamp en `backups/`.
-  - Páginas de error personalizadas (`404` y `500`) con registro de eventos anómalos en `errores.log`.
-  - **Modo Milagritos 🧚:** Personalización visual accesible vía sesión HTTP.
+- **Mantenimiento y Resguardo:**
+  - Resguardo de base de datos (`/backup`) exclusivo para administradores con timestamp en la carpeta `backups/`.
+  - Páginas de error personalizadas (`401`, `403`, `404` y `500`) con registro de eventos de auditoría en `sistema.log`.
+  - Modo Milagritos accesible vía sesión HTTP.
 
 ---
 
-## 🛠 Tecnologías utilizadas
+## Tecnologías utilizadas
 
 | Capa | Tecnología | Justificación |
 |---|---|---|
-| **Backend** | Python 3 + Flask 3.1 | Microframework ágil, modular y de bajo consumo de recursos. |
-| **Base de Datos** | SQLite 3 | Base de datos relacional serverless, ACID, con foreign keys activadas. |
-| **Frontend** | HTML5 + Jinja2 | Herencia de plantillas modular (`base.html`), lógica declarativa segura. |
-| **Estilos** | CSS3 + Bootstrap 5.3 | Diseño responsivo con componentes modernos y hojas CSS modulares. |
-| **Interactividad** | JavaScript (ES6) | Asincronismo con `fetch`, manipulación del DOM y ordenamiento cliente. |
-| **Configuración** | `python-dotenv` | Separación estricta entre código y configuración de entorno (.env). |
+| **Backend** | Python 3 + Flask 3.1 | Microframework ágil, modularizado con Blueprints. |
+| **Base de Datos** | SQLite 3 | Motor relacional local, transaccional (ACID), con foreign keys activadas. |
+| **Frontend** | HTML5 + Jinja2 | Herencia de plantillas modular (`base.html`), inyección global de contexto. |
+| **Estilos** | CSS3 + Bootstrap 5.3 | Interfaz responsiva con componentes modernos y hojas CSS específicas. |
+| **Interactividad** | JavaScript (ES6) | Asincronismo con `fetch`, manipulación del DOM y ordenamiento en cliente. |
+| **Configuración** | `python-dotenv` | Separación estricta entre código fuente y variables de entorno (`.env`). |
 
 ---
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
-El proyecto implementa una arquitectura modular con separación de responsabilidades:
+El proyecto implementa una arquitectura modular organizada en Blueprints y capas de soporte:
 
 ```
 SG - Gomería/
 │
-├── app.py                      # Punto de entrada de la aplicación y controladores de rutas
-├── requirements.txt            # Dependencias del proyecto en formato estándar UTF-8
+├── app.py                      # Punto de entrada, configuración global y registro de Blueprints
+├── iniciar.bat                 # Lanzador de un solo clic para Windows (inicia servidor y abre navegador)
+├── requirements.txt            # Dependencias del proyecto
 ├── .env.example                # Plantilla de variables de entorno para desarrollo
-├── .gitignore                  # Exclusión de archivos sensibles, entornos y bases de datos
-├── README.md                   # Documentación técnica y guía de instalación
+├── .gitignore                  # Exclusión de archivos sensibles, logs, entornos y base de datos
+├── README.md                   # Documentación técnica y guía de uso
 │
-├── database/                   # Módulo de persistencia y base de datos
+├── routes/                     # Controladores modularizados (Blueprints de Flask)
+│   ├── auth.py                 # Login, logout y control de sesión
+│   ├── general.py              # Pantalla de inicio, acerca-de, salir y backups
+│   ├── clientes.py             # Dashboard de empresas, historial y alta de clientes
+│   ├── trabajos.py             # Mataburros (emisión de remitos) y administración de precios
+│   └── cheques.py              # Cartera de cheques, cobros y cambios de estado
+│
+├── utils/                      # Utilidades y funciones transversales
+│   ├── seguridad.py            # Decoradores login_requerido, solo_admin y auditoría
+│   └── formateadores.py        # Conversiones seguras de tipos (parse_int, parse_float) y filtros
+│
+├── services/                   # Servicios desacoplados de lógica de negocio
+│
+├── database/                   # Persistencia y base de datos
 │   ├── connection.py           # Conexión centralizada a SQLite (FK ON, row_factory)
 │   └── init_db.py              # Script DDL de inicialización y datos semilla
 │
 ├── templates/                  # Plantillas Jinja2
 │   ├── base/
 │   │   └── base.html           # Layout base compartido (Navbar, CDN Bootstrap, estilos)
-│   ├── index.html              # Pantalla principal de acceso rápido
+│   ├── index.html              # Pantalla principal con accesos directos
 │   ├── mataburros.html         # Formulario de carga de trabajos y cálculo de remitos
 │   ├── clientes.html           # Dashboard de empresas y tabla de remitos interactiva
 │   ├── historial-cliente.html  # Vista mensual consolidada por cliente
@@ -98,38 +111,32 @@ SG - Gomería/
 │   ├── cheques.html            # Cartera y seguimiento de cheques
 │   ├── acerca-de.html          # Información del sistema
 │   ├── salir.html              # Pantalla de confirmación de salida
-│   └── error.html              # Vista unificada de errores HTTP (404, 500)
+│   └── error.html              # Vista unificada de errores HTTP (401, 403, 404, 500)
 │
-├── static/                     # Archivos estáticos
-│   ├── css/
-│   │   ├── estilos.css         # Reglas visuales globales y tema Modo Milagritos
-│   │   └── cheques.css         # Estilos específicos del módulo de cheques
-│   ├── js/
-│   │   ├── clientes.js         # Filtros, ordenamiento de tablas y actualización AJAX
-│   │   ├── mataburros.js       # Dinámica de cantidades, tareas y listas de precios
-│   │   ├── cheques.js          # Control de estados y acciones de cheques
-│   │   └── precios.js          # Edición modal de tareas y precios
-│   └── logo.png                # Isotipo del taller
+├── static/                     # Recursos estáticos
+│   ├── css/                    # Hojas de estilo (estilos.css, cheques.css)
+│   ├── js/                     # Scripts del cliente (clientes.js, mataburros.js, cheques.js)
+│   └── logo.png                # Logo del taller
 │
 └── tests/                      # Suite de pruebas automatizadas
-    └── test_rutas.py           # Pruebas de integración sobre los endpoints principales
+    └── test_rutas.py           # Pruebas de integración sobre endpoints, seguridad y roles
 ```
 
 ---
 
-## ⚙ Variables de entorno
+## Variables de entorno
 
-El sistema utiliza variables de entorno para evitar datos sensibles en el código fuente. Se incluye un archivo `.env.example` de referencia:
+Se incluye un archivo `.env.example` de referencia con la configuración mínima:
 
-| Variable | Descripción | Valor por defecto |
+| Variable | Descripción | Valor sugerido |
 |---|---|---|
-| `SECRET_KEY` | Clave criptográfica para firmas de sesión Flask | Valor de respaldo para desarrollo |
+| `SECRET_KEY` | Clave criptográfica para firmas de sesión Flask | Cadena aleatoria segura en producción |
 | `DATABASE_PATH` | Ruta al archivo de base de datos SQLite | `sg_gomeria.db` |
-| `FLASK_DEBUG` | Activa o desactiva el modo de depuración (`True`/`False`) | `True` |
+| `FLASK_DEBUG` | Modo depuración (`True` para desarrollo, `False` en producción) | `False` |
 
 ---
 
-## ✅ Requisitos previos
+## Requisitos previos
 
 - **Python 3.10 o superior** ([python.org](https://www.python.org/))
 - **Git** ([git-scm.com](https://git-scm.com/))
@@ -137,7 +144,7 @@ El sistema utiliza variables de entorno para evitar datos sensibles en el códig
 
 ---
 
-## 🚀 Instalación y puesta en marcha
+## Instalación y puesta en marcha
 
 ### 1. Clonar el repositorio
 ```bash
@@ -163,35 +170,37 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configurar las variables de entorno
-Copiá la plantilla de variables de entorno:
-- En Windows (PowerShell):
-  ```powershell
-  Copy-Item .env.example .env
-  ```
-- En Linux / macOS / CMD:
-  ```bash
-  copy .env.example .env   # CMD
-  cp .env.example .env     # Bash
-  ```
+```powershell
+Copy-Item .env.example .env     # PowerShell
+copy .env.example .env          # CMD
+cp .env.example .env            # Bash
+```
 
 ### 5. Inicializar la base de datos
-Ejecutá el script constructor del esquema relacional:
 ```bash
 python database/init_db.py
 ```
-*Este comando crea todas las tablas con sus restricciones y carga datos semilla de prueba si la base se encuentra vacía.*
+*Crea la base de datos `sg_gomeria.db` con todas sus tablas, restricciones y usuarios iniciales si aún no existen.*
 
-### 6. Iniciar el servidor
+### 6. Ejecución del sistema
+
+#### Modo uso diario (Windows):
+Hacer doble clic sobre el archivo **`iniciar.bat`**.
+Este script activa automáticamente el entorno virtual, levanta el servidor Flask y abre el navegador predeterminado directamente en la pantalla de inicio de sesión (`http://127.0.0.1:5000/login`).
+
+> Se puede crear un acceso directo en el Escritorio apuntando a `iniciar.bat` y cambiarle el icono para que funcione exactamente como un programa de escritorio tradicional, evitando la necesidad de abrir terminales o escribir comandos manuales.
+
+#### Modo manual / desarrollo:
 ```bash
 python app.py
 ```
-Abrí en tu navegador: **http://127.0.0.1:5000/**
+Y luego abrir en el navegador: **http://127.0.0.1:5000/login**
 
 ---
 
-## 🧪 Ejecución de Pruebas Automáticas
+## Ejecución de Pruebas Automáticas
 
-El proyecto cuenta con un conjunto de pruebas automáticas desarrolladas con el módulo estándar `unittest` de Python para garantizar la estabilidad de las rutas principales y el manejo de errores:
+El proyecto incluye pruebas de integración desarrolladas con el módulo nativo `unittest` de Python para validar autenticación, permisos por rol, rutas protegidas y respuestas HTTP:
 
 ```bash
 python -m unittest discover tests
@@ -199,15 +208,15 @@ python -m unittest discover tests
 
 Salida esperada:
 ```
-Ran 6 tests in 0.120s
+Ran 13 tests in 0.399s
 OK
 ```
 
 ---
 
-## 🏛 Arquitectura y Buenas Prácticas
+## Arquitectura y Buenas Prácticas
 
-1. **Separación de Persistencia:** Toda la lógica de conexión vive en `database/connection.py`. Los controladores obtienen conexiones de corta duración y liberan recursos al finalizar cada solicitud.
-2. **Integridad Referencial:** Claves foráneas activas (`PRAGMA foreign_keys = ON`) y restricciones `CHECK` a nivel de motor para garantizar la validez de precios, cantidades y estados.
-3. **Frontend Componentizado:** Las plantillas extienden de `templates/base/base.html`, reduciendo código duplicado y asegurando consistencia visual.
-4. **Seguridad y Resguardo:** Exclusión de bases de datos operativas del repositorio Git mediante `.gitignore` y parametrización segura de credenciales mediante `python-dotenv`.
+1. **Modularización con Blueprints:** Rutas separadas por dominio funcional (`auth`, `clientes`, `trabajos`, `cheques`, `general`) en lugar de concentrar toda la aplicación en un único archivo.
+2. **Separación de Persistencia y Conexiones:** Conexión centralizada en `database/connection.py`, garantizando conexiones de vida corta y cierre explícito tras cada operación.
+3. **Integridad Referencial y Transacciones:** Claves foráneas activas (`PRAGMA foreign_keys = ON`) y transacciones atómicas para operaciones compuestas (ej. remito de cabecera y renglones de tareas).
+4. **Seguridad:** Contraseñas hasheadas con `werkzeug.security`, variables sensibles aisladas en `.env` y exclusión de archivos de datos y logs en `.gitignore`.
