@@ -1,21 +1,22 @@
 {% extends "base/base.html" %}
 
-{% block title %}Nuevo Remito{% endblock %}
+{% block title %}Nuevo Remito - Mataburros{% endblock %}
+{% block subtitle %}Nuevo Remito de Trabajo{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/styles/choices.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/styles/choices.min.css">
+    <link rel="stylesheet" href="/static/css/estilos.css">
 {% endblock %}
 
-{% block subtitle %}Nuevo Remito{% endblock %}
-
 {% block content %}
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="container py-3 d-flex flex-column align-items-center">
-
+    <div class="container my-5">
         {% with mensajes = get_flashed_messages(with_categories=true) %}
             {% if mensajes %}
-                {% for categoria, texto in mensajes %}
-                    <div class="alert alert-{{ categoria }}">{{ texto }}</div>
+                {% for categoria, mensaje in mensajes %}
+                    <div class="alert alert-{{ categoria }} alert-dismissible fade show shadow-sm rounded-4 mb-4" role="alert">
+                        {{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
@@ -60,15 +61,23 @@
             <form action="/enviar-trabajo" method="POST" id="form-remito" novalidate>
             <div id="errores-form" class="alert alert-danger d-none" role="alert"></div>
             
-                <!-- 1. Número de Remito -->
-                <div class="mb-4">
-                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">N° Remito</label>
-                    <div class="input-group">
-                        <select name="tipo" class="form-select input-personalizado" style="max-width: 110px;">
-                            <option value="OI" selected>OI</option>
-                            <option value="OIB">OIB</option>
-                        </select>
-                        <input type="text" name="remito" class="form-control input-personalizado" placeholder="Ej: 20213" required>
+                <!-- 1. Número de Remito y Fecha -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-7">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">N° Remito</label>
+                        <div class="input-group">
+                            <select name="tipo" id="select-tipo" class="form-select input-personalizado" style="max-width: 110px;">
+                                <option value="OI" selected>OI</option>
+                                <option value="OIB">OIB</option>
+                            </select>
+                            <input type="text" name="remito" id="input-remito" class="form-control input-personalizado" placeholder="Ej: 20213 (5 dígitos)" required>
+                        </div>
+                        <div class="form-text small text-muted" id="ayuda-remito">OI: 5 dígitos numéricos (ej. 12345)</div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Fecha</label>
+                        <input type="date" name="fecha" id="input-fecha" class="form-control input-personalizado" value="{{ fecha_hoy }}" required>
                     </div>
                 </div>
 
@@ -78,7 +87,7 @@
                     <select name="empresa" id="select-empresa" class="form-select input-personalizado" required>
                         <option value="" selected disabled>Selecciona un cliente...</option>
                         {% for e in empresas %}
-                            <option value="{{ e['id_cliente'] }}">{{ e['nom_cli'] }} (CUIT: {{ e['cuit'] }})</option>
+                            <option value="{{ e['id_cliente'] }}">{{ e['nom_cli'] }} {% if e['cuit'] %}(CUIT: {{ e['cuit'] }}){% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>

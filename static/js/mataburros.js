@@ -17,8 +17,31 @@ document.getElementById('select-empresa').addEventListener('change', function ()
     const cliente = CLIENTES_DATA.find(c => String(c.id_cliente) === this.value);
     clienteSinIva = cliente ? cliente.con_iva === 0 : false;
     document.getElementById('aviso-sin-iva').classList.toggle('d-none', !clienteSinIva);
-    calcularTotal();
+
+    // Auto-vincular lista de precios del cliente (L1, L2, L3)
+    if (cliente && cliente.lista_precios) {
+        cambiarLista(cliente.lista_precios);
+    } else {
+        calcularTotal();
+    }
 });
+
+// Ayuda y placeholders dinámicos según tipo de comprobante (OI vs OIB)
+const selectTipo = document.getElementById('select-tipo');
+const inputRemito = document.getElementById('input-remito');
+const ayudaRemito = document.getElementById('ayuda-remito');
+
+if (selectTipo && inputRemito) {
+    selectTipo.addEventListener('change', function () {
+        if (this.value === 'OI') {
+            inputRemito.placeholder = 'Ej: 20213 (5 dígitos)';
+            if (ayudaRemito) ayudaRemito.textContent = 'OI: 5 dígitos numéricos (ej. 12345)';
+        } else if (this.value === 'OIB') {
+            inputRemito.placeholder = 'Ej: 001234 (00 + 4 dígitos)';
+            if (ayudaRemito) ayudaRemito.textContent = 'OIB: Comienza con 00 y 4 dígitos adicionales';
+        }
+    });
+}
 
 // Función auxiliar: convierte cualquier <select> en un combobox buscable
 function crearChoicesParaSelect(select) {
@@ -68,8 +91,6 @@ function quitarFilaTarea() {
     calcularTotal();
 }
 
-
-
 function cambiarLista(numeroLista) {
     document.getElementById('tipo_lista').value = numeroLista;
     const columna = COLUMNA_PRECIO[numeroLista];
@@ -103,8 +124,10 @@ function cambiarLista(numeroLista) {
         btn.classList.add('btn-outline-primary');
     });
     const botonActivo = document.getElementById(`btn-l${numeroLista}`);
-    botonActivo.classList.remove('btn-outline-primary');
-    botonActivo.classList.add('btn-primary');
+    if (botonActivo) {
+        botonActivo.classList.remove('btn-outline-primary');
+        botonActivo.classList.add('btn-primary');
+    }
 
     calcularTotal();
 }
@@ -153,10 +176,20 @@ function calcularTotal() {
 
 function validarFormularioRemito(e) {
     const errores = [];
+    const inputRem = document.querySelector('[name="remito"]').value.trim();
+    const tipoVal = document.getElementById('select-tipo') ? document.getElementById('select-tipo').value : 'OI';
 
-    if (!document.querySelector('[name="remito"]').value.trim()) {
-        errores.push('Falta el número de OI.');
+    if (!inputRem) {
+        errores.push('Falta el número de remito.');
+    } else {
+        if (tipoVal === 'OI' && inputRem.replace(/\D/g, '').length > 5) {
+            errores.push('El remito OI no puede superar los 5 dígitos.');
+        }
+        if (tipoVal === 'OIB' && inputRem.startsWith('00') && inputRem.replace(/\D/g, '').length > 6) {
+            errores.push('El remito OIB no puede superar los 6 dígitos totales.');
+        }
     }
+
     if (!document.getElementById('select-empresa').value) {
         errores.push('Elegí un cliente.');
     }
@@ -183,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
         instanciaChoicesEmpresa = crearChoicesParaSelect(selectEmpresa);
     }
 
-    // Creamos la primera fila de tareas (antes estaba escrita a mano en el HTML)
+    // Creamos la primera fila de tareas
     agregarFilaTarea();
 
     // Escuchamos cambios en cualquier select de tarea (incluidos los clonados)

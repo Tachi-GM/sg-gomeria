@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import app
+from database.connection import obtener_conexion
 
 
 class TestSeguridadYAutenticacion(unittest.TestCase):
@@ -62,6 +63,28 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         with self.client.session_transaction() as sess:
             sess["usuario"] = "admin"
             sess["rol"] = "admin"
+
+        self._limpiar_temporales()
+
+    def tearDown(self):
+        self._limpiar_temporales()
+
+    def _limpiar_temporales(self):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM detalle_trabajos WHERE id_trabajo IN (
+                SELECT id_trabajo FROM trabajos WHERE remito IN ('98765', '88881', '008882')
+            )
+        """)
+        cursor.execute(
+            "DELETE FROM trabajos WHERE remito IN ('98765', '88881', '008882')"
+        )
+        cursor.execute(
+            "DELETE FROM clientes WHERE nom_cli = 'Empresa Test Automatizada'"
+        )
+        conn.commit()
+        conn.close()
 
     def test_inicio_autenticado_responde_200(self):
         """La pantalla principal '/' debe responder 200 para un usuario logueado."""
@@ -115,7 +138,7 @@ class TestRutasConSesionIniciada(unittest.TestCase):
             "/agregar-cliente",
             data={
                 "nombre": "Empresa Test Automatizada",
-                "cuit": "30-99887766-1",
+                "cuit": "20-11112222-9",
                 "tel": "11-4455-6677",
                 "mail": "test@empresa.com",
             },
@@ -166,7 +189,8 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         respuesta = self.client.post(
             "/enviar-trabajo",
             data={
-                "remito": "R-TEST-AUTO-999",
+                "remito": "98765",
+                "fecha": "2026-10-18",
                 "empresa": "1",
                 "tipo_lista": "1",
                 "tipo": "OI",
@@ -178,6 +202,73 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         )
         self.assertEqual(respuesta.status_code, 302)
         self.assertIn("/mataburros", respuesta.headers.get("Location", ""))
+
+    def test_editar_remito_endpoint_exitoso_y_errores(self):
+        """El endpoint POST /editar-remito valida datos y actualiza."""
+        # Error por ID inválido o faltante
+        resp_error = self.client.post(
+            "/editar-remito",
+            data={
+                "id_trabajo": "0",
+                "tipo": "OI",
+                "remito": "12345",
+                "fecha": "2026-10-18",
+            },
+        )
+        self.assertEqual(resp_error.status_code, 400)
+        self.assertFalse(resp_error.get_json()["exito"])
+
+        # Error por formato de remito incorrecto
+        resp_invalido = self.client.post(
+            "/editar-remito",
+            data={
+                "id_trabajo": "1",
+                "tipo": "OI",
+                "remito": "letras",
+                "fecha": "2026-10-18",
+            },
+        )
+        self.assertEqual(resp_invalido.status_code, 400)
+
+        # Crear un trabajo previo para editarlo de forma aislada
+        self.client.post(
+            "/enviar-trabajo",
+            data={
+                "remito": "88881",
+                "fecha": "2026-10-18",
+                "empresa": "1",
+                "tipo_lista": "1",
+                "tipo": "OI",
+                "detalle": "Para editar por ruta",
+                "tareas": ["1"],
+                "cantidades": ["1"],
+            },
+        )
+
+        conn = obtener_conexion()
+        trabajo = conn.execute(
+            "SELECT id_trabajo FROM trabajos WHERE remito = '88881'"
+        ).fetchone()
+        conn.close()
+
+        self.assertIsNotNone(trabajo)
+        id_trabajo = trabajo["id_trabajo"]
+
+        # Edición válida sobre el trabajo recién creado
+        resp_ok = self.client.post(
+            "/editar-remito",
+            data={
+                "id_trabajo": str(id_trabajo),
+                "tipo": "OIB",
+                "remito": "8882",
+                "fecha": "2026-10-19",
+            },
+        )
+        self.assertEqual(resp_ok.status_code, 200)
+        datos = resp_ok.get_json()
+        self.assertTrue(datos["exito"])
+        self.assertEqual(datos["remito"], "008882")
+        self.assertEqual(datos["tipo"], "OIB")
 
     def test_operaciones_cheques_completas(self):
         """Registrar, cambiar estado y eliminar cheque mediante API."""

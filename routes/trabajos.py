@@ -1,10 +1,22 @@
 import sqlite3
 import logging
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from datetime import date
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+)
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
 from utils.formateadores import parse_int_seguro, parse_float_seguro
-from services.trabajos_service import crear_trabajo_completo
+from services.trabajos_service import (
+    crear_trabajo_completo,
+    editar_cabecera_remito,
+)
 
 logger = logging.getLogger("SG_Gomeria")
 trabajos_bp = Blueprint("trabajos_bp", __name__)
@@ -17,13 +29,14 @@ def mataburros():
     conexion = obtener_conexion()
 
     empresas = conexion.execute(
-        "SELECT id_cliente, nom_cli, cuit, con_iva FROM clientes"
+        "SELECT id_cliente, nom_cli, cuit, con_iva, lista_precios FROM clientes ORDER BY nom_cli ASC"
     ).fetchall()
     tareas = conexion.execute(
-        "SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas"
+        "SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas WHERE activa = 1 ORDER BY nom_tar ASC"
     ).fetchall()
     clientes_json = [dict(e) for e in empresas]
     tareas_json = [dict(t) for t in tareas]
+    fecha_hoy = date.today().strftime("%Y-%m-%d")
 
     conexion.close()
     return render_template(
@@ -32,6 +45,7 @@ def mataburros():
         tareas=tareas,
         tareas_json=tareas_json,
         clientes_json=clientes_json,
+        fecha_hoy=fecha_hoy,
         milagritos=modo_activo(),
     )
 
@@ -45,12 +59,16 @@ def enviar_trabajo():
     tipo_lista = request.form.get("tipo_lista", "1")
     detalle = request.form.get("detalles") or request.form.get("detalle", "")
     tipo = request.form.get("tipo", "OI").strip()
+    fecha = request.form.get("fecha", "").strip()
+
     if not remito:
         flash("Error: El número de remito es obligatorio", "danger")
         return redirect(url_for("trabajos_bp.mataburros"))
+
     if not id_cliente:
         flash("Error: Debes seleccionar una empresa", "danger")
         return redirect(url_for("trabajos_bp.mataburros"))
+
     # Delegamos toda la lógica y el cálculo al servicio
     exito, mensaje = crear_trabajo_completo(
         remito=remito,
@@ -60,9 +78,42 @@ def enviar_trabajo():
         detalle=detalle,
         tareas_raw=request.form.getlist("tareas"),
         cantidades_raw=request.form.getlist("cantidades"),
+        fecha=fecha,
     )
     flash(mensaje, "success" if exito else "danger")
     return redirect(url_for("trabajos_bp.mataburros"))
+
+
+# Endpoint asíncrono para editar remito desde el modal de clientes / historial
+@trabajos_bp.route("/editar-remito", methods=["POST"])
+@login_requerido
+def editar_remito():
+    id_trabajo = parse_int_seguro(request.form.get("id_trabajo"))
+    nuevo_tipo = request.form.get("tipo", "OI").strip()
+    nuevo_remito = request.form.get("remito", "").strip()
+    nueva_fecha = request.form.get("fecha", "").strip()
+
+    if not id_trabajo:
+        return jsonify({"exito": False, "mensaje": "ID de trabajo inválido"}), 400
+
+    exito, mensaje, remito_formateado = editar_cabecera_remito(
+        id_trabajo, nuevo_tipo, nuevo_remito, nueva_fecha
+    )
+
+    status_code = 200 if exito else 400
+    return (
+        jsonify(
+            {
+                "exito": exito,
+                "mensaje": mensaje,
+                "id_trabajo": id_trabajo,
+                "tipo": nuevo_tipo,
+                "remito": remito_formateado or nuevo_remito,
+                "fecha": nueva_fecha,
+            }
+        ),
+        status_code,
+    )
 
 
 # Pantalla Precios
@@ -73,7 +124,7 @@ def precios():
     cursor = conexion.cursor()
 
     tareas = cursor.execute(
-        "SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas"
+        "SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas ORDER BY nom_tar ASC"
     ).fetchall()
 
     conexion.close()

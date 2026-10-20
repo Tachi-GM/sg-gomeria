@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
-from utils.formateadores import obtener_meses_disponibles
+from utils.formateadores import obtener_meses_disponibles, validar_y_formatear_cuit
 
 logger = logging.getLogger("SG_Gomeria")
 
@@ -165,7 +165,7 @@ def agregar_cliente():
     cursor = conexion.cursor()
 
     nom_cli = request.form.get("nombre", "").strip()
-    cuit = request.form.get("cuit", "").strip()
+    cuit_raw = request.form.get("cuit", "").strip()
     tel = request.form.get("tel", "").strip()
     mail = request.form.get("mail", "").strip()
 
@@ -173,22 +173,30 @@ def agregar_cliente():
         flash("El nombre o razón social del cliente es obligatorio", "danger")
         return redirect(url_for("clientes_bp.clientes"))
 
+    cuit_final = None
+    if cuit_raw:
+        cuit_valido, cuit_resultado = validar_y_formatear_cuit(cuit_raw)
+        if not cuit_valido:
+            flash(f"Error en CUIT: {cuit_resultado}", "danger")
+            return redirect(url_for("clientes_bp.clientes"))
+        cuit_final = cuit_resultado
+
     try:
         cursor.execute(
             """
             INSERT INTO clientes (nom_cli, cuit, tel, mail)
             VALUES (?, ?, ?, ?)
         """,
-            (nom_cli, cuit, tel, mail),
+            (nom_cli, cuit_final, tel, mail),
         )
         conexion.commit()
         registrar_auditoria(
-            "ALTA_CLIENTE", f"Empresa '{nom_cli}' (CUIT: {cuit}) agregada"
+            "ALTA_CLIENTE", f"Empresa '{nom_cli}' (CUIT: {cuit_final}) agregada"
         )
         flash(f"Cliente '{nom_cli}' registrado correctamente.", "success")
     except sqlite3.IntegrityError:
         logger.warning(
-            f"AUDITORIA | Intento de registrar cliente duplicado: '{nom_cli}' (CUIT: {cuit})"
+            f"AUDITORIA | Intento de registrar cliente duplicado: '{nom_cli}' (CUIT: {cuit_final})"
         )
         flash("Error: Ya existe un cliente con ese CUIT o razón social.", "danger")
     except Exception as e:

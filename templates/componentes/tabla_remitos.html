@@ -1,4 +1,4 @@
- <table class="table table-hover align-middle mb-0">
+<table class="table table-hover align-middle mb-0">
     <thead class="table-light">
         <tr class="text-secondary small text-uppercase">
             <!-- Columna 0: Fecha (se ordena como texto ISO) -->
@@ -21,19 +21,34 @@
             <th class="py-3 text-end" onclick="ordenarTabla(4, true)" style="cursor: pointer;">
                 Total ⇅
             </th>
+            <!-- Columna 5: Acción -->
+            <th class="py-3 text-center" style="width: 80px;">
+                Acción
+            </th>
         </tr>
     </thead>
     <tbody>
         {% for r in remitos %}
         <tr class="fila-remito" onclick="toggleDetalle(this)">
-            <td class="py-3 px-4 fw-medium">{{ r['fecha'] }}</td>
-            <td class="py-3 fw-bold text-primary">{{ r['tipo'] }} #{{ r['remito'] }}</td>
+            <td class="py-3 px-4 fw-medium celda-fecha">{{ r['fecha'] }}</td>
+            <td class="py-3 fw-bold text-primary celda-remito">{{ r['tipo'] }} #{{ r['remito'] }}</td>
             <td class="py-3 fw-bold">{{ r['nom_cli'] }}</td>
             <td class="py-3 text-secondary">{{ r['detalle'] | default('', true) }}</td>
             <td class="py-3 text-end fw-bold text-dark fs-6">${{ "{:,.2f}".format(r['total']) }}</td>
+            <td class="py-3 text-center" onclick="event.stopPropagation()">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary btn-editar-remito rounded-pill"
+                        data-id="{{ r['id_trabajo'] }}"
+                        data-tipo="{{ r['tipo'] }}"
+                        data-remito="{{ r['remito'] }}"
+                        data-fecha="{{ r['fecha'] }}"
+                        title="Editar remito y fecha">
+                    ✏️
+                </button>
+            </td>
         </tr>
         <tr class="fila-detalle d-none">
-            <td colspan="5" class="px-4 py-3">
+            <td colspan="6" class="px-4 py-3">
                 <strong class="d-block mb-2 text-secondary text-uppercase small">Tareas realizadas</strong>
                 <ul class="mb-0 ps-3">
                     {% for d in detalles_por_trabajo.get(r['id_trabajo'], []) %}
@@ -44,10 +59,52 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="5" class="text-center py-5 text-muted">
+            <td colspan="6" class="text-center py-5 text-muted">
                 Aún no se han registrado trabajos en el sistema.
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Modal Editar Remito -->
+<div class="modal fade" id="modalEditarRemito" tabindex="-1" aria-labelledby="modalEditarRemitoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark" id="modalEditarRemitoLabel">✏️ Editar Remito</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="form-editar-remito">
+                <div class="modal-body p-4">
+                    <div id="alerta-error-modal" class="alert alert-danger d-none py-2 small" role="alert"></div>
+                    <input type="hidden" name="id_trabajo" id="edit-id-trabajo">
+                    <div class="mb-3">
+                        <label for="edit-fecha" class="form-label small fw-bold text-secondary">Fecha</label>
+                        <input type="date" class="form-control" id="edit-fecha" name="fecha" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label for="edit-tipo" class="form-label small fw-bold text-secondary">Tipo</label>
+                            <select class="form-select" id="edit-tipo" name="tipo" required>
+                                <option value="OI">OI</option>
+                                <option value="OIB">OIB</option>
+                            </select>
+                        </div>
+                        <div class="col-8">
+                            <label for="edit-remito" class="form-label small fw-bold text-secondary">N° Remito</label>
+                            <input type="text" class="form-control" id="edit-remito" name="remito" required>
+                        </div>
+                    </div>
+                    <div id="edit-remito-hint" class="form-text small text-muted">
+                        OI: 5 dígitos numéricos (ej. 12345). OIB: 00 seguido de 4 dígitos (ej. 001234).
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" id="btn-guardar-edicion">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
