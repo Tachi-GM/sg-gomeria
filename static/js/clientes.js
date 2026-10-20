@@ -26,6 +26,56 @@ function cambiarEstado(select, idTrabajo) {
     });
 }
 
+// Lógica de checkbox de pago
+function inicializarCheckboxesPago() {
+    document.querySelectorAll('.check-pago').forEach(chk => {
+        // Estilo inicial
+        aplicarEstiloCheckPago(chk);
+
+        chk.addEventListener('change', function () {
+            const idTrabajo = this.dataset.id;
+            const nuevoEstado = this.checked ? 'PAGADO' : 'PENDIENTE';
+
+            fetch('/actualizar-estado', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id_trabajo=${idTrabajo}&estado=${encodeURIComponent(nuevoEstado)}`
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Error del servidor');
+                return res.json();
+            })
+            .then(data => {
+                if (data.exito) {
+                    this.dataset.estado = nuevoEstado;
+                    this.title = nuevoEstado;
+                    aplicarEstiloCheckPago(this);
+                } else {
+                    // Revertir si hubo error
+                    this.checked = !this.checked;
+                    alert('No se pudo actualizar el estado. Intentá de nuevo.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                this.checked = !this.checked;
+                alert('Error de comunicación. Intentá de nuevo.');
+            });
+        });
+    });
+}
+
+function aplicarEstiloCheckPago(chk) {
+    const fila = chk.closest('tr.fila-remito');
+    if (!fila) return;
+    if (chk.checked) {
+        fila.classList.add('table-success');
+        fila.classList.remove('table-warning');
+    } else {
+        fila.classList.remove('table-success');
+    }
+}
+
 // Variable para recordar la dirección del orden (ascendente o descendente)
 let ordenAscendente = true;
 let ultimaColumna = -1;
@@ -84,6 +134,8 @@ function ordenarTabla(nColumna, esNumero = false) {
 
 // Inicialización de la edición modal de remitos
 document.addEventListener("DOMContentLoaded", () => {
+    // Inicializar checkboxes de pago
+    inicializarCheckboxesPago();
     const modalElement = document.getElementById("modalEditarRemito");
     if (!modalElement) return;
 

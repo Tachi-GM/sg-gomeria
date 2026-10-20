@@ -21,9 +21,13 @@
             <th class="py-3 text-end" onclick="ordenarTabla(4, true)" style="cursor: pointer;">
                 Total ⇅
             </th>
-            <!-- Columna 5: Acción -->
-            <th class="py-3 text-center" style="width: 80px;">
-                Acción
+            <!-- Columna 5: Pago (checkbox) -->
+            <th class="py-3 text-center" style="width: 75px;">
+                Pago
+            </th>
+            <!-- Columna 6: Acción (editar) -->
+            <th class="py-3 text-center" style="width: 70px;">
+                Editar
             </th>
         </tr>
     </thead>
@@ -35,6 +39,21 @@
             <td class="py-3 fw-bold">{{ r['nom_cli'] }}</td>
             <td class="py-3 text-secondary">{{ r['detalle'] | default('', true) }}</td>
             <td class="py-3 text-end fw-bold text-dark fs-6">${{ "{:,.2f}".format(r['total']) }}</td>
+            <!-- Columna Pago: checkbox para marcar como PAGADO -->
+            <td class="py-3 text-center" onclick="event.stopPropagation()">
+                <div class="form-check d-flex justify-content-center mb-0">
+                    <input
+                        class="form-check-input check-pago"
+                        type="checkbox"
+                        style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
+                        data-id="{{ r['id_trabajo'] }}"
+                        data-estado="{{ r['estado'] }}"
+                        {% if r['estado'] == 'PAGADO' %}checked{% endif %}
+                        title="{{ r['estado'] }}"
+                    >
+                </div>
+            </td>
+            <!-- Columna Editar: botón modal -->
             <td class="py-3 text-center" onclick="event.stopPropagation()">
                 <button type="button"
                         class="btn btn-sm btn-outline-secondary btn-editar-remito rounded-pill"
@@ -48,7 +67,7 @@
             </td>
         </tr>
         <tr class="fila-detalle d-none">
-            <td colspan="6" class="px-4 py-3">
+            <td colspan="7" class="px-4 py-3">
                 <strong class="d-block mb-2 text-secondary text-uppercase small">Tareas realizadas</strong>
                 <ul class="mb-0 ps-3">
                     {% for d in detalles_por_trabajo.get(r['id_trabajo'], []) %}
@@ -59,7 +78,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="6" class="text-center py-5 text-muted">
+            <td colspan="7" class="text-center py-5 text-muted">
                 Aún no se han registrado trabajos en el sistema.
             </td>
         </tr>

@@ -39,7 +39,7 @@ def clientes():
 
     # Armamos la consulta de remitos, sumando el filtro de mes si corresponde
     query_remitos = """
-        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle, t.estado
         FROM trabajos t
         JOIN clientes c ON t.id_cliente = c.id_cliente
     """
@@ -97,7 +97,7 @@ def historial_cliente():
     ).fetchone()
     # 1. Armamos la consulta base y la lista de parámetros
     query = """
-        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle,
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle, t.estado,
                GROUP_CONCAT(tar.nom_tar, ', ') AS detalle_tareas
         FROM trabajos t
         LEFT JOIN detalle_trabajos dt ON t.id_trabajo = dt.id_trabajo

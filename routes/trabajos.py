@@ -212,3 +212,33 @@ def modificar_tarea():
         conexion.close()
 
     return redirect(url_for("trabajos_bp.precios"))
+
+
+# Endpoint asíncrono para marcar/desmarcar remito como pagado
+@trabajos_bp.route("/actualizar-estado", methods=["POST"])
+@login_requerido
+def actualizar_estado():
+    id_trabajo = parse_int_seguro(request.form.get("id_trabajo"))
+    nuevo_estado = request.form.get("estado", "").strip()
+
+    estados_validos = ("PENDIENTE", "EN PROCESO", "PAGADO")
+    if not id_trabajo or nuevo_estado not in estados_validos:
+        return jsonify({"exito": False, "mensaje": "Datos inválidos"}), 400
+
+    conexion = obtener_conexion()
+    try:
+        conexion.execute(
+            "UPDATE trabajos SET estado = ? WHERE id_trabajo = ?",
+            (nuevo_estado, id_trabajo),
+        )
+        conexion.commit()
+        registrar_auditoria(
+            "ESTADO_REMITO",
+            f"Trabajo ID {id_trabajo} marcado como '{nuevo_estado}'",
+        )
+        return jsonify({"exito": True, "estado": nuevo_estado})
+    except Exception as e:
+        logger.exception(f"Error al actualizar estado del trabajo ID {id_trabajo}: {e}")
+        return jsonify({"exito": False, "mensaje": "Error interno"}), 500
+    finally:
+        conexion.close()
