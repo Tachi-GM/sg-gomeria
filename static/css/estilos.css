@@ -106,6 +106,8 @@ body {
     border-radius: 20px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.08);
     width: 100%;
+    max-width: 650px;
+    margin: 0 auto;
 }
 .input-personalizado {
     background-color: var(--gris-fondo);
