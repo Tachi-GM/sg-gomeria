@@ -23,19 +23,22 @@ Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Su
 
 - **Mataburros (Emisión de Remitos):**
   - Registro de órdenes de trabajo con soporte para comprobantes oficiales (**OI**) y adicionales (**OIB**).
-  - Selección de cliente con asignación automática de lista de precios por defecto y condición de IVA.
+  - Selector manual de fecha (por defecto la fecha del día actual, con soporte para registrar remitos pasados o diferidos).
+  - Vinculación automática en tiempo real del cliente seleccionado con su lista de precios habitual (L1, L2, L3) y tipo de comprobante sugerido.
+  - Estandarización y validación estricta: formato `XXXXX` (5 dígitos numéricos) para **OI** y `00XXXX` (`00` seguido de 4 dígitos) para **OIB**.
   - Selección múltiple de tareas con controles interactivos de incremento/decremento de cantidades (+ / -).
   - Tres listas de precios diferenciadas por política comercial (L1: Lista base / L2: Clientes frecuentes / L3: Pago diferido).
   - Cálculo automático de subtotales, recargo por IVA (21%) y total final del trabajo.
 
 - **Módulo de Clientes:**
-  - Alta y consulta de empresas (Razón Social, CUIT con validación única, teléfono, email).
+  - Alta y consulta de empresas (Razón Social, CUIT con validación algorítmica de módulo 11 de AFIP, teléfono, email).
   - Asignación de condición impositiva (Con IVA / Sin IVA) y lista de precios habitual (1, 2 o 3).
   - Listado de clientes con buscador en tiempo real y vista en tarjetas.
   - Historial detallado por empresa con navegación mensual por pestañas y totales acumulados.
 
 - **Historial General y Remitos:**
   - Tabla interactiva de remitos con ordenamiento dinámico por columnas (fecha, número de remito, cliente, total y estado).
+  - Edición rápida de remitos existentes vía modal interactivo (permite modificar fecha, tipo y número de comprobante con validación asíncrona y control de duplicados).
   - Despliegue en acordeón de los renglones de tareas realizadas por remito sin recargar la página.
   - Actualización del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
 
@@ -93,10 +96,10 @@ SG - Gomería/
 │
 ├── utils/                      # Utilidades y funciones transversales
 │   ├── seguridad.py            # Decoradores login_requerido, solo_admin y auditoría
-│   └── formateadores.py        # Conversiones seguras de tipos (parse_int, parse_float) y filtros
+│   └── formateadores.py        # Validación CUIT (módulo 11), remitos OI/OIB, parse_int, parse_float
 │
 ├── services/                   # Capa de servicios y lógica de negocio desacoplada
-│   └── trabajos_service.py     # Procesamiento comercial, cálculo de IVA por tarea y persistencia
+│   └── trabajos_service.py     # Emisión, cálculo de IVA por tarea, edición transaccional y persistencia
 │
 ├── database/                   # Persistencia y base de datos
 │   ├── connection.py           # Conexión centralizada a SQLite (FK ON, row_factory)
@@ -203,7 +206,7 @@ Y luego abrir en el navegador: **http://127.0.0.1:5000/login**
 
 ## Ejecución de Pruebas y Calidad de Código
 
-El proyecto cuenta con **25 pruebas automatizadas** desarrolladas con el módulo nativo `unittest` de Python, alcanzando un **91% de cobertura de código**:
+El proyecto cuenta con **35 pruebas automatizadas** desarrolladas con el módulo nativo `unittest` de Python, alcanzando un **91% de cobertura de código**:
 
 ### 1. Ejecutar las pruebas
 ```bash
@@ -212,7 +215,7 @@ python -m unittest discover tests
 
 Salida esperada:
 ```
-Ran 25 tests in 0.664s
+Ran 35 tests in 0.890s
 OK
 ```
 
