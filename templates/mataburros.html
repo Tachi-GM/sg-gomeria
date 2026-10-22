@@ -129,9 +129,7 @@
                                         Selecciona una tarea realizada...
                                     </option>
                                     {% for t in tareas %}
-                                        <option value="{{ t['id_tarea'] }}" data-nombre="{{ t['nom_tar'] }}" data-precio1="{{ t['precio'] }}" data-precio2="{{ t['precio2'] }}" data-precio3="{{ t['precio3'] }}">
-                                            {{ t['nom_tar'] }} &mdash; ${{ "{:,.2f}".format(t['precio']) }}
-                                        </option>
+                                        <option value="{{ t['id_tarea'] }}" data-nombre="{{ t['nom_tar'] }}" data-precio1="{{ t['precio'] }}" data-precio2="{{ t['precio2'] }}" data-precio3="{{ t['precio3'] }}">{{ t['nom_tar'] }} — ${{ "{:,.2f}".format(t['precio']) }}</option>
                                     {% endfor %}
                                 </select>
 
