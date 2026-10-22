@@ -14,8 +14,7 @@ from pathlib import Path
 # Agregar raiz del proyecto al path de busqueda
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import app
-from database.connection import obtener_conexion
+from tests.support import app, obtener_conexion
 
 
 class TestSeguridadYAutenticacion(unittest.TestCase):
