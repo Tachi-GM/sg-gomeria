@@ -98,6 +98,8 @@ def editar_usuario(id_usuario):
 
     conexion = obtener_conexion()
     try:
+        # Serializa la comprobación del último administrador con la escritura.
+        conexion.execute("BEGIN IMMEDIATE")
         actual = conexion.execute(
             "SELECT id_usuario, usuario, rol FROM usuarios WHERE id_usuario = ?",
             (id_usuario,),
@@ -154,6 +156,8 @@ def eliminar_usuario(id_usuario):
     conexion = obtener_conexion()
     cerrar_sesion = False
     try:
+        # Evita que dos solicitudes simultáneas eliminen a los últimos admins.
+        conexion.execute("BEGIN IMMEDIATE")
         objetivo = conexion.execute(
             "SELECT id_usuario, usuario, rol FROM usuarios WHERE id_usuario = ?",
             (id_usuario,),
