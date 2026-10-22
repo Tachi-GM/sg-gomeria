@@ -110,7 +110,7 @@
                                 </form>
                             </td>
                             <td>
-                                <form method="POST" action="{{ url_for('usuarios_bp.eliminar_usuario', id_usuario=usuario['id_usuario']) }}" onsubmit="return confirm('¿Seguro que querés eliminar al usuario {{ usuario['usuario']|e }}?');">
+                                <form method="POST" action="{{ url_for('usuarios_bp.eliminar_usuario', id_usuario=usuario['id_usuario']) }}" onsubmit="return confirm('¿Seguro que querés eliminar este usuario?');">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" {% if usuarios|length == 1 %}title="No elimines la única cuenta" {% endif %}>Eliminar</button>
                                 </form>
                             </td>
