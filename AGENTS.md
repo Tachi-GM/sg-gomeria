@@ -10,6 +10,9 @@
 - Sé **directo y conciso**. Priorizá la claridad, sin perder la explicación necesaria para aprender.
 - Entregá siempre el **código en bloques markdown** con el lenguaje indicado.
 
+### Canario
+- Empezá cada respuesta con el nombre "Tachi".
+
 ### Honestidad
 
 - **No inventes datos**, APIs, comandos, versiones, precios ni resultados.
@@ -101,3 +104,10 @@ tests/                  # Pruebas automatizadas
 - Cuando se use un comando nuevo, explicar brevemente qué hace.
 - Si una tarea requiere varios pasos, mostrar el plan antes de ejecutarlo.
 - No modificar archivos sin avisar qué se va a cambiar y por qué.
+
+
+## Contexto dinámico del proyecto
+
+- **Al iniciar cada sesión nueva**, leer `CONTEXT.md` para conocer el estado actual del proyecto: estructura de carpetas, funcionalidades implementadas y pendientes.
+- Si el usuario menciona que agregó o cambió algo, actualizar la sección correspondiente del `CONTEXT.md` antes de continuar trabajando.
+- No preguntar qué se hizo antes: buscarlo en `CONTEXT.md` y en el historial de commits con `git log --oneline -15`.

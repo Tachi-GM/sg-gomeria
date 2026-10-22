@@ -10,4 +10,6 @@ backups/
 .env
 *.log
 .coverage
-htmlcov/
+htmlcov/
+opencode.jsonc
+.opencode/
