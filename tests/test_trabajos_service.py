@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from database.connection import obtener_conexion
+from tests.support import obtener_conexion
 from services.trabajos_service import crear_trabajo_completo, editar_cabecera_remito
 from utils.formateadores import validar_y_formatear_cuit, validar_y_formatear_remito
 

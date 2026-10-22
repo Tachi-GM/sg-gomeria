@@ -14,8 +14,7 @@ from pathlib import Path
 # Agregar raiz del proyecto al path de busqueda
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import app
-from database.connection import obtener_conexion
+from tests.support import app, obtener_conexion
 
 
 class TestSeguridadYAutenticacion(unittest.TestCase):
@@ -305,10 +304,14 @@ class TestRutasConSesionIniciada(unittest.TestCase):
     def test_backup_descarga_archivo_db(self):
         """Un usuario administrador puede descargar el resguardo de la BD."""
         respuesta = self.client.get("/backup")
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertIn(
-            "backup_gomeria_", respuesta.headers.get("Content-Disposition", "")
-        )
+        try:
+            self.assertEqual(respuesta.status_code, 200)
+            self.assertIn(
+                "backup_gomeria_", respuesta.headers.get("Content-Disposition", "")
+            )
+        finally:
+            # send_file mantiene abierto el archivo hasta cerrar la respuesta.
+            respuesta.close()
 
     def test_solo_admin_bloquea_usuario_comun(self):
         """Un usuario sin rol de admin es redirigido al intentar hacer backup."""
