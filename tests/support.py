@@ -19,6 +19,7 @@ TEST_DB_PATH = TEST_DIR / "sg_gomeria_tests.db"
 
 # Debe configurarse antes de importar la conexión, los servicios o la app.
 os.environ["DATABASE_PATH"] = str(TEST_DB_PATH)
+os.environ["SG_TESTING"] = "1"
 
 # Creamos el esquema real y los datos semilla que las pruebas existentes esperan.
 from database.init_db import crear_tablas, sembrar_datos_prueba  # noqa: E402
