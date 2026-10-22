@@ -146,6 +146,7 @@ def historial_cliente():
             detalles_por_trabajo.setdefault(d["id_trabajo"], []).append(d)
 
     cursor.close()
+    conexion.close()
     return render_template(
         "historial-cliente.html",
         cliente=cliente,
