@@ -1,7 +1,8 @@
 import os
-import shutil
+import sqlite3
 from datetime import datetime
-from flask import Blueprint, render_template, send_file
+from flask import Blueprint, current_app, render_template, send_file
+from database.connection import get_db_path
 from utils.seguridad import (
     login_requerido,
     solo_admin,
@@ -37,12 +38,19 @@ def hacer_backup():
     fecha_hora = datetime.now().strftime("%Y-%m-%d_%H-%M")
     nombre_archivo = f"backup_gomeria_{fecha_hora}.db"
 
-    # 2. Creamos una carpeta para guardar copias (si no existe)
-    os.makedirs("backups", exist_ok=True)
-    ruta_copia = os.path.join("backups", nombre_archivo)
+    # 2. Usamos la carpeta configurada (en tests, dentro del directorio temporal).
+    carpeta_backups = current_app.config.get("BACKUP_DIR", "backups")
+    os.makedirs(carpeta_backups, exist_ok=True)
+    ruta_copia = os.path.join(carpeta_backups, nombre_archivo)
 
-    # 3. Copiamos la base de datos actual a esa carpeta
-    shutil.copy("sg_gomeria.db", ruta_copia)
+    # 3. SQLite Backup API: copia consistente incluso si la base está en uso.
+    origen = sqlite3.connect(str(get_db_path()))
+    destino = sqlite3.connect(ruta_copia)
+    try:
+        origen.backup(destino)
+    finally:
+        destino.close()
+        origen.close()
 
     registrar_auditoria(
         "BACKUP_BD", f"Generado resguardo de base de datos: {nombre_archivo}"
