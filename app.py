@@ -17,10 +17,14 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler("sistema.log", encoding="utf-8"),
-        logging.StreamHandler(),
-    ],
+    handlers=(
+        [logging.StreamHandler()]
+        if os.getenv("SG_TESTING") == "1"
+        else [
+            logging.FileHandler("sistema.log", encoding="utf-8"),
+            logging.StreamHandler(),
+        ]
+    ),
 )
 logger = logging.getLogger("SG_Gomeria")
 
