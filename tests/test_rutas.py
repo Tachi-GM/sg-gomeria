@@ -304,10 +304,14 @@ class TestRutasConSesionIniciada(unittest.TestCase):
     def test_backup_descarga_archivo_db(self):
         """Un usuario administrador puede descargar el resguardo de la BD."""
         respuesta = self.client.get("/backup")
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertIn(
-            "backup_gomeria_", respuesta.headers.get("Content-Disposition", "")
-        )
+        try:
+            self.assertEqual(respuesta.status_code, 200)
+            self.assertIn(
+                "backup_gomeria_", respuesta.headers.get("Content-Disposition", "")
+            )
+        finally:
+            # send_file mantiene abierto el archivo hasta cerrar la respuesta.
+            respuesta.close()
 
     def test_solo_admin_bloquea_usuario_comun(self):
         """Un usuario sin rol de admin es redirigido al intentar hacer backup."""
