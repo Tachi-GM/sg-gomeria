@@ -85,7 +85,9 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
     except ValueError as exc:
         raise ErrorGomeros("La fecha no es válida.") from exc
     valor = _importe(importe)
-    concepto = (concepto or "").strip()[:200]
+    if tipo == "PAGO_SEMANAL" and fecha_obj.weekday() != 5:
+        raise ErrorGomeros("El pago semanal se registra el sábado.")
+    concepto = (concepto or "").strip()[:200
 
     if tipo == "GASTO_GENERAL":
         if id_gomero not in (None, ""):
