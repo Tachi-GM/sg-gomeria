@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function actualizarFormulario() {
     const esGasto = tipo.value === "GASTO_GENERAL";
     const esDescuento = tipo.value === "DESCUENTO_AGUINALDO";
+    if (esGasto) destino.value = "NO_APLICA";
+    else if (destino.value === "NO_APLICA" || !destino.value) destino.value = "SUELDO";
     if (esDescuento) destino.value = "AGUINALDO";
     if (tipo.value === "PAGO_SEMANAL") destino.value = "SUELDO";
     campoGomero.classList.toggle("d-none", esGasto);
@@ -22,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
     destino.required = !esGasto;
     periodo.required = !esGasto && (destino.value === "AGUINALDO" || esDescuento);
     if (esGasto) {
-      destino.value = "NO_APLICA";
       ayuda.textContent = "El gasto queda en la cuenta general y no modifica ningún sueldo.";
     } else if (esDescuento) {
       ayuda.textContent = "Registrá un descuento efectivamente aplicado al aguinaldo. No puede superar el saldo pendiente.";
