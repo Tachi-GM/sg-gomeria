@@ -45,10 +45,18 @@ class TestControlGomeros(unittest.TestCase):
         self.assertIn(b"Control semanal de gomeros", respuesta.data)
         self.assertIn(b"260.000", respuesta.data)
 
-    def test_usuario_comun_no_puede_ver_control(self):
+    def test_usuario_comun_puede_ver_control(self):
         with self.client.session_transaction() as sesion:
             sesion["rol"] = "usuario"
-        self.assertEqual(self.client.get("/gomeros").status_code, 302)
+        respuesta = self.client.get("/gomeros")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn(b"Control semanal de gomeros", respuesta.data)
+
+    def test_usuario_no_autenticado_es_redirigido(self):
+        with self.client.session_transaction() as sesion:
+            sesion.clear()
+        respuesta = self.client.get("/gomeros")
+        self.assertEqual(respuesta.status_code, 302)
 
     def test_adelanto_reduce_saldo_semanal(self):
         hoy = date.today().isoformat()
