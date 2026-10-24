@@ -1,4 +1,4 @@
-"""Rutas del control semanal de gomeros, restringidas a administradores."""
+"""Rutas del control semanal de gomeros para usuarios autenticados."""
 from datetime import date
 import logging
 
@@ -8,7 +8,7 @@ from services.gomeros_service import (
     ErrorGomeros, guardar_gomero, desactivar_gomero, registrar_movimiento,
     obtener_resumen, listar_gomeros, obtener_saldos_aguinaldo,
 )
-from utils.seguridad import login_requerido, solo_admin, registrar_auditoria
+from utils.seguridad import login_requerido, registrar_auditoria
 
 logger = logging.getLogger("SG_Gomeria")
 gomeros_bp = Blueprint("gomeros_bp", __name__)
@@ -21,7 +21,6 @@ def _volver_a_semana():
 
 @gomeros_bp.route("/gomeros")
 @login_requerido
-@solo_admin
 def control_gomeros():
     referencia = request.args.get("semana") or date.today().isoformat()
     try:
@@ -37,7 +36,6 @@ def control_gomeros():
 
 @gomeros_bp.route("/gomeros/crear", methods=["POST"])
 @login_requerido
-@solo_admin
 def crear_gomero():
     nombre = request.form.get("nombre", "").strip()
     try:
@@ -54,7 +52,6 @@ def crear_gomero():
 
 @gomeros_bp.route("/gomeros/editar/<int:id_gomero>", methods=["POST"])
 @login_requerido
-@solo_admin
 def editar_gomero(id_gomero):
     try:
         guardar_gomero(request.form.get("nombre"), request.form.get("sueldo_semanal", "260000"), id_gomero)
@@ -70,7 +67,6 @@ def editar_gomero(id_gomero):
 
 @gomeros_bp.route("/gomeros/desactivar/<int:id_gomero>", methods=["POST"])
 @login_requerido
-@solo_admin
 def desactivar(id_gomero):
     try:
         desactivar_gomero(id_gomero)
@@ -86,7 +82,6 @@ def desactivar(id_gomero):
 
 @gomeros_bp.route("/gomeros/movimiento", methods=["POST"])
 @login_requerido
-@solo_admin
 def nuevo_movimiento():
     try:
         registrar_movimiento(
@@ -108,7 +103,6 @@ def nuevo_movimiento():
 
 @gomeros_bp.route("/gomeros/movimiento/eliminar/<int:id_movimiento>", methods=["POST"])
 @login_requerido
-@solo_admin
 def eliminar_movimiento(id_movimiento):
     from database.connection import obtener_conexion
     conexion = obtener_conexion()
