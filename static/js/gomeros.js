@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     campoDestino.classList.toggle("d-none", esGasto || esDescuento);
     campoAguinaldo.classList.toggle("d-none", esGasto || (destino.value !== "AGUINALDO" && !esDescuento));
     selectorGomero.required = !esGasto;
+    selectorGomero.disabled = esGasto;
     destino.required = !esGasto;
     periodo.required = !esGasto && (destino.value === "AGUINALDO" || esDescuento);
     if (esGasto) {
