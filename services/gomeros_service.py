@@ -28,7 +28,8 @@ def listar_gomeros():
     conexion = obtener_conexion()
     try:
         return conexion.execute(
-            "SELECT id_gomero, nombre, sueldo_semanal FROM gomeros WHERE activo = 1 ORDER BY nombre COLLATE NOCASE"
+            """SELECT id_gomero, nombre, sueldo_semanal FROM gomeros
+               WHERE activo = 1 ORDER BY nombre COLLATE NOCASE"""
         ).fetchall()
     finally:
         conexion.close()
@@ -43,13 +44,17 @@ def guardar_gomero(nombre, sueldo_semanal="260000", id_gomero=None):
     try:
         if id_gomero:
             cursor = conexion.execute(
-                "UPDATE gomeros SET nombre = ?, sueldo_semanal = ? WHERE id_gomero = ? AND activo = 1",
+                """UPDATE gomeros SET nombre = ?, sueldo_semanal = ?
+                   WHERE id_gomero = ? AND activo = 1""",
                 (nombre, sueldo, id_gomero),
             )
             if cursor.rowcount != 1:
                 raise ErrorGomeros("No se encontró el gomero activo.")
         else:
-            conexion.execute("INSERT INTO gomeros (nombre, sueldo_semanal) VALUES (?, ?)", (nombre, sueldo))
+            conexion.execute(
+                "INSERT INTO gomeros (nombre, sueldo_semanal) VALUES (?, ?)",
+                (nombre, sueldo),
+            )
         conexion.commit()
     except sqlite3.IntegrityError as exc:
         conexion.rollback()
@@ -62,9 +67,13 @@ def guardar_gomero(nombre, sueldo_semanal="260000", id_gomero=None):
 
 
 def desactivar_gomero(id_gomero):
+    """Baja lógica: conserva al empleado y sus movimientos históricos."""
     conexion = obtener_conexion()
     try:
-        cursor = conexion.execute("UPDATE gomeros SET activo = 0 WHERE id_gomero = ? AND activo = 1", (id_gomero,))
+        cursor = conexion.execute(
+            "UPDATE gomeros SET activo = 0 WHERE id_gomero = ? AND activo = 1",
+            (id_gomero,),
+        )
         if cursor.rowcount != 1:
             raise ErrorGomeros("No se encontró el gomero activo.")
         conexion.commit()
@@ -77,17 +86,21 @@ def desactivar_gomero(id_gomero):
 
 def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLICA",
                          periodo_aguinaldo=None, concepto="", usuario=""):
+    """Valida y registra un movimiento completo dentro de una transacción."""
     tipos = {"ADELANTO", "PAGO_SEMANAL", "GASTO_GENERAL", "DESCUENTO_AGUINALDO"}
     if tipo not in tipos:
         raise ErrorGomeros("El tipo de movimiento no es válido.")
     try:
         fecha_obj = date.fromisoformat((fecha or "").strip())
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         raise ErrorGomeros("La fecha no es válida.") from exc
+
     valor = _importe(importe)
+    concepto = (concepto or "").strip()[:200]
+    usuario = (usuario or "").strip()[:50]
+
     if tipo == "PAGO_SEMANAL" and fecha_obj.weekday() != 5:
         raise ErrorGomeros("El pago semanal se registra el sábado.")
-    concepto = (concepto or "").strip()[:200
 
     if tipo == "GASTO_GENERAL":
         if id_gomero not in (None, ""):
@@ -100,10 +113,10 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
             raise ErrorGomeros("Seleccioná un gomero.") from exc
         if tipo == "DESCUENTO_AGUINALDO":
             destino = "AGUINALDO"
+        if tipo == "PAGO_SEMANAL":
+            destino = "SUELDO"
         if destino not in {"SUELDO", "AGUINALDO"}:
-            raise ErrorGomeros("Elegí si se descuenta del sueldo o del aguinaldo.")
-        if tipo == "PAGO_SEMANAL" and destino != "SUELDO":
-            raise ErrorGomeros("El pago semanal debe imputarse al sueldo.")
+            raise ErrorGomeros("Elegí si el adelanto se descuenta del sueldo o del aguinaldo.")
         if destino == "AGUINALDO":
             if not re.fullmatch(r"\d{4}-[12]", str(periodo_aguinaldo or "")):
                 raise ErrorGomeros("Elegí el período de aguinaldo (año y semestre).")
@@ -112,40 +125,58 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
 
     conexion = obtener_conexion()
     try:
+        # Serializa validación + INSERT para evitar superar el saldo por concurrencia.
         conexion.execute("BEGIN IMMEDIATE")
         if tipo != "GASTO_GENERAL":
             gomero = conexion.execute(
-                "SELECT id_gomero, sueldo_semanal FROM gomeros WHERE id_gomero = ? AND activo = 1",
+                """SELECT id_gomero, sueldo_semanal FROM gomeros
+                   WHERE id_gomero = ? AND activo = 1""",
                 (id_gomero,),
             ).fetchone()
             if gomero is None:
                 raise ErrorGomeros("El gomero no existe o está inactivo.")
+
             if destino == "SUELDO" and tipo in {"ADELANTO", "PAGO_SEMANAL"}:
                 lunes = inicio_semana(fecha_obj).isoformat()
                 domingo = (date.fromisoformat(lunes) + timedelta(days=6)).isoformat()
                 usado = conexion.execute(
-                    """SELECT COALESCE(SUM(importe), 0) AS total FROM movimientos_gomeros
-                       WHERE id_gomero = ? AND fecha BETWEEN ? AND ? AND destino = 'SUELDO'
-                       AND tipo IN ('ADELANTO', 'PAGO_SEMANAL')""",
+                    """SELECT COALESCE(SUM(importe), 0) AS total
+                       FROM movimientos_gomeros
+                       WHERE id_gomero = ? AND fecha BETWEEN ? AND ?
+                         AND destino = 'SUELDO'
+                         AND tipo IN ('ADELANTO', 'PAGO_SEMANAL')""",
                     (id_gomero, lunes, domingo),
                 ).fetchone()["total"]
                 if usado + valor > gomero["sueldo_semanal"]:
                     disponible = max(gomero["sueldo_semanal"] - usado, 0)
-                    raise ErrorGomeros("El movimiento supera el saldo semanal disponible: $" + format(disponible, ",.0f").replace(",", ".") + ".")
+                    importe_formateado = format(disponible, ",.0f").replace(",", ".")
+                    raise ErrorGomeros(
+                        "El movimiento supera el saldo semanal disponible: $" + importe_formateado + "."
+                    )
+
             if tipo == "DESCUENTO_AGUINALDO":
                 pendiente = conexion.execute(
-                    """SELECT COALESCE(SUM(CASE WHEN tipo = 'ADELANTO' THEN importe
-                       WHEN tipo = 'DESCUENTO_AGUINALDO' THEN -importe ELSE 0 END), 0) AS total
-                       FROM movimientos_gomeros WHERE id_gomero = ? AND periodo_aguinaldo = ?""",
+                    """SELECT COALESCE(SUM(
+                           CASE WHEN tipo = 'ADELANTO' THEN importe
+                                WHEN tipo = 'DESCUENTO_AGUINALDO' THEN -importe
+                                ELSE 0 END
+                       ), 0) AS total
+                       FROM movimientos_gomeros
+                       WHERE id_gomero = ? AND destino = 'AGUINALDO'
+                         AND periodo_aguinaldo = ?""",
                     (id_gomero, periodo_aguinaldo),
                 ).fetchone()["total"]
                 if valor > pendiente:
-                    raise ErrorGomeros("El descuento supera los adelantos pendientes de ese aguinaldo.")
+                    raise ErrorGomeros(
+                        "El descuento supera los adelantos pendientes de ese aguinaldo."
+                    )
+
         conexion.execute(
             """INSERT INTO movimientos_gomeros
                (id_gomero, tipo, fecha, importe, destino, periodo_aguinaldo, concepto, usuario)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (id_gomero, tipo, fecha_obj.isoformat(), valor, destino, periodo_aguinaldo, concepto or None, (usuario or "")[:50]),
+            (id_gomero, tipo, fecha_obj.isoformat(), valor, destino,
+             periodo_aguinaldo, concepto or None, usuario or None),
         )
         conexion.commit()
     except Exception:
@@ -156,29 +187,44 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
 
 
 def obtener_resumen(fecha_referencia=None):
-    fecha = date.fromisoformat(fecha_referencia) if fecha_referencia else date.today()
+    """Calcula los totales de la semana que contiene la fecha indicada."""
+    try:
+        fecha = date.fromisoformat(fecha_referencia) if fecha_referencia else date.today()
+    except (TypeError, ValueError) as exc:
+        raise ErrorGomeros("La fecha seleccionada no es válida.") from exc
     lunes = inicio_semana(fecha)
     domingo = lunes + timedelta(days=6)
     conexion = obtener_conexion()
     try:
         empleados = conexion.execute(
-            "SELECT id_gomero, nombre, sueldo_semanal FROM gomeros WHERE activo = 1 ORDER BY nombre COLLATE NOCASE"
+            """SELECT id_gomero, nombre, sueldo_semanal FROM gomeros
+               WHERE activo = 1 ORDER BY nombre COLLATE NOCASE"""
         ).fetchall()
         movimientos = conexion.execute(
-            """SELECT m.*, g.nombre AS nombre_gomero FROM movimientos_gomeros m
+            """SELECT m.*, g.nombre AS nombre_gomero
+               FROM movimientos_gomeros m
                LEFT JOIN gomeros g ON g.id_gomero = m.id_gomero
-               WHERE m.fecha BETWEEN ? AND ? ORDER BY m.fecha DESC, m.id_movimiento DESC""",
+               WHERE m.fecha BETWEEN ? AND ?
+               ORDER BY m.fecha DESC, m.id_movimiento DESC""",
             (lunes.isoformat(), domingo.isoformat()),
         ).fetchall()
         resumen = []
         for empleado in empleados:
             propios = [m for m in movimientos if m["id_gomero"] == empleado["id_gomero"]]
-            adelantos = sum(m["importe"] for m in propios if m["tipo"] == "ADELANTO" and m["destino"] == "SUELDO")
+            adelantos = sum(
+                m["importe"] for m in propios
+                if m["tipo"] == "ADELANTO" and m["destino"] == "SUELDO"
+            )
             pagos = sum(m["importe"] for m in propios if m["tipo"] == "PAGO_SEMANAL")
             por_dia = {}
-            for n in range(6):
-                dia = (lunes + timedelta(days=n)).isoformat()
-                por_dia[dia] = sum(m["importe"] for m in propios if m["fecha"] == dia and m["tipo"] in {"ADELANTO", "PAGO_SEMANAL"} and m["destino"] == "SUELDO")
+            for numero_dia in range(6):
+                dia = (lunes + timedelta(days=numero_dia)).isoformat()
+                por_dia[dia] = sum(
+                    m["importe"] for m in propios
+                    if m["fecha"] == dia
+                    and m["tipo"] in {"ADELANTO", "PAGO_SEMANAL"}
+                    and m["destino"] == "SUELDO"
+                )
             resumen.append({
                 "id_gomero": empleado["id_gomero"], "nombre": empleado["nombre"],
                 "sueldo": empleado["sueldo_semanal"], "adelantos": adelantos,
@@ -202,15 +248,20 @@ def obtener_resumen(fecha_referencia=None):
 
 
 def obtener_saldos_aguinaldo():
+    """Lista períodos de aguinaldo con adelantos todavía pendientes."""
     conexion = obtener_conexion()
     try:
         return conexion.execute(
             """SELECT g.id_gomero, g.nombre, m.periodo_aguinaldo,
                       SUM(CASE WHEN m.tipo = 'ADELANTO' THEN m.importe
-                               WHEN m.tipo = 'DESCUENTO_AGUINALDO' THEN -m.importe ELSE 0 END) AS pendiente
-               FROM movimientos_gomeros m JOIN gomeros g ON g.id_gomero = m.id_gomero
-               WHERE m.destino = 'AGUINALDO' GROUP BY g.id_gomero, g.nombre, m.periodo_aguinaldo
-               HAVING pendiente > 0 ORDER BY m.periodo_aguinaldo DESC, g.nombre COLLATE NOCASE"""
+                               WHEN m.tipo = 'DESCUENTO_AGUINALDO' THEN -m.importe
+                               ELSE 0 END) AS pendiente
+               FROM movimientos_gomeros m
+               JOIN gomeros g ON g.id_gomero = m.id_gomero
+               WHERE m.destino = 'AGUINALDO'
+               GROUP BY g.id_gomero, g.nombre, m.periodo_aguinaldo
+               HAVING pendiente > 0
+               ORDER BY m.periodo_aguinaldo DESC, g.nombre COLLATE NOCASE"""
         ).fetchall()
     finally:
         conexion.close()
