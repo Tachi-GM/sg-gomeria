@@ -63,6 +63,9 @@
                             <small>Revisar cobros y vencimientos</small>
                         </span>
                     </a>
+                    <a href="{{ url_for('gomeros_bp.control_gomeros') }}" class="btn btn-capsula px-5 shadow-sm col-8 col-sm-6 text-decoration-none text-center">
+                        Control semanal de gomeros
+                    </a>
                     {% if session.get('rol') == 'admin' %}
                     <a href="{{ url_for('usuarios_bp.listar_usuarios') }}" class="btn btn-capsula px-4 shadow-sm col-11 col-sm-8 text-decoration-none text-center">
                         <span class="accion-icono">🔐</span>

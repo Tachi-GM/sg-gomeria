@@ -652,3 +652,81 @@ body.modo-milagritos .hada-decorativa {
 body.modo-milagritos .codigo-error {
     color: #c9184a; /* coherencia con Modo Milagritos */
 }
+
+/* ===== CONTROL SEMANAL DE GOMEROS ===== */
+.control-gomeros {
+    background: linear-gradient(135deg, var(--crema), #fffaf5);
+    color: var(--texto-oscuro);
+}
+.tarjeta-resumen-gomero {
+    border: 1px solid var(--arena);
+    border-radius: 16px;
+    box-shadow: 0 5px 18px rgba(13, 27, 62, 0.06);
+}
+.encabezado-seccion-gomeros {
+    background: var(--azul-oscuro);
+    color: var(--blanco);
+    padding: 1rem 1.25rem;
+}
+.tabla-control-gomeros {
+    min-width: 980px;
+    font-size: 0.9rem;
+}
+.tabla-control-gomeros thead th {
+    background: var(--azul-suave);
+    color: var(--azul-oscuro);
+    font-size: 0.78rem;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.tabla-control-gomeros tbody td,
+.tabla-control-gomeros tbody th,
+.tabla-control-gomeros tfoot th,
+.tabla-control-gomeros tfoot td {
+    padding: .85rem .75rem;
+    border-color: var(--gris-borde);
+}
+.tabla-control-gomeros tbody tr:hover { background: #f2f5ff; }
+.nombre-gomero { min-width: 125px; white-space: nowrap; }
+.saldo-gomero {
+    display: inline-block;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    background: #e4f6e9;
+    color: #176534;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.saldo-pagado { background: #e2e8f0; color: #334155; }
+.control-gomeros .card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+.control-gomeros .form-control,
+.control-gomeros .form-select {
+    border-radius: 10px;
+    border-color: var(--gris-borde);
+    padding-top: .65rem;
+    padding-bottom: .65rem;
+}
+.control-gomeros .btn-primary {
+    background-color: var(--azul);
+    border-color: var(--azul);
+}
+.control-gomeros .btn-primary:hover {
+    background-color: var(--azul-hover);
+    border-color: var(--azul-hover);
+}
+body.modo-milagritos .encabezado-seccion-gomeros {
+    background: var(--magenta-texto);
+}
+body.modo-milagritos .tabla-control-gomeros thead th {
+    background: var(--rosa-claro);
+    color: var(--bordo-texto);
+}
+@media (max-width: 576px) {
+    .control-gomeros { padding-left: .75rem; padding-right: .75rem; }
+    .control-gomeros h1 { font-size: 1.55rem; }
+    .control-gomeros .h3 { font-size: 1.15rem; }
+}
