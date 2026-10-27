@@ -70,6 +70,7 @@ SG - Gomería/
 │   ├── clientes.html
 │   ├── historial-cliente.html
 │   ├── cheques.html
+│   ├── gomeros.html
 │   ├── precios.html
 │   ├── pagos.html
 │   ├── salir.html
@@ -128,6 +129,7 @@ SG - Gomería/
 - **Componente `tabla_remitos.html`:** reutilizable en clientes e historial.
 - **Backup en un clic:** descarga del archivo `.db` con timestamp.
 - **Inicio renovado:** menú descriptivo, resumen con métricas reales, gradiente, responsive y animaciones accesibles.
+- **Plantillas coherentes:** Precios, Usuarios, Gomeros y Cheques usan la herencia de `templates/base/base.html`; Login e Inicio conservan layouts propios por su función.
 - **Modo Milagritos 🧚:** tema visual rosa, toggle persistido en sesión.
 - **Tests automatizados:** `test_rutas.py` (integración) y `test_trabajos_service.py` (unitarios). Cobertura ~91%.
 - **Importador de clientes:** `importar_clientes.py` para migración masiva desde Excel.
