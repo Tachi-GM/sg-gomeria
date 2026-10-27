@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from flask import Blueprint, current_app, render_template, send_file
 from database.connection import get_db_path
+from services.dashboard_service import obtener_resumen_inicio
 from utils.seguridad import (
     login_requerido,
     solo_admin,
@@ -17,7 +18,11 @@ general_bp = Blueprint("general_bp", __name__)
 @general_bp.route("/")
 @login_requerido
 def home():
-    return render_template("index.html", milagritos=modo_activo())
+    return render_template(
+        "index.html",
+        milagritos=modo_activo(),
+        resumen=obtener_resumen_inicio(),
+    )
 
 
 @general_bp.route("/salir")

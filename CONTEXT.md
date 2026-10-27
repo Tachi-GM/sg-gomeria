@@ -48,6 +48,7 @@ SG - Gomería/
 │   └── trabajos.py             # Mataburros, envío de remito, actualización de estado
 │
 ├── services/
+│   ├── dashboard_service.py    # Métricas reales del resumen de inicio
 │   └── trabajos_service.py     # Lógica de negocio: crear_trabajo_completo(), editar_cabecera_remito()
 │
 ├── utils/
@@ -126,6 +127,7 @@ SG - Gomería/
 - **Herencia de plantillas Jinja2:** `base.html` implementado, los templates extienden de él.
 - **Componente `tabla_remitos.html`:** reutilizable en clientes e historial.
 - **Backup en un clic:** descarga del archivo `.db` con timestamp.
+- **Inicio renovado:** menú descriptivo, resumen con métricas reales, gradiente, responsive y animaciones accesibles.
 - **Modo Milagritos 🧚:** tema visual rosa, toggle persistido en sesión.
 - **Tests automatizados:** `test_rutas.py` (integración) y `test_trabajos_service.py` (unitarios). Cobertura ~91%.
 - **Importador de clientes:** `importar_clientes.py` para migración masiva desde Excel.

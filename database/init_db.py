@@ -98,10 +98,57 @@ def crear_tablas():
         contraseña TEXT NOT NULL,
         rol TEXT NOT NULL DEFAULT 'usuario' CHECK (rol IN ('usuario', 'admin'))
     );
+
+    -- 8. Personal: gomeros y su sueldo semanal configurado
+    CREATE TABLE IF NOT EXISTS gomeros (
+        id_gomero INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL COLLATE NOCASE UNIQUE,
+        sueldo_semanal INTEGER NOT NULL DEFAULT 260000 CHECK (sueldo_semanal > 0),
+        activo INTEGER NOT NULL DEFAULT 1 CHECK (activo IN (0, 1)),
+        creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 9. Movimientos: adelantos, pagos de sueldo, gastos generales y descuentos de aguinaldo
+    CREATE TABLE IF NOT EXISTS movimientos_gomeros (
+        id_movimiento INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_gomero INTEGER,
+        tipo TEXT NOT NULL CHECK (tipo IN ('ADELANTO', 'PAGO_SEMANAL', 'GASTO_GENERAL', 'DESCUENTO_AGUINALDO')),
+        fecha TEXT NOT NULL,
+        importe INTEGER NOT NULL CHECK (importe > 0),
+        destino TEXT NOT NULL CHECK (destino IN ('SUELDO', 'AGUINALDO', 'NO_APLICA')),
+        periodo_aguinaldo TEXT,
+        concepto TEXT,
+        usuario TEXT,
+        creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_gomero) REFERENCES gomeros(id_gomero) ON DELETE RESTRICT,
+        CHECK (
+            (tipo = 'GASTO_GENERAL' AND id_gomero IS NULL AND destino = 'NO_APLICA')
+            OR (tipo != 'GASTO_GENERAL' AND id_gomero IS NOT NULL AND destino IN ('SUELDO', 'AGUINALDO'))
+        ),
+        CHECK (
+            (destino = 'AGUINALDO' AND periodo_aguinaldo IS NOT NULL)
+            OR (destino != 'AGUINALDO' AND periodo_aguinaldo IS NULL)
+        )
+    );
+    CREATE INDEX IF NOT EXISTS idx_movimientos_gomeros_fecha
+        ON movimientos_gomeros(fecha);
+    CREATE INDEX IF NOT EXISTS idx_movimientos_gomeros_gomero_fecha
+        ON movimientos_gomeros(id_gomero, fecha);
     """
     conexion = obtener_conexion()
     try:
         conexion.executescript(ddl_script)
+        # Gomeros iniciales solicitados; INSERT OR IGNORE no reactiva bajas lógicas.
+        conexion.executemany(
+            "INSERT OR IGNORE INTO gomeros (nombre, sueldo_semanal) VALUES (?, ?)",
+            [
+                ("Sebastián", 260000),
+                ("Lucas", 260000),
+                ("Marcelo", 260000),
+                ("Braian", 260000),
+                ("Javier", 260000),
+            ],
+        )
         conexion.commit()
         print(f"[OK] Estructura de tablas creada con exito en: {get_db_path()}")
     finally:
