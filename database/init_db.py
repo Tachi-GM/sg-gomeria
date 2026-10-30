@@ -134,7 +134,23 @@ def crear_tablas():
         ON movimientos_gomeros(fecha);
     CREATE INDEX IF NOT EXISTS idx_movimientos_gomeros_gomero_fecha
         ON movimientos_gomeros(id_gomero, fecha);
+
+    --10. Ausencias:  registro de los días que no asistieron
+     CREATE TABLE IF NOT EXISTS ausencias_gomeros (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gomero_id INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+        FOREIGN KEY (gomero_id)
+            REFERENCES gomeros(id_gomero),
+
+        UNIQUE (gomero_id, fecha)
+    )
     """
+
+
+    
     conexion = obtener_conexion()
     try:
         conexion.executescript(ddl_script)
@@ -142,11 +158,11 @@ def crear_tablas():
         conexion.executemany(
             "INSERT OR IGNORE INTO gomeros (nombre, sueldo_semanal) VALUES (?, ?)",
             [
-                ("Sebastián", 260000),
-                ("Lucas", 260000),
-                ("Marcelo", 260000),
-                ("Braian", 260000),
-                ("Javier", 260000),
+                ("Sebastián", 300000),
+                ("Lucas", 300000),
+                ("Marcelo", 350000),
+                ("Braian", 300000),
+                ("Javier", 400000),
             ],
         )
         conexion.commit()

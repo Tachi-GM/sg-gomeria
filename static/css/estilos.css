@@ -316,6 +316,13 @@ body {
     background-color: var(--azul-oscuro); /* Mismo color oscuro del texto */
 }
 
+.dia-ausente {
+    background-color: #fce8e8 !important;
+    color: #a52a2a;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
 .logo-empresa {
     max-width: 80%;
     height: auto;

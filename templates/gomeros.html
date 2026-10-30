@@ -5,11 +5,7 @@
 
 {% block content %}
 <div class="container-fluid container-xl py-4 py-lg-5 control-gomeros">
-<div class="mb-4">
-    <p class="text-muted mb-1">Administración · Personal</p>
-    <h2 class="h2 mb-1">Control semanal de gomeros</h2>
-    <p class="text-muted mb-0">Adelantos, cierre del sábado y gastos generales, separados.</p>
-</div>
+
 {% with mensajes = get_flashed_messages(with_categories=true) %}{% for categoria, msg in mensajes %}<div class="alert alert-{{ categoria }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}{% endwith %}
 <section class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3"><div class="d-flex align-items-center gap-2"><a class="btn btn-light border rounded-circle" href="{{ url_for('gomeros_bp.control_gomeros', semana=resumen.anterior) }}">‹</a><div class="fw-bold">{{ resumen.lunes.strftime('%d/%m/%Y') }} — {{ resumen.sabado.strftime('%d/%m/%Y') }}<small class="d-block text-muted fw-normal">Semana de lunes a sábado</small></div><a class="btn btn-light border rounded-circle" href="{{ url_for('gomeros_bp.control_gomeros', semana=resumen.siguiente) }}">›</a></div><form class="d-flex gap-2 align-items-center" method="get"><label for="semana">Ir a semana</label><input id="semana" class="form-control" type="date" name="semana" value="{{ resumen.lunes.isoformat() }}"><button class="btn btn-primary rounded-pill">Ver</button><a class="btn btn-outline-primary rounded-pill" href="{{ url_for('gomeros_bp.control_gomeros') }}">Actual</a></form></section>
 <section class="row g-3 mb-4">
