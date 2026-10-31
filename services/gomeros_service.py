@@ -24,6 +24,92 @@ def _importe(valor):
     return numero
 
 
+def _fecha_valida(fecha):
+    try:
+        return date.fromisoformat((fecha or "").strip())
+    except (TypeError, ValueError) as exc:
+        raise ErrorGomeros("La fecha no es válida.") from exc
+
+
+def _obtener_ausencias(conexion, id_gomero, lunes, sabado):
+    filas = conexion.execute(
+        """
+        SELECT fecha
+        FROM ausencias_gomeros
+        WHERE gomero_id = ? AND fecha BETWEEN ? AND ?
+        ORDER BY fecha
+        """,
+        (id_gomero, lunes.isoformat(), sabado.isoformat()),
+    ).fetchall()
+    return {fila["fecha"] for fila in filas}
+
+
+def _calcular_descuento_ausencias(sueldo_semanal, cantidad_ausencias):
+    return round(sueldo_semanal * cantidad_ausencias / 6)
+
+
+def _validar_gomero(conexion, id_gomero):
+    try:
+        id_gomero = int(id_gomero)
+    except (TypeError, ValueError) as exc:
+        raise ErrorGomeros("Seleccioná un gomero válido.") from exc
+    gomero = conexion.execute(
+        "SELECT id_gomero, sueldo_semanal FROM gomeros WHERE id_gomero = ?",
+        (id_gomero,),
+    ).fetchone()
+    if gomero is None:
+        raise ErrorGomeros("El gomero no existe.")
+    return gomero
+
+
+def registrar_ausencia(gomero_id, fecha):
+    """Registra una ausencia idempotente para un gomero y una fecha."""
+    fecha_obj = _fecha_valida(fecha)
+    conexion = obtener_conexion()
+    try:
+        conexion.execute("BEGIN IMMEDIATE")
+        _validar_gomero(conexion, gomero_id)
+        conexion.execute(
+            """
+            INSERT INTO ausencias_gomeros (gomero_id, fecha)
+            VALUES (?, ?)
+            ON CONFLICT(gomero_id, fecha) DO NOTHING
+            """,
+            (int(gomero_id), fecha_obj.isoformat()),
+        )
+        conexion.commit()
+    except ErrorGomeros:
+        conexion.rollback()
+        raise
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        conexion.close()
+
+
+def eliminar_ausencia(gomero_id, fecha):
+    """Elimina únicamente la ausencia indicada, sin afectar otras fechas."""
+    fecha_obj = _fecha_valida(fecha)
+    conexion = obtener_conexion()
+    try:
+        conexion.execute("BEGIN IMMEDIATE")
+        _validar_gomero(conexion, gomero_id)
+        conexion.execute(
+            "DELETE FROM ausencias_gomeros WHERE gomero_id = ? AND fecha = ?",
+            (int(gomero_id), fecha_obj.isoformat()),
+        )
+        conexion.commit()
+    except ErrorGomeros:
+        conexion.rollback()
+        raise
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        conexion.close()
+
+
 def listar_gomeros():
     conexion = obtener_conexion()
     try:
@@ -90,10 +176,7 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
     tipos = {"ADELANTO", "PAGO_SEMANAL", "GASTO_GENERAL", "DESCUENTO_AGUINALDO"}
     if tipo not in tipos:
         raise ErrorGomeros("El tipo de movimiento no es válido.")
-    try:
-        fecha_obj = date.fromisoformat((fecha or "").strip())
-    except (TypeError, ValueError) as exc:
-        raise ErrorGomeros("La fecha no es válida.") from exc
+    fecha_obj = _fecha_valida(fecha)
 
     valor = _importe(importe)
     concepto = (concepto or "").strip()[:200]
@@ -137,18 +220,23 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
                 raise ErrorGomeros("El gomero no existe o está inactivo.")
 
             if destino == "SUELDO" and tipo in {"ADELANTO", "PAGO_SEMANAL"}:
-                lunes = inicio_semana(fecha_obj).isoformat()
-                domingo = (date.fromisoformat(lunes) + timedelta(days=6)).isoformat()
+                lunes = inicio_semana(fecha_obj)
+                sabado = lunes + timedelta(days=5)
                 usado = conexion.execute(
                     """SELECT COALESCE(SUM(importe), 0) AS total
                        FROM movimientos_gomeros
                        WHERE id_gomero = ? AND fecha BETWEEN ? AND ?
                          AND destino = 'SUELDO'
                          AND tipo IN ('ADELANTO', 'PAGO_SEMANAL')""",
-                    (id_gomero, lunes, domingo),
+                    (id_gomero, lunes.isoformat(), sabado.isoformat()),
                 ).fetchone()["total"]
-                if usado + valor > gomero["sueldo_semanal"]:
-                    disponible = max(gomero["sueldo_semanal"] - usado, 0)
+                ausencias = _obtener_ausencias(conexion, id_gomero, lunes, sabado)
+                descuento = _calcular_descuento_ausencias(
+                    gomero["sueldo_semanal"], len(ausencias)
+                )
+                sueldo_disponible = max(gomero["sueldo_semanal"] - descuento, 0)
+                if usado + valor > sueldo_disponible:
+                    disponible = max(sueldo_disponible - usado, 0)
                     importe_formateado = format(disponible, ",.0f").replace(",", ".")
                     raise ErrorGomeros(
                         "El movimiento supera el saldo semanal disponible: $" + importe_formateado + "."
@@ -211,6 +299,10 @@ def obtener_resumen(fecha_referencia=None):
         resumen = []
         for empleado in empleados:
             propios = [m for m in movimientos if m["id_gomero"] == empleado["id_gomero"]]
+            ausencias = _obtener_ausencias(conexion, empleado["id_gomero"], lunes, lunes + timedelta(days=5))
+            descuento_ausencias = _calcular_descuento_ausencias(
+                empleado["sueldo_semanal"], len(ausencias)
+            )
             adelantos = sum(
                 m["importe"] for m in propios
                 if m["tipo"] == "ADELANTO" and m["destino"] == "SUELDO"
@@ -228,7 +320,21 @@ def obtener_resumen(fecha_referencia=None):
             resumen.append({
                 "id_gomero": empleado["id_gomero"], "nombre": empleado["nombre"],
                 "sueldo": empleado["sueldo_semanal"], "adelantos": adelantos,
-                "pagos": pagos, "saldo": empleado["sueldo_semanal"] - adelantos - pagos,
+                "pagos": pagos, "ausencias": len(ausencias),
+                "ausencias_por_dia": {
+                    dia: dia in ausencias
+                    for dia in (
+                        (lunes + timedelta(days=n)).isoformat() for n in range(6)
+                    )
+                },
+                "descuento_ausencias": descuento_ausencias,
+                "saldo": max(
+                    empleado["sueldo_semanal"]
+                    - descuento_ausencias
+                    - adelantos
+                    - pagos,
+                    0,
+                ),
                 "por_dia": por_dia,
             })
         gastos = [m for m in movimientos if m["tipo"] == "GASTO_GENERAL"]

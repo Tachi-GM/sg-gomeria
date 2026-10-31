@@ -710,6 +710,24 @@ body.modo-milagritos .codigo-error {
 }
 .tabla-control-gomeros tbody tr:hover { background: #f2f5ff; }
 .nombre-gomero { min-width: 125px; white-space: nowrap; }
+.selector-asistencia {
+    min-width: 72px;
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+    color: var(--texto-oscuro);
+    font-size: 0.72rem;
+    padding: 0.25rem 1.4rem 0.25rem 0.4rem;
+}
+.dia-ausente {
+    background-color: #fce8e8 !important;
+    color: #a52a2a;
+    border-color: #f5c6c6;
+}
+.dia-ausente .selector-asistencia {
+    background-color: #fce8e8;
+    color: #a52a2a;
+    border-color: #e8aaaa;
+}
 .saldo-gomero {
     display: inline-block;
     padding: .35rem .65rem;
@@ -745,6 +763,12 @@ body.modo-milagritos .encabezado-seccion-gomeros {
 body.modo-milagritos .tabla-control-gomeros thead th {
     background: var(--rosa-claro);
     color: var(--bordo-texto);
+}
+body.modo-milagritos .dia-ausente,
+body.modo-milagritos .dia-ausente .selector-asistencia {
+    background-color: #ffe0e8 !important;
+    color: var(--magenta-texto);
+    border-color: var(--rosa-borde);
 }
 @media (max-width: 576px) {
     .control-gomeros { padding-left: .75rem; padding-right: .75rem; }

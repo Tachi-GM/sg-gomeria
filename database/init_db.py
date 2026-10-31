@@ -143,14 +143,14 @@ def crear_tablas():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
         FOREIGN KEY (gomero_id)
-            REFERENCES gomeros(id_gomero),
+            REFERENCES gomeros(id_gomero) ON DELETE RESTRICT,
 
         UNIQUE (gomero_id, fecha)
-    )
+    );
+    CREATE INDEX IF NOT EXISTS idx_ausencias_gomeros_gomero_fecha
+        ON ausencias_gomeros(gomero_id, fecha);
     """
 
-
-    
     conexion = obtener_conexion()
     try:
         conexion.executescript(ddl_script)

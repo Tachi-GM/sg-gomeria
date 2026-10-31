@@ -2,16 +2,21 @@
 from datetime import date
 import logging
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from services.gomeros_service import (
     ErrorGomeros, guardar_gomero, desactivar_gomero, registrar_movimiento,
     obtener_resumen, listar_gomeros, obtener_saldos_aguinaldo,
+    registrar_ausencia, eliminar_ausencia,
 )
 from utils.seguridad import login_requerido, registrar_auditoria
 
 logger = logging.getLogger("SG_Gomeria")
 gomeros_bp = Blueprint("gomeros_bp", __name__)
+
+
+def _booleano_formulario(valor):
+    return str(valor).strip().lower() in {"1", "true", "si", "sí", "on"}
 
 
 def _volver_a_semana():
@@ -91,7 +96,11 @@ def nuevo_movimiento():
             periodo_aguinaldo=request.form.get("periodo_aguinaldo") or None,
             concepto=request.form.get("concepto"), usuario=session.get("usuario", ""),
         )
-        registrar_auditoria("MOVIMIENTO_GOMEROS", f"Tipo {request.form.get('tipo')}; importe {request.form.get('importe')}")
+        registrar_auditoria(
+            "MOVIMIENTO_GOMEROS",
+            f"Tipo {request.form.get('tipo')}; "
+            f"importe {request.form.get('importe')}",
+        )
         flash("Movimiento registrado correctamente.", "success")
     except ErrorGomeros as exc:
         flash(str(exc), "danger")
@@ -99,6 +108,44 @@ def nuevo_movimiento():
         logger.exception("Error al registrar movimiento de gomeros")
         flash("No se pudo registrar el movimiento.", "danger")
     return _volver_a_semana()
+
+
+@gomeros_bp.route("/gomeros/ausencia", methods=["POST"])
+@login_requerido
+def cambiar_ausencia():
+    datos_json = request.get_json(silent=True) or {}
+    gomero_id = request.form.get("gomero_id") or datos_json.get("gomero_id")
+    fecha = request.form.get("fecha") or datos_json.get("fecha")
+    ausente = _booleano_formulario(
+        request.form.get("ausente", datos_json.get("ausente", False))
+    )
+    try:
+        if ausente:
+            registrar_ausencia(gomero_id, fecha)
+        else:
+            eliminar_ausencia(gomero_id, fecha)
+        resumen = obtener_resumen(fecha)
+        fila = next(
+            gomero for gomero in resumen["gomeros"]
+            if gomero["id_gomero"] == int(gomero_id)
+        )
+        return jsonify({
+            "exito": True,
+            "gomero_id": int(gomero_id),
+            "fecha": fecha,
+            "ausente": ausente,
+            "saldo": fila["saldo"],
+            "descuento_ausencias": fila["descuento_ausencias"],
+            "ausencias": fila["ausencias"],
+        })
+    except (ErrorGomeros, ValueError) as exc:
+        return jsonify({"exito": False, "mensaje": str(exc)}), 400
+    except Exception:
+        logger.exception("Error al cambiar asistencia de gomero")
+        return jsonify({
+            "exito": False,
+            "mensaje": "No se pudo actualizar la asistencia.",
+        }), 500
 
 
 @gomeros_bp.route("/gomeros/movimiento/eliminar/<int:id_movimiento>", methods=["POST"])
@@ -117,7 +164,11 @@ def eliminar_movimiento(id_movimiento):
         else:
             conexion.execute("DELETE FROM movimientos_gomeros WHERE id_movimiento = ?", (id_movimiento,))
             conexion.commit()
-            registrar_auditoria("ELIMINACION_MOVIMIENTO_GOMEROS", f"ID {id_movimiento}; tipo {fila['tipo']}; importe {fila['importe']}")
+            registrar_auditoria(
+                "ELIMINACION_MOVIMIENTO_GOMEROS",
+                f"ID {id_movimiento}; tipo {fila['tipo']}; "
+                f"importe {fila['importe']}",
+            )
             flash("Movimiento eliminado.", "success")
     except Exception:
         conexion.rollback()

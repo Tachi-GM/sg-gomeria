@@ -49,6 +49,7 @@ SG - Gomería/
 │
 ├── services/
 │   ├── dashboard_service.py    # Métricas reales del resumen de inicio
+│   ├── gomeros_service.py      # Sueldos, movimientos y ausencias de gomeros
 │   └── trabajos_service.py     # Lógica de negocio: crear_trabajo_completo(), editar_cabecera_remito()
 │
 ├── utils/
@@ -108,6 +109,7 @@ SG - Gomería/
 | `cheques` | E-checks recibidos | `numero`, `banco`, `endosado`, `estado`, `id_cliente` |
 | `usuarios` | Acceso al sistema | `usuario`, `contraseña` (hash), `rol` (usuario/admin) |
 | `vehiculos` | Vehículos por cliente | `patente`, `id_cliente` |
+| `ausencias_gomeros` | Días no trabajados | `gomero_id`, `fecha`, `created_at` |
 
 ---
 
@@ -125,6 +127,7 @@ SG - Gomería/
 - **Historial por cliente:** pestañas por mes/año, total del período, desglose por tarea.
 - **Módulo de Cheques:** CRUD completo persistido en SQLite (número, banco, cliente, endosado, fecha de emisión, fecha de cobro, importe, estado).
 - **Lista de precios:** vista y gestión de las 3 listas por tarea. Campo `activa` para activar/desactivar servicios.
+- **Asistencia de gomeros:** selector por día, persistencia de ausencias y descuento proporcional del sueldo semanal.
 - **Herencia de plantillas Jinja2:** `base.html` implementado, los templates extienden de él.
 - **Componente `tabla_remitos.html`:** reutilizable en clientes e historial.
 - **Backup en un clic:** descarga del archivo `.db` con timestamp.
