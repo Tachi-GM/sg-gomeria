@@ -8,6 +8,20 @@ def obtener_resumen_inicio(fecha_referencia=None):
     fecha = fecha_referencia or date.today()
     fecha_iso = fecha.isoformat()
     mes_actual = fecha.strftime("%Y-%m")
+    nombres_meses = (
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+    )
 
     conexion = obtener_conexion()
     try:
@@ -44,6 +58,7 @@ def obtener_resumen_inicio(fecha_referencia=None):
             "remitos_pendientes": remitos_pendientes,
             "total_mes": float(total_mes or 0),
             "cheques_por_vencer": cheques_por_vencer,
+            "periodo_mes": f"{nombres_meses[fecha.month - 1]} {fecha.year}",
         }
     finally:
         conexion.close()

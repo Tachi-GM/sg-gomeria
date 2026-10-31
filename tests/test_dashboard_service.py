@@ -63,6 +63,7 @@ class TestDashboardService(unittest.TestCase):
             resumen["cheques_por_vencer"],
             self.resumen_base["cheques_por_vencer"] + 1,
         )
+        self.assertEqual(resumen["periodo_mes"], "octubre 2026")
 
 
 if __name__ == "__main__":
