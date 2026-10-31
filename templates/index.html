@@ -99,26 +99,23 @@
                         <p class="saludo-inicio mb-1">Hola, {{ session.get('usuario', 'equipo') }} 👋</p>
                         <p class="descripcion-inicio mb-4">Este es el resumen de actividad de tu gomería.</p>
                     </div>
-                    <div class="metricas-inicio row g-3">
-                        <div class="col-12 col-lg-4">
+                    <div class="metricas-inicio row g-2 g-lg-3">
+                        <div class="col-6 col-lg-4">
                             <div class="metrica-inicio h-100">
-                                <span class="metrica-icono">📋</span>
                                 <strong>{{ resumen.remitos_pendientes }}</strong>
                                 <small>Remitos pendientes</small>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-4">
+                        <div class="col-6 col-lg-4">
                             <div class="metrica-inicio h-100">
-                                <span class="metrica-icono">💰</span>
                                 <strong>${{ "{:,.0f}".format(resumen.total_mes).replace(",", ".") }}</strong>
-                                <small>Total del mes</small>
+                                <small>Total ARS · {{ resumen.periodo_mes }}</small>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-4">
+                        <div class="col-6 col-lg-4">
                             <div class="metrica-inicio h-100">
-                                <span class="metrica-icono">⏰</span>
                                 <strong>{{ resumen.cheques_por_vencer }}</strong>
-                                <small>Cheques por vencer</small>
+                                <small>Cheques · próximos 30 días</small>
                             </div>
                         </div>
                     </div>
