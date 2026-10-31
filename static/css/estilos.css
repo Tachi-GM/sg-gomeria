@@ -38,7 +38,9 @@
 }
 
 .logo-home {
+    display: block;
     max-width: 72%;
+    margin-inline: auto;
     height: auto;
     filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
 }
