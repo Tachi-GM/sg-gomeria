@@ -1,4 +1,46 @@
 document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".selector-asistencia").forEach((selector) => {
+    selector.addEventListener("change", async () => {
+      const celda = selector.closest("td");
+      const estadoAnterior = selector.dataset.estadoAnterior;
+      const datos = new URLSearchParams({
+        gomero_id: selector.dataset.gomeroId,
+        fecha: selector.dataset.fecha,
+        ausente: selector.value,
+      });
+
+      selector.disabled = true;
+      try {
+        const respuesta = await fetch("/gomeros/ausencia", {
+          method: "POST",
+          headers: {"Content-Type": "application/x-www-form-urlencoded"},
+          body: datos,
+        });
+        const resultado = await respuesta.json();
+        if (!respuesta.ok || !resultado.exito) {
+          throw new Error(resultado.mensaje || "No se pudo actualizar la asistencia.");
+        }
+        selector.dataset.estadoAnterior = selector.value;
+        celda.classList.toggle("dia-ausente", resultado.ausente);
+        const saldo = document.querySelector(
+          `[data-saldo-gomero="${resultado.gomero_id}"]`
+        );
+        const descuento = document.querySelector(
+          `[data-descuento-gomero="${resultado.gomero_id}"]`
+        );
+        if (saldo) saldo.textContent = `$${resultado.saldo.toLocaleString("es-AR")}`;
+        if (descuento) {
+          descuento.textContent = `$${resultado.descuento_ausencias.toLocaleString("es-AR")}`;
+        }
+      } catch (error) {
+        selector.value = estadoAnterior;
+        window.alert(error.message);
+      } finally {
+        selector.disabled = false;
+      }
+    });
+  });
+
   const tipo = document.getElementById("tipo");
   const campoGomero = document.querySelector(".campo-gomero");
   const campoDestino = document.querySelector(".campo-destino");
