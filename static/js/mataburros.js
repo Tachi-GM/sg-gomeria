@@ -4,6 +4,13 @@ let instanciasChoicesTareas = [];
 
 // Constantes
 const TAREAS_DATA = JSON.parse(document.getElementById('tareas-data').textContent);
+const TAREAS_TEMPORALES = JSON.parse(
+    document.getElementById('tareas-temporales-data').textContent
+).map(tarea => ({
+    ...tarea,
+    id_tarea: `temporal:${tarea.token}`,
+}));
+TAREAS_DATA.push(...TAREAS_TEMPORALES);
 const COLUMNA_PRECIO = { 1: 'precio', 2: 'precio2', 3: 'precio3' };
 const TASA_IVA = 1.21;
 const CLIENTES_DATA = JSON.parse(document.getElementById('clientes-data').textContent);

@@ -21,6 +21,7 @@ def crear_trabajo_completo(
     tareas_raw,
     cantidades_raw,
     fecha=None,
+    tareas_temporales=None,
 ):
     """
     Procesa y registra un remito y sus renglones en la base de datos.
@@ -51,9 +52,38 @@ def crear_trabajo_completo(
     columnas_precio = {"1": "precio", "2": "precio2", "3": "precio3"}
     columna_elegida = columnas_precio.get(tipo_lista, "precio")
 
-    # Filtrar solo tareas con id numérico válido
-    ids_tareas = [parse_int_seguro(t) for t in tareas_raw if parse_int_seguro(t) > 0]
-    if not ids_tareas:
+    temporales_por_token = {
+        tarea.get("token"): tarea
+        for tarea in (tareas_temporales or [])
+        if tarea.get("token")
+    }
+    tareas_seleccionadas = []
+    for indice, tarea_raw in enumerate(tareas_raw):
+        if str(tarea_raw).startswith("temporal:"):
+            token = str(tarea_raw).split(":", 1)[1]
+            tarea_temporal = temporales_por_token.get(token)
+            if tarea_temporal:
+                tareas_seleccionadas.append(
+                    (
+                        "temporal",
+                        token,
+                        tarea_temporal,
+                        cantidades_raw[indice] if indice < len(cantidades_raw) else "1",
+                    )
+                )
+        else:
+            id_tarea = parse_int_seguro(tarea_raw)
+            if id_tarea > 0:
+                tareas_seleccionadas.append(
+                    (
+                        "persistente",
+                        id_tarea,
+                        None,
+                        cantidades_raw[indice] if indice < len(cantidades_raw) else "1",
+                    )
+                )
+
+    if not tareas_seleccionadas:
         return False, "Error: Debes seleccionar al menos una tarea válida"
 
     conexion = obtener_conexion()
@@ -72,14 +102,22 @@ def crear_trabajo_completo(
         # B. Calcular precios tarea por tarea
         total_trabajo = 0.0
         detalles_a_guardar = []
+        detalles_temporales_a_guardar = []
 
-        for id_t, cant in zip(ids_tareas, cantidades_raw):
+        for tipo_tarea, id_t, tarea_temporal, cant in tareas_seleccionadas:
             cantidad = max(1, parse_int_seguro(cant, 1))
-            cursor.execute(
-                f"SELECT nom_tar, {columna_elegida} AS precio_final FROM tareas WHERE id_tarea = ?",
-                (id_t,),
-            )
-            fila = cursor.fetchone()
+            if tipo_tarea == "temporal":
+                fila = {
+                    "nom_tar": tarea_temporal["nom_tar"],
+                    "precio_final": tarea_temporal.get(columna_elegida, 0),
+                }
+            else:
+                cursor.execute(
+                    f"SELECT nom_tar, {columna_elegida} AS precio_final "
+                    "FROM tareas WHERE id_tarea = ?",
+                    (id_t,),
+                )
+                fila = cursor.fetchone()
             if fila:
                 precio_lista = parse_float_seguro(fila["precio_final"], 0.0)
 
@@ -91,7 +129,14 @@ def crear_trabajo_completo(
 
                 subtotal = round(precio_unitario * cantidad, 2)
                 total_trabajo += subtotal
-                detalles_a_guardar.append((id_t, cantidad, precio_unitario, subtotal))
+                if tipo_tarea == "temporal":
+                    detalles_temporales_a_guardar.append(
+                        (tarea_temporal["nom_tar"], cantidad, precio_unitario, subtotal)
+                    )
+                else:
+                    detalles_a_guardar.append(
+                        (id_t, cantidad, precio_unitario, subtotal)
+                    )
 
         # El total es la suma exacta de los renglones
         total_trabajo = round(total_trabajo, 2)
@@ -115,6 +160,15 @@ def crear_trabajo_completo(
                 VALUES (?, ?, ?, ?, ?)
             """,
                 (id_trabajo, id_t, cant, p_unit, sub),
+            )
+        for nombre, cant, p_unit, sub in detalles_temporales_a_guardar:
+            cursor.execute(
+                """
+                INSERT INTO detalle_temporal_trabajos
+                    (id_trabajo, nombre_tarea, cantidad, precio_unitario, subtotal)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (id_trabajo, nombre, cant, p_unit, sub),
             )
 
         conexion.commit()

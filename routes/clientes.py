@@ -61,7 +61,10 @@ def clientes():
         SELECT dt.id_trabajo, tar.nom_tar, dt.cantidad, dt.subtotal
         FROM detalle_trabajos dt
         JOIN tareas tar ON dt.id_tarea = tar.id_tarea
-        ORDER BY dt.id_trabajo
+        UNION ALL
+        SELECT dtt.id_trabajo, dtt.nombre_tarea, dtt.cantidad, dtt.subtotal
+        FROM detalle_temporal_trabajos dtt
+        ORDER BY id_trabajo
     """).fetchall()
 
     detalles_por_trabajo = {}
@@ -100,8 +103,14 @@ def historial_cliente():
         SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle, t.estado,
                GROUP_CONCAT(tar.nom_tar, ', ') AS detalle_tareas
         FROM trabajos t
-        LEFT JOIN detalle_trabajos dt ON t.id_trabajo = dt.id_trabajo
-        LEFT JOIN tareas tar ON dt.id_tarea = tar.id_tarea
+        LEFT JOIN (
+            SELECT dt.id_trabajo, tar.nom_tar
+            FROM detalle_trabajos dt
+            JOIN tareas tar ON dt.id_tarea = tar.id_tarea
+            UNION ALL
+            SELECT id_trabajo, nombre_tarea
+            FROM detalle_temporal_trabajos
+        ) tar ON t.id_trabajo = tar.id_trabajo
         LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
         WHERE t.id_cliente = ?
     """
@@ -136,8 +145,11 @@ def historial_cliente():
             SELECT dt.id_trabajo, tar.nom_tar, dt.cantidad, dt.subtotal
             FROM detalle_trabajos dt
             JOIN tareas tar ON dt.id_tarea = tar.id_tarea
-            WHERE dt.id_trabajo IN ({placeholders})
-            ORDER BY dt.id_trabajo
+            UNION ALL
+            SELECT dtt.id_trabajo, dtt.nombre_tarea, dtt.cantidad, dtt.subtotal
+            FROM detalle_temporal_trabajos dtt
+            WHERE dtt.id_trabajo IN ({placeholders})
+            ORDER BY id_trabajo
         """,
             ids_trabajo,
         ).fetchall()

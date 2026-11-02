@@ -9,7 +9,9 @@ from flask import (
     url_for,
     flash,
     jsonify,
+    session,
 )
+from uuid import uuid4
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
 from utils.formateadores import parse_int_seguro, parse_float_seguro
@@ -36,6 +38,7 @@ def mataburros():
     ).fetchall()
     clientes_json = [dict(e) for e in empresas]
     tareas_json = [dict(t) for t in tareas]
+    tareas_temporales = session.get("tareas_temporales", [])
     fecha_hoy = date.today().strftime("%Y-%m-%d")
 
     conexion.close()
@@ -44,6 +47,7 @@ def mataburros():
         empresas=empresas,
         tareas=tareas,
         tareas_json=tareas_json,
+        tareas_temporales=tareas_temporales,
         clientes_json=clientes_json,
         fecha_hoy=fecha_hoy,
         milagritos=modo_activo(),
@@ -60,6 +64,7 @@ def enviar_trabajo():
     detalle = request.form.get("detalles") or request.form.get("detalle", "")
     tipo = request.form.get("tipo", "OI").strip()
     fecha = request.form.get("fecha", "").strip()
+    tareas_temporales = session.get("tareas_temporales", [])
 
     if not remito:
         flash("Error: El número de remito es obligatorio", "danger")
@@ -79,7 +84,21 @@ def enviar_trabajo():
         tareas_raw=request.form.getlist("tareas"),
         cantidades_raw=request.form.getlist("cantidades"),
         fecha=fecha,
+        tareas_temporales=tareas_temporales,
     )
+    if exito:
+        tokens_usados = {
+            tarea.split(":", 1)[1]
+            for tarea in request.form.getlist("tareas")
+            if tarea.startswith("temporal:")
+        }
+        if tokens_usados:
+            session["tareas_temporales"] = [
+                tarea
+                for tarea in tareas_temporales
+                if tarea.get("token") not in tokens_usados
+            ]
+            session.modified = True
     flash(mensaje, "success" if exito else "danger")
     return redirect(url_for("trabajos_bp.mataburros"))
 
@@ -142,6 +161,7 @@ def agregar_tarea():
     precio1 = parse_float_seguro(request.form.get("precio1-form"), 0.0)
     precio2 = parse_float_seguro(request.form.get("precio2-form"), 0.0)
     precio3 = parse_float_seguro(request.form.get("precio3-form"), 0.0)
+    es_temporal = request.form.get("temporal") == "1"
 
     if not nom_tar:
         flash("El nombre de la tarea no puede estar vacío", "danger")
@@ -153,6 +173,26 @@ def agregar_tarea():
             f'⚠️ Revisa los precios de "{nom_tar}": los valores no siguen el orden habitual L1 <= L2 <= L3.',
             "warning",
         )
+
+    if es_temporal:
+        conexion.close()
+        tareas_temporales = session.get("tareas_temporales", [])
+        tareas_temporales.append(
+            {
+                "token": uuid4().hex,
+                "nom_tar": nom_tar,
+                "precio": precio1,
+                "precio2": precio2,
+                "precio3": precio3,
+            }
+        )
+        session["tareas_temporales"] = tareas_temporales
+        session.modified = True
+        flash(
+            f'La tarea temporal "{nom_tar}" estará disponible solo para este uso.',
+            "success",
+        )
+        return redirect(url_for("trabajos_bp.mataburros"))
 
     try:
         cursor.execute(

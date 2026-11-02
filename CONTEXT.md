@@ -106,6 +106,7 @@ SG - Gomería/
 | `tareas` | Catálogo de servicios | `precio`, `precio2`, `precio3`, `activa` |
 | `trabajos` | Cabecera de remitos | `tipo` (OI/OIB), `detalle`, `foto_remito`, `con_iva` |
 | `detalle_trabajos` | Renglones de cada remito | `precio_unitario`, `subtotal` |
+| `detalle_temporal_trabajos` | Renglones temporales de remitos | `nombre_tarea`, `precio_unitario`, `subtotal` |
 | `cheques` | E-checks recibidos | `numero`, `banco`, `endosado`, `estado`, `id_cliente` |
 | `usuarios` | Acceso al sistema | `usuario`, `contraseña` (hash), `rol` (usuario/admin) |
 | `vehiculos` | Vehículos por cliente | `patente`, `id_cliente` |
@@ -127,6 +128,7 @@ SG - Gomería/
 - **Historial por cliente:** pestañas por mes/año, total del período, desglose por tarea.
 - **Módulo de Cheques:** CRUD completo persistido en SQLite (número, banco, cliente, endosado, fecha de emisión, fecha de cobro, importe, estado).
 - **Lista de precios:** vista y gestión de las 3 listas por tarea. Campo `activa` para activar/desactivar servicios.
+- **Tareas temporales:** permite usar una tarea en un remito sin persistirla en el tarifario; el detalle queda guardado junto al remito.
 - **Asistencia de gomeros:** selector por día, persistencia de ausencias y descuento proporcional del sueldo semanal.
 - **Herencia de plantillas Jinja2:** `base.html` implementado, los templates extienden de él.
 - **Componente `tabla_remitos.html`:** reutilizable en clientes e historial.
