@@ -76,7 +76,18 @@ def crear_tablas():
         FOREIGN KEY (id_tarea) REFERENCES tareas (id_tarea) ON DELETE RESTRICT
     );
 
-    -- 6. Cheques recibidos de clientes
+    -- 6. Renglones temporales asociados a un remito, fuera del tarifario
+    CREATE TABLE IF NOT EXISTS detalle_temporal_trabajos (
+        id_detalle_temporal INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_trabajo INTEGER NOT NULL,
+        nombre_tarea TEXT NOT NULL,
+        cantidad INTEGER NOT NULL CHECK (cantidad > 0),
+        precio_unitario REAL NOT NULL CHECK (precio_unitario >= 0),
+        subtotal REAL NOT NULL CHECK (subtotal >= 0),
+        FOREIGN KEY (id_trabajo) REFERENCES trabajos (id_trabajo) ON DELETE CASCADE
+    );
+
+    -- 7. Cheques recibidos de clientes
     CREATE TABLE IF NOT EXISTS cheques (
         id_cheque INTEGER PRIMARY KEY AUTOINCREMENT,
         numero TEXT NOT NULL,
@@ -91,7 +102,7 @@ def crear_tablas():
         FOREIGN KEY (id_cliente) REFERENCES clientes (id_cliente)
     );
 
-    -- 7. Usuarios del sistema
+    -- 8. Usuarios del sistema
     CREATE TABLE IF NOT EXISTS usuarios (
         id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario TEXT NOT NULL UNIQUE,

@@ -76,6 +76,11 @@ class TestRutasConSesionIniciada(unittest.TestCase):
                 SELECT id_trabajo FROM trabajos WHERE remito IN ('98765', '88881', '008882')
             )
         """)
+        cursor.execute("""
+            DELETE FROM detalle_temporal_trabajos WHERE id_trabajo IN (
+                SELECT id_trabajo FROM trabajos WHERE remito IN ('98765', '88881', '008882')
+            )
+        """)
         cursor.execute(
             "DELETE FROM trabajos WHERE remito IN ('98765', '88881', '008882')"
         )
@@ -182,6 +187,68 @@ class TestRutasConSesionIniciada(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(resp_mod.status_code, 302)
+
+    def test_tarea_temporal_no_se_guarda_en_tarifario_y_se_usa_en_remito(self):
+        nombre = "Tarea Temporal Automatizada"
+        respuesta = self.client.post(
+            "/agregar-tarea",
+            data={
+                "nombre": nombre,
+                "precio1-form": "17500",
+                "precio2-form": "16000",
+                "precio3-form": "15000",
+                "temporal": "1",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 302)
+
+        with self.client.session_transaction() as sesion:
+            temporales = sesion.get("tareas_temporales", [])
+            self.assertEqual(len(temporales), 1)
+            token = temporales[0]["token"]
+
+        conn = obtener_conexion()
+        self.assertIsNone(
+            conn.execute(
+                "SELECT id_tarea FROM tareas WHERE nom_tar = ?", (nombre,)
+            ).fetchone()
+        )
+        conn.close()
+
+        respuesta = self.client.post(
+            "/enviar-trabajo",
+            data={
+                "remito": "98765",
+                "fecha": "2026-10-18",
+                "empresa": "1",
+                "tipo_lista": "1",
+                "tipo": "OI",
+                "detalle": "Trabajo temporal",
+                "tareas": [f"temporal:{token}"],
+                "cantidades": ["1"],
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 302)
+
+        conn = obtener_conexion()
+        detalle = conn.execute(
+            """
+            SELECT dtt.nombre_tarea, dtt.subtotal
+            FROM detalle_temporal_trabajos dtt
+            JOIN trabajos t ON t.id_trabajo = dtt.id_trabajo
+            WHERE t.remito = ?
+            """,
+            ("98765",),
+        ).fetchone()
+        self.assertIsNotNone(detalle)
+        self.assertEqual(detalle["nombre_tarea"], nombre)
+        self.assertEqual(detalle["subtotal"], 17500.0)
+        conn.close()
+
+        with self.client.session_transaction() as sesion:
+            self.assertEqual(sesion.get("tareas_temporales", []), [])
 
     def test_enviar_trabajo_endpoint_exitoso(self):
         """El endpoint POST /enviar-trabajo procesa el remito y redirige."""
