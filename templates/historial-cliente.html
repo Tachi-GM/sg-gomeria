@@ -42,6 +42,15 @@
             </h4>
         </div>
 
+        {% if periodo_seleccionado == 'todos' %}
+        <div class="d-flex gap-2 flex-wrap mb-4">
+            <a class="btn btn-success rounded-pill fw-bold"
+               href="{{ url_for('exportaciones_bp.exportar_excel', id_cliente=cliente['id_cliente']) }}">
+                Descargar Excel general
+            </a>
+        </div>
+        {% endif %}
+
         <div class="tabla-remitos">
             <div class="table-responsive">
                {% include "componentes/tabla_remitos.html" %}

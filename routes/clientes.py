@@ -23,7 +23,13 @@ def clientes():
     if buscar:
         empresas = cursor.execute(
             """
-            SELECT id_cliente, nom_cli, cuit, tel, mail
+            SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
+                   (SELECT COUNT(*) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente)
+                       AS cantidad_remitos,
+                   COALESCE(
+                       (SELECT SUM(t.total) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente),
+                       0
+                   ) AS total_facturado
             FROM clientes
             WHERE nom_cli LIKE ? OR cuit LIKE ? OR tel LIKE ?
             ORDER BY nom_cli
@@ -32,7 +38,13 @@ def clientes():
         ).fetchall()
     else:
         empresas = cursor.execute("""
-            SELECT id_cliente, nom_cli, cuit, tel, mail
+            SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
+                   (SELECT COUNT(*) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente)
+                       AS cantidad_remitos,
+                   COALESCE(
+                       (SELECT SUM(t.total) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente),
+                       0
+                   ) AS total_facturado
             FROM clientes
             ORDER BY nom_cli
         """).fetchall()

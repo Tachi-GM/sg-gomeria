@@ -10,6 +10,7 @@ from routes.clientes import clientes_bp
 from routes.cheques import cheques_bp
 from routes.usuarios import usuarios_bp
 from routes.gomeros import gomeros_bp
+from routes.exportaciones import exportaciones_bp
 
 # 1. Configuración de variables de entorno
 load_dotenv()
@@ -125,6 +126,7 @@ app.register_blueprint(clientes_bp)
 app.register_blueprint(cheques_bp)
 app.register_blueprint(usuarios_bp)
 app.register_blueprint(gomeros_bp)
+app.register_blueprint(exportaciones_bp)
 
 # 6. Arranque del servidor local
 if __name__ == "__main__":

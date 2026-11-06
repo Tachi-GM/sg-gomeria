@@ -69,15 +69,33 @@
                     <div class="card-body d-flex flex-column justify-content-between">
                         <div>
                             <h5 class="card-title fw-bold text-dark text-uppercase mb-3">{{ emp['nom_cli'] }}</h5>
-                            <p class="card-text mb-1 text-muted small">
-                                <strong>CUIT:</strong> {{ emp['cuit'] or 'Sin registrar' }}
-                            </p>
-                            <p class="card-text mb-1 text-muted small">
-                                <strong>Teléfono:</strong> {{ emp['tel'] or 'Sin registrar' }}
-                            </p>
-                            <p class="card-text mb-3 text-muted small">
-                                <strong>Email:</strong> {{ emp['mail'] or 'Sin registrar' }}
-                            </p>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge rounded-pill bg-light text-dark border">
+                                    {% if emp['con_iva'] %}Con IVA{% else %}Sin IVA{% endif %}
+                                </span>
+                                <span class="badge rounded-pill bg-light text-dark border">
+                                    Lista {{ emp['lista_precios'] }}
+                                </span>
+                            </div>
+                            <div class="small text-muted">
+                                <p class="mb-2"><strong>CUIT:</strong> {{ emp['cuit'] or 'Sin registrar' }}</p>
+                                <p class="mb-2">
+                                    <strong>Contacto:</strong>
+                                    {% if emp['tel'] %}
+                                    <a href="tel:{{ emp['tel'] }}" class="text-decoration-none">{{ emp['tel'] }}</a>
+                                    {% else %}Sin registrar{% endif %}
+                                </p>
+                                <p class="mb-3 text-break">
+                                    <strong>Email:</strong>
+                                    {% if emp['mail'] %}
+                                    <a href="mailto:{{ emp['mail'] }}" class="text-decoration-none">{{ emp['mail'] }}</a>
+                                    {% else %}Sin registrar{% endif %}
+                                </p>
+                            </div>
+                            <div class="d-flex justify-content-between border-top pt-3 small text-secondary">
+                                <span>{{ emp['cantidad_remitos'] }} remitos</span>
+                                <span class="fw-bold">${{ "{:,.2f}".format(emp['total_facturado']) }}</span>
+                            </div>
                         </div>
                         <a href="/historial-cliente?id_cliente={{ emp['id_cliente'] }}" class="btn btn-outline-primary w-100 fw-bold rounded-pill mt-3">
                             Ver Historial &rarr;
