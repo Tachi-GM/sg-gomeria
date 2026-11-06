@@ -9,6 +9,9 @@ y el funcionamiento de las paginas de error personalizadas.
 
 import unittest
 import sys
+import io
+import shutil
+import zipfile
 from pathlib import Path
 
 # Agregar raiz del proyecto al path de busqueda
@@ -82,13 +85,16 @@ class TestRutasConSesionIniciada(unittest.TestCase):
             )
         """)
         cursor.execute(
-            "DELETE FROM trabajos WHERE remito IN ('98765', '88881', '008882')"
+            "DELETE FROM trabajos WHERE remito IN ('98765', '88881', '008882', '98766')"
         )
         cursor.execute(
             "DELETE FROM clientes WHERE nom_cli = 'Empresa Test Automatizada'"
         )
         conn.commit()
         conn.close()
+        shutil.rmtree(
+            Path(app.config["UPLOAD_DIR"]) / "fotos_remitos", ignore_errors=True
+        )
 
     def test_inicio_autenticado_responde_200(self):
         """La pantalla principal '/' debe responder 200 para un usuario logueado."""
@@ -269,6 +275,125 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         self.assertEqual(respuesta.status_code, 302)
         self.assertIn("/mataburros", respuesta.headers.get("Location", ""))
 
+    def test_enviar_trabajo_guarda_foto_y_la_consulta_con_sesion(self):
+        imagen_png = b"\x89PNG\r\n\x1a\n" + b"contenido de prueba"
+        respuesta = self.client.post(
+            "/enviar-trabajo",
+            data={
+                "remito": "98766",
+                "fecha": "2026-10-18",
+                "empresa": "1",
+                "tipo_lista": "1",
+                "tipo": "OI",
+                "detalle": "Remito con foto",
+                "tareas": ["1"],
+                "cantidades": ["1"],
+                "foto_remito": (io.BytesIO(imagen_png), "remito.png"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 302)
+
+        conn = obtener_conexion()
+        trabajo = conn.execute(
+            "SELECT foto_remito FROM trabajos WHERE remito = ?", ("98766",)
+        ).fetchone()
+        conn.close()
+        self.assertIsNotNone(trabajo["foto_remito"])
+        self.assertTrue(
+            (Path(app.config["UPLOAD_DIR"]) / trabajo["foto_remito"]).is_file()
+        )
+
+        foto = self.client.get(
+            f"/foto-remito/{trabajo['foto_remito']}", follow_redirects=False
+        )
+        try:
+            self.assertEqual(foto.status_code, 200)
+            self.assertEqual(foto.data, imagen_png)
+        finally:
+            foto.close()
+
+        with self.client.session_transaction() as sesion:
+            sesion.clear()
+        protegida = self.client.get(
+            f"/foto-remito/{trabajo['foto_remito']}", follow_redirects=False
+        )
+        self.assertEqual(protegida.status_code, 302)
+        self.assertIn("/login", protegida.headers["Location"])
+
+    def test_foto_rechaza_extension_y_firma_incompatibles(self):
+        respuesta = self.client.post(
+            "/enviar-trabajo",
+            data={
+                "remito": "98766",
+                "fecha": "2026-10-18",
+                "empresa": "1",
+                "tipo_lista": "1",
+                "tipo": "OI",
+                "detalle": "Foto inválida",
+                "tareas": ["1"],
+                "cantidades": ["1"],
+                "foto_remito": (io.BytesIO(b"no es una imagen"), "remito.exe"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 302)
+        conn = obtener_conexion()
+        self.assertIsNone(
+            conn.execute(
+                "SELECT id_trabajo FROM trabajos WHERE remito = ?", ("98766",)
+            ).fetchone()
+        )
+        conn.close()
+
+        respuesta = self.client.post(
+            "/enviar-trabajo",
+            data={
+                "remito": "98766",
+                "fecha": "2026-10-18",
+                "empresa": "1",
+                "tipo_lista": "1",
+                "tipo": "OI",
+                "detalle": "Firma inválida",
+                "tareas": ["1"],
+                "cantidades": ["1"],
+                "foto_remito": (io.BytesIO(b"contenido que no es PNG"), "remito.png"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 302)
+
+        respuesta = self.client.post(
+            "/enviar-trabajo",
+            data={
+                "remito": "98766",
+                "fecha": "2026-10-18",
+                "empresa": "1",
+                "tipo_lista": "1",
+                "tipo": "OI",
+                "detalle": "Foto demasiado grande",
+                "tareas": ["1"],
+                "cantidades": ["1"],
+                "foto_remito": (
+                    io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"x" * (5 * 1024 * 1024)),
+                    "remito.png",
+                ),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 302)
+
+    def test_foto_no_permite_traversal(self):
+        respuesta = self.client.get(
+            "/foto-remito/fotos_remitos/..%2F..%2Fsg_gomeria.db",
+            follow_redirects=False,
+        )
+        self.assertEqual(respuesta.status_code, 404)
+
     def test_editar_remito_endpoint_exitoso_y_errores(self):
         """El endpoint POST /editar-remito valida datos y actualiza."""
         # Error por ID inválido o faltante
@@ -369,13 +494,27 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         self.assertEqual(resp_eliminar.status_code, 200)
 
     def test_backup_descarga_archivo_db(self):
-        """Un usuario administrador puede descargar el resguardo de la BD."""
+        """Un usuario administrador descarga BD y fotos en un ZIP restaurable."""
+        carpeta_fotos = Path(app.config["UPLOAD_DIR"]) / "fotos_remitos"
+        carpeta_fotos.mkdir(parents=True, exist_ok=True)
+        (carpeta_fotos / "foto-backup.png").write_bytes(
+            b"\x89PNG\r\n\x1a\n" + b"backup"
+        )
         respuesta = self.client.get("/backup")
         try:
             self.assertEqual(respuesta.status_code, 200)
             self.assertIn(
                 "backup_gomeria_", respuesta.headers.get("Content-Disposition", "")
             )
+            nombre = (
+                respuesta.headers["Content-Disposition"]
+                .split("filename=")[1]
+                .strip('"')
+            )
+            ruta_zip = Path(app.config["BACKUP_DIR"]) / nombre
+            with zipfile.ZipFile(ruta_zip) as paquete:
+                self.assertIn("sg_gomeria.db", paquete.namelist())
+                self.assertIn("fotos_remitos/foto-backup.png", paquete.namelist())
         finally:
             respuesta.close()
 

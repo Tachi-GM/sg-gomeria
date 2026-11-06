@@ -147,7 +147,7 @@ SG - Gomería/
 
 ### Alta prioridad
 - [ ] **Hosting:** investigar cómo desplegar la app (PythonAnywhere, Railway, VPS). Actualmente solo corre local.
-- [ ] **Foto de remito:** columna `foto_remito` ya existe en la tabla `trabajos`, pero falta el formulario de carga y la vista.
+- [x] **Foto de remito:** carga opcional protegida desde Mataburros, consulta desde el detalle y respaldo junto con la base en ZIP.
 - [ ] **Exportación mensual a Excel/imagen** desde `historial-cliente`.
 - [ ] **Personalización de empresa:** datos propios en pantalla de inicio o en los comprobantes (nombre, dirección, CUIT del local).
 - [ ] **Desglose de IVA en pantalla:** mostrar subtotal + IVA + total final al estilo factura en el remito.

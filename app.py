@@ -34,6 +34,7 @@ logger = logging.getLogger("SG_Gomeria")
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-gomeria-2026-cambiar-en-prod")
+app.config["UPLOAD_DIR"] = os.getenv("UPLOAD_DIR", "uploads")
 
 
 def modo_activo():

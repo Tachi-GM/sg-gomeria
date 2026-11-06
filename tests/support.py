@@ -28,11 +28,12 @@ crear_tablas()
 sembrar_datos_prueba()
 
 from app import app  # noqa: E402
-from database.connection import get_db_path, obtener_conexion  # noqa: E402
+from database.connection import get_db_path, obtener_conexion  # noqa: E402,F401
 
 app.config.update(
     TESTING=True,
     BACKUP_DIR=str(TEST_DIR / "backups"),
+    UPLOAD_DIR=str(TEST_DIR / "uploads"),
 )
 
 # Comprobación defensiva: si cambia la inicialización de conexión, no seguir
