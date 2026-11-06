@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Línea de Tiempo Visual — SG Gomería "El Puente"</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #0284c7;
+            --orange: #ea580c;
+            --green: #16a34a;
+            --purple: #8b5cf6;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .badge-kpi {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* KPI Dashboard */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 50px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Timeline vertical */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            background: #cbd5e1;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+            width: 50%;
+        }
+
+        .timeline-item.left {
+            left: 0;
+            padding-right: 40px;
+            text-align: right;
+        }
+
+        .timeline-item.right {
+            left: 50%;
+            padding-left: 40px;
+            text-align: left;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            top: 20px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 4px solid var(--accent);
+            z-index: 2;
+        }
+
+        .timeline-item.left .timeline-dot {
+            right: -9px;
+        }
+
+        .timeline-item.right .timeline-dot {
+            left: -9px;
+        }
+
+        .timeline-content {
+            background: var(--card-bg);
+            padding: 22px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            position: relative;
+            text-align: left;
+        }
+
+        .timeline-date {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .timeline-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .timeline-desc {
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .tag-pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            margin-right: 6px;
+            margin-top: 4px;
+        }
+
+        .tag-pill.success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .tag-pill.accent {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 20px;
+            }
+            .timeline-item {
+                width: 100%;
+                left: 0 !important;
+                padding-left: 50px !important;
+                padding-right: 0 !important;
+                text-align: left !important;
+            }
+            .timeline-dot {
+                left: 11px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <span class="badge-kpi">Gomería "El Puente" · UTN Programación IV & Gestión de Software</span>
+        <h1>Línea de Tiempo y Evolución del Proyecto</h1>
+        <p class="subtitle">Trazabilidad histórica desde la entrevista de relevamiento inicial hasta la versión final con entregas reales.</p>
+    </header>
+
+    <!-- Resumen de Métricas / KPI -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-value">22 Ago</div>
+            <div class="kpi-label">Entrevista Inicial</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">60+</div>
+            <div class="kpi-label">Commits en GitHub</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">91%</div>
+            <div class="kpi-label">Cobertura de Tests</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">-3 Días</div>
+            <div class="kpi-label">Desvío (Adelantado)</div>
+        </div>
+    </div>
+
+    <!-- Línea de tiempo vertical interactiva -->
+    <div class="timeline">
+
+        <!-- 1. Entrevista -->
+        <div class="timeline-item left">
+            <div class="timeline-dot" style="border-color: #ea580c;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">22 de Agosto de 2026</span>
+                <h3 class="timeline-title">Entrevista y Relevamiento en el Taller</h3>
+                <p class="timeline-desc">Visita a Gomería "El Puente". Identificación de la problemática de mostrador: pérdida de remitos en papel, demora en calcular listas de tarifas L1-L3 y falta de control de cheques diferidos.</p>
+                <span class="tag-pill accent">Hito Inicial</span>
+                <span class="tag-pill">Requerimientos</span>
+            </div>
+        </div>
+
+        <!-- 2. Prototipo Canva -->
+        <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #0284c7;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">05 al 07 de Septiembre de 2026</span>
+                <h3 class="timeline-title">Diseño de Pantallas en Canva</h3>
+                <p class="timeline-desc">Maquetado de interfaces de usuario para "Mataburros", listado de clientes y talonarios. Finalizado 1 día antes de lo estipulado en el Gantt oficial.</p>
+                <span class="tag-pill success">Terminó antes (-1d)</span>
+                <span class="tag-pill">UI / UX</span>
+            </div>
+        </div>
+
+        <!-- 3. Primer Commit -->
+        <div class="timeline-item left">
+            <div class="timeline-dot" style="border-color: #16a34a;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">09 de Septiembre de 2026</span>
+                <h3 class="timeline-title">Arranque de Construcción (Primer Commit)</h3>
+                <p class="timeline-desc">Creación del repositorio Git. Estructura Flask inicial, base SQLite con claves foráneas y pantallas base de mostrador y empresas.</p>
+                <span class="tag-pill success">Hito de Código</span>
+                <span class="tag-pill">Flask + SQLite</span>
+            </div>
+        </div>
+
+        <!-- 4. Tarifas e Historial -->
+        <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #8b5cf6;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">12 al 18 de Septiembre de 2026</span>
+                <h3 class="timeline-title">Historial por Cliente y Listas L1-L3</h3>
+                <p class="timeline-desc">Filtro de trabajos por mes/año y catálogo de 3 listas de precios simultáneas. Primera versión del manual de usuario en texto plano.</p>
+                <span class="tag-pill">Gestión Tarifaria</span>
+            </div>
+        </div>
+
+        <!-- 5. Parciales Septiembre -->
+        <div class="timeline-item left">
+            <div class="timeline-dot" style="border-color: #ea580c;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">21 al 25 de Septiembre de 2026</span>
+                <h3 class="timeline-title">Presentaciones Parciales Académicas</h3>
+                <p class="timeline-desc">Defensa de avances en Programación IV (funcionalidad) y Gestión de Desarrollo de Software (Gantt, costos proyectados de $2.710.000 y metodologías).</p>
+                <span class="tag-pill accent">Hito Académico</span>
+                <span class="tag-pill">Gantt & Costos</span>
+            </div>
+        </div>
+
+        <!-- 6. Remitos OI/OIB y Cheques -->
+        <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #0284c7;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">28 de Sept. al 08 de Octubre</span>
+                <h3 class="timeline-title">Remitos Oficiales OI/OIB y Cheques</h3>
+                <p class="timeline-desc">Estandarización de talonarios con validación estricta, plantilla base Jinja2 unificada, variables de entorno (.env) y cartera de e-checks interactiva.</p>
+                <span class="tag-pill">Facturación</span>
+                <span class="tag-pill">Jinja2</span>
+            </div>
+        </div>
+
+        <!-- 7. Seguridad y Blueprints -->
+        <div class="timeline-item left">
+            <div class="timeline-dot" style="border-color: #16a34a;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">16 al 18 de Octubre de 2026</span>
+                <h3 class="timeline-title">Modularización en Blueprints y Cobertura 91%</h3>
+                <p class="timeline-desc">Refactorización arquitectural de app.py en Blueprints, lógica de negocio en capa de servicios, autenticación con hash seguro, auditoría y 35 tests automatizados.</p>
+                <span class="tag-pill success">Cobertura 91%</span>
+                <span class="tag-pill">Blueprints</span>
+            </div>
+        </div>
+
+        <!-- 8. Control de Gomeros y Ausencias -->
+        <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #8b5cf6;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">23 al 31 de Octubre de 2026</span>
+                <h3 class="timeline-title">Control de Gomeros y Liquidación Semanal</h3>
+                <p class="timeline-desc">Módulo para registrar adelantos, gastos y ausencias de operarios por día con descuento proporcional automático del sueldo semanal. Lanzador iniciar.bat.</p>
+                <span class="tag-pill">Personal de Taller</span>
+            </div>
+        </div>
+
+        <!-- 9. Fotos, Tareas Temporales y Exportaciones -->
+        <div class="timeline-item left">
+            <div class="timeline-dot" style="border-color: #0284c7;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">02 al 06 de Noviembre de 2026</span>
+                <h3 class="timeline-title">Fotos de Remitos, Tareas Temporales y Excel</h3>
+                <p class="timeline-desc">Subida protegida de fotos de remitos en papel (máx 5MB), opción de tareas temporales sin alterar el catálogo, backup ZIP completo (DB + fotos) y exportación general a Excel.</p>
+                <span class="tag-pill accent">Última Versión</span>
+                <span class="tag-pill success">Listo para Cierre</span>
+            </div>
+        </div>
+
+        <!-- 10. Cierre y Presentación -->
+        <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #ea580c;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">10 al 18 de Noviembre de 2026</span>
+                <h3 class="timeline-title">Presentaciones Finales y Entrega al Cliente</h3>
+                <p class="timeline-desc">Exposición de software funcional y base de datos (Programación IV) y defensa metodológica ágil, métricas y roles (Gestión de Desarrollo de Software).</p>
+                <span class="tag-pill accent">Hito Final</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
