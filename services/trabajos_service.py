@@ -22,6 +22,7 @@ def crear_trabajo_completo(
     cantidades_raw,
     fecha=None,
     tareas_temporales=None,
+    foto_remito=None,
 ):
     """
     Procesa y registra un remito y sus renglones en la base de datos.
@@ -144,10 +145,19 @@ def crear_trabajo_completo(
         # C. Guardar cabecera en 'trabajos'
         cursor.execute(
             """
-            INSERT INTO trabajos (remito, tipo, fecha, id_cliente, total, detalle)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO trabajos
+                (remito, tipo, fecha, id_cliente, total, detalle, foto_remito)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-            (remito, tipo, fecha_final, id_cliente, total_trabajo, detalle),
+            (
+                remito,
+                tipo,
+                fecha_final,
+                id_cliente,
+                total_trabajo,
+                detalle,
+                foto_remito,
+            ),
         )
 
         id_trabajo = cursor.lastrowid

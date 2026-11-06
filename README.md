@@ -41,6 +41,7 @@ Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Su
   - Edición rápida de remitos existentes vía modal interactivo (permite modificar fecha, tipo y número de comprobante con validación asíncrona y control de duplicados).
   - Despliegue en acordeón de los renglones de tareas realizadas por remito sin recargar la página.
   - Actualización del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
+  - Carga opcional de foto del remito (JPG, PNG, GIF o WEBP, hasta 5 MB) con acceso protegido desde el detalle.
 
 - **Módulo de Cheques:**
   - Registro y seguimiento de cartera de cheques recibidos de clientes (número, banco emisor, cliente asociado, fecha de emisión, fecha de cobro e importe).
@@ -53,7 +54,7 @@ Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Su
   - Credenciales demo para evaluación: `admin` / `admin123` y `operador` / `operador123`.
 
 - **Mantenimiento y Resguardo:**
-  - Resguardo de base de datos (`/backup`) exclusivo para administradores con timestamp en la carpeta `backups/`.
+  - Resguardo (`/backup`) exclusivo para administradores con timestamp en `backups/`, en formato ZIP restaurable: `sg_gomeria.db` y `fotos_remitos/...`.
   - Páginas de error personalizadas (`401`, `403`, `404` y `500`) con registro de eventos de auditoría en `sistema.log`.
   - Modo Milagritos accesible vía sesión HTTP.
 
@@ -245,4 +246,3 @@ coverage html
 3. **Separación de Persistencia y Conexiones:** Conexión centralizada en `database/connection.py`, garantizando conexiones de vida corta y cierre explícito tras cada operación.
 4. **Integridad Referencial y Transacciones:** Claves foráneas activas (`PRAGMA foreign_keys = ON`), `id_cliente NOT NULL` en cheques y transacciones atómicas para operaciones compuestas (cabecera y renglones de tareas).
 5. **Seguridad:** Contraseñas hasheadas con `werkzeug.security`, variables sensibles aisladas en `.env` y exclusión de archivos de datos y logs en `.gitignore`.
-

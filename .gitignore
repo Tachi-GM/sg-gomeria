@@ -5,6 +5,7 @@ venv/
 datos_privados/
 *.db
 backups/
+uploads/
 *.xls
 *.xlsx
 .env

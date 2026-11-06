@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+from pathlib import Path
 from datetime import date
 from flask import (
     Blueprint,
@@ -10,6 +11,9 @@ from flask import (
     flash,
     jsonify,
     session,
+    current_app,
+    abort,
+    send_from_directory,
 )
 from uuid import uuid4
 from database.connection import obtener_conexion
@@ -18,6 +22,11 @@ from utils.formateadores import parse_int_seguro, parse_float_seguro
 from services.trabajos_service import (
     crear_trabajo_completo,
     editar_cabecera_remito,
+)
+from utils.fotos import (
+    guardar_foto_remito,
+    eliminar_foto_remito,
+    ruta_foto_segura,
 )
 
 logger = logging.getLogger("SG_Gomeria")
@@ -65,6 +74,21 @@ def enviar_trabajo():
     tipo = request.form.get("tipo", "OI").strip()
     fecha = request.form.get("fecha", "").strip()
     tareas_temporales = session.get("tareas_temporales", [])
+    archivo_foto = request.files.get("foto_remito")
+    ruta_foto = None
+
+    if archivo_foto and archivo_foto.filename:
+        try:
+            ruta_foto = guardar_foto_remito(
+                archivo_foto, current_app.config.get("UPLOAD_DIR", "uploads")
+            )
+        except ValueError as error:
+            flash(f"Error en la foto del remito: {error}", "danger")
+            return redirect(url_for("trabajos_bp.mataburros"))
+        except OSError:
+            logger.exception("Error al guardar la foto del remito")
+            flash("No se pudo guardar la foto del remito.", "danger")
+            return redirect(url_for("trabajos_bp.mataburros"))
 
     if not remito:
         flash("Error: El número de remito es obligatorio", "danger")
@@ -85,7 +109,10 @@ def enviar_trabajo():
         cantidades_raw=request.form.getlist("cantidades"),
         fecha=fecha,
         tareas_temporales=tareas_temporales,
+        foto_remito=ruta_foto,
     )
+    if not exito and ruta_foto:
+        eliminar_foto_remito(ruta_foto, current_app.config.get("UPLOAD_DIR", "uploads"))
     if exito:
         tokens_usados = {
             tarea.split(":", 1)[1]
@@ -101,6 +128,29 @@ def enviar_trabajo():
             session.modified = True
     flash(mensaje, "success" if exito else "danger")
     return redirect(url_for("trabajos_bp.mataburros"))
+
+
+@trabajos_bp.route("/foto-remito/<path:nombre_archivo>")
+@login_requerido
+def foto_remito(nombre_archivo):
+    ruta_relativa = nombre_archivo.replace("\\", "/")
+    carpeta_uploads = Path(current_app.config.get("UPLOAD_DIR", "uploads")).resolve()
+    ruta_segura = ruta_foto_segura(ruta_relativa, carpeta_uploads)
+    if ruta_segura is None or not ruta_segura.is_file():
+        abort(404)
+
+    conexion = obtener_conexion()
+    existe = conexion.execute(
+        "SELECT 1 FROM trabajos WHERE foto_remito = ?", (ruta_relativa,)
+    ).fetchone()
+    conexion.close()
+    if existe is None:
+        abort(404)
+
+    return send_from_directory(
+        str(carpeta_uploads),
+        ruta_relativa,
+    )
 
 
 # Endpoint asíncrono para editar remito desde el modal de clientes / historial

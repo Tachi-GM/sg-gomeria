@@ -66,7 +66,7 @@
                 </div>
             </div>
             
-            <form action="/enviar-trabajo" method="POST" id="form-remito" novalidate>
+            <form action="/enviar-trabajo" method="POST" id="form-remito" enctype="multipart/form-data" novalidate>
             <div id="errores-form" class="alert alert-danger d-none" role="alert"></div>
             
                 <!-- 1. Número de Remito y Fecha -->
@@ -104,6 +104,15 @@
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Detalles</label>
                     <textarea name="detalles" class="form-control input-personalizado" rows="3" placeholder="Observaciones o detalles del trabajo..."></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="foto-remito" class="form-label small fw-bold text-secondary text-uppercase mb-1">
+                        Foto del remito (opcional)
+                    </label>
+                    <input type="file" name="foto_remito" id="foto-remito" class="form-control input-personalizado"
+                           accept=".jpg,.jpeg,.png,.gif,.webp">
+                    <div class="form-text">JPG, PNG, GIF o WEBP. Tamaño máximo: 5 MB.</div>
                 </div>
 
                 <!-- 4. Tareas Realizadas dinámicas -->
