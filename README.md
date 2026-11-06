@@ -42,6 +42,8 @@ Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Su
   - Despliegue en acordeón de los renglones de tareas realizadas por remito sin recargar la página.
   - Actualización del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
   - Carga opcional de foto del remito (JPG, PNG, GIF o WEBP, hasta 5 MB) con acceso protegido desde el detalle.
+  - Exportación general por cliente a Excel, con una pestaña por mes y cálculo de Importe, IVA, Total y Saldo según la condición de IVA.
+  - Exportación mensual a imagen PNG, incluyendo tareas, totales, estado y miniaturas disponibles.
 
 - **Módulo de Cheques:**
   - Registro y seguimiento de cartera de cheques recibidos de clientes (número, banco emisor, cliente asociado, fecha de emisión, fecha de cobro e importe).
@@ -93,14 +95,17 @@ SG - Gomería/
 │   ├── general.py              # Pantalla de inicio, acerca-de, salir y backups
 │   ├── clientes.py             # Dashboard de empresas, historial y alta de clientes
 │   ├── trabajos.py             # Mataburros (emisión de remitos) y administración de precios
+│   ├── exportaciones.py        # Descarga mensual de remitos en Excel e imagen
 │   └── cheques.py              # Cartera de cheques, cobros y cambios de estado
 │
 ├── utils/                      # Utilidades y funciones transversales
 │   ├── seguridad.py            # Decoradores login_requerido, solo_admin y auditoría
-│   └── formateadores.py        # Validación CUIT (módulo 11), remitos OI/OIB, parse_int, parse_float
+│   ├── formateadores.py        # Validación CUIT, remitos OI/OIB, parse_int, parse_float
+│   └── exportadores.py         # Generación de archivos XLSX y PNG
 │
 ├── services/                   # Capa de servicios y lógica de negocio desacoplada
-│   └── trabajos_service.py     # Emisión, cálculo de IVA por tarea, edición transaccional y persistencia
+│   ├── trabajos_service.py     # Emisión, cálculo de IVA, edición y persistencia
+│   └── exportaciones_service.py# Consulta y preparación de datos mensuales
 │
 ├── database/                   # Persistencia y base de datos
 │   ├── connection.py           # Conexión centralizada a SQLite (FK ON, row_factory)
