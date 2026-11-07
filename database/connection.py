@@ -32,6 +32,20 @@ def obtener_conexion() -> sqlite3.Connection:
     conexion = sqlite3.connect(str(DB_PATH))
     conexion.row_factory = sqlite3.Row
     conexion.execute("PRAGMA foreign_keys = ON;")
+
+    # Migración transparente para clientes.activo si no existe en la base actual
+    try:
+        columnas = [
+            col[1] for col in conexion.execute("PRAGMA table_info(clientes)").fetchall()
+        ]
+        if columnas and "activo" not in columnas:
+            conexion.execute(
+                "ALTER TABLE clientes ADD COLUMN activo INTEGER NOT NULL DEFAULT 1 CHECK (activo IN (0, 1));"
+            )
+            conexion.commit()
+    except Exception:
+        pass
+
     return conexion
 
 

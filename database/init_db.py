@@ -26,7 +26,8 @@ def crear_tablas():
         tel TEXT,
         mail TEXT,
         con_iva INTEGER NOT NULL DEFAULT 1,
-        lista_precios INTEGER NOT NULL DEFAULT 1 CHECK (lista_precios IN (1, 2, 3))
+        lista_precios INTEGER NOT NULL DEFAULT 1 CHECK (lista_precios IN (1, 2, 3)),
+        activo INTEGER NOT NULL DEFAULT 1 CHECK (activo IN (0, 1))
     );
 
     -- 2. Vehículos de cada empresa

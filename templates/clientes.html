@@ -6,13 +6,24 @@
 
 {% block content %}
     <div class="container py-4">
-        <!-- 2. BOTÓN, BUSCADOR Y FORMULARIO PARA AGREGAR EMPRESA -->
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                {% for categoria, mensaje in mensajes %}
+                    <div class="alert alert-{{ categoria }} alert-dismissible fade show shadow-sm rounded-4 mb-4" role="alert">
+                        {{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <!-- 1. BOTÓN, BUSCADOR Y FORMULARIO PARA AGREGAR EMPRESA -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <h2 class="h5 text-secondary fw-bold mb-0 text-uppercase"><span class="hada-decorativa">✨</span> Nuestras Empresas <span class="hada-decorativa">✨</span></h2>
 
             <!-- Buscador de empresas -->
             <form action="{{ url_for('clientes_bp.clientes') }}" method="GET" class="flex-grow-1 mx-md-4 buscador-form">
                 <input type="hidden" name="periodo" value="{{ periodo_seleccionado }}">
+                <input type="hidden" name="estado" value="{{ filtro_estado }}">
                 <div class="input-group input-group-lg shadow-sm buscador-clientes w-100">
                     <input
                         type="text"
@@ -23,7 +34,7 @@
                     >
                     <button type="submit" class="btn btn-primary px-4">Buscar</button>
                     {% if buscar %}
-                        <a href="{{ url_for('clientes_bp.clientes') }}" class="btn btn-outline-secondary px-4">Limpiar</a>
+                        <a href="{{ url_for('clientes_bp.clientes', estado=filtro_estado, periodo=periodo_seleccionado) }}" class="btn btn-outline-secondary px-4">Limpiar</a>
                     {% endif %}
                 </div>
             </form>
@@ -44,15 +55,30 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-secondary">CUIT</label>
-                        <input type="text" name="cuit" class="form-control" placeholder="Ej: 30-71234567-9" required>
+                        <input type="text" name="cuit" class="form-control" placeholder="Ej: 30-71234567-9">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label small fw-bold text-secondary">Teléfono</label>
                         <input type="text" name="tel" class="form-control" placeholder="Ej: 011-4567-8900">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label small fw-bold text-secondary">Email</label>
                         <input type="email" name="mail" class="form-control" placeholder="contacto@empresa.com">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small fw-bold text-secondary">IVA</label>
+                        <select name="con_iva" class="form-select">
+                            <option value="1" selected>Con IVA</option>
+                            <option value="0">Sin IVA</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small fw-bold text-secondary">Lista</label>
+                        <select name="lista_precios" class="form-select">
+                            <option value="1" selected>L1</option>
+                            <option value="2">L2</option>
+                            <option value="3">L3</option>
+                        </select>
                     </div>
                     <div class="col-12 text-end mt-3">
                         <button type="submit" class="btn btn-primary px-4 fw-bold rounded-pill">Guardar Empresa</button>
@@ -61,51 +87,151 @@
             </div>
         </div>
 
-        <!-- 3. PANEL 1: GRILLA DE TARJETAS DE EMPRESAS -->
+        <!-- 2. FILTRO DE ESTADO: ACTIVOS / INACTIVOS / TODOS -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="btn-group shadow-sm rounded-pill overflow-hidden" role="group">
+                <a href="{{ url_for('clientes_bp.clientes', estado='activos', buscar=buscar, periodo=periodo_seleccionado) }}"
+                   class="btn btn-sm {% if filtro_estado == 'activos' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %} px-3">
+                    Activas ({{ conteo_activos }})
+                </a>
+                <a href="{{ url_for('clientes_bp.clientes', estado='inactivos', buscar=buscar, periodo=periodo_seleccionado) }}"
+                   class="btn btn-sm {% if filtro_estado == 'inactivos' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %} px-3">
+                    Ocultas / Inactivas ({{ conteo_inactivos }})
+                </a>
+                <a href="{{ url_for('clientes_bp.clientes', estado='todos', buscar=buscar, periodo=periodo_seleccionado) }}"
+                   class="btn btn-sm {% if filtro_estado == 'todos' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %} px-3">
+                    Todas ({{ conteo_activos + conteo_inactivos }})
+                </a>
+            </div>
+            <span class="text-muted small">Mostrando <strong>{{ empresas|length }}</strong> empresa(s)</span>
+        </div>
+
+        <!-- 3. GRILLA DE TARJETAS DE EMPRESAS -->
         <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
             {% for emp in empresas %}
             <div class="col">
-                <div class="card h-100 tarjeta-empresa p-3 bg-white">
-                    <div class="card-body d-flex flex-column justify-content-between">
+                <div class="card h-100 tarjeta-empresa p-3 bg-white shadow-sm border-0 rounded-4 position-relative {% if not emp['activo'] %}opacity-75 bg-light{% endif %}">
+                    <div class="card-body d-flex flex-column justify-content-between p-2">
                         <div>
-                            <h5 class="card-title fw-bold text-dark text-uppercase mb-3">{{ emp['nom_cli'] }}</h5>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title fw-bold text-dark text-uppercase mb-0 text-truncate" title="{{ emp['nom_cli'] }}">
+                                    {{ emp['nom_cli'] }}
+                                </h5>
+                                {% if not emp['activo'] %}
+                                    <span class="badge bg-secondary rounded-pill">Inactiva</span>
+                                {% endif %}
+                            </div>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <span class="badge rounded-pill bg-light text-dark border">
-                                    {% if emp['con_iva'] %}Con IVA{% else %}Sin IVA{% endif %}
+                                    {% if emp['con_iva'] %}Con IVA (21%){% else %}Sin IVA{% endif %}
                                 </span>
                                 <span class="badge rounded-pill bg-light text-dark border">
                                     Lista {{ emp['lista_precios'] }}
                                 </span>
                             </div>
                             <div class="small text-muted">
-                                <p class="mb-2"><strong>CUIT:</strong> {{ emp['cuit'] or 'Sin registrar' }}</p>
-                                <p class="mb-2">
+                                <p class="mb-1"><strong>CUIT:</strong> {{ emp['cuit'] or 'Sin registrar' }}</p>
+                                <p class="mb-1">
                                     <strong>Contacto:</strong>
                                     {% if emp['tel'] %}
                                     <a href="tel:{{ emp['tel'] }}" class="text-decoration-none">{{ emp['tel'] }}</a>
                                     {% else %}Sin registrar{% endif %}
                                 </p>
-                                <p class="mb-3 text-break">
+                                <p class="mb-2 text-break">
                                     <strong>Email:</strong>
                                     {% if emp['mail'] %}
                                     <a href="mailto:{{ emp['mail'] }}" class="text-decoration-none">{{ emp['mail'] }}</a>
                                     {% else %}Sin registrar{% endif %}
                                 </p>
                             </div>
-                            <div class="d-flex justify-content-between border-top pt-3 small text-secondary">
+                            <div class="d-flex justify-content-between border-top pt-2 small text-secondary">
                                 <span>{{ emp['cantidad_remitos'] }} remitos</span>
                                 <span class="fw-bold">${{ "{:,.2f}".format(emp['total_facturado']) }}</span>
                             </div>
                         </div>
-                        <a href="/historial-cliente?id_cliente={{ emp['id_cliente'] }}" class="btn btn-outline-primary w-100 fw-bold rounded-pill mt-3">
-                            Ver Historial &rarr;
-                        </a>
+
+                        <div class="mt-3">
+                            <div class="d-flex gap-2 mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1 rounded-pill fw-bold"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarCliente{{ emp['id_cliente'] }}">
+                                    ✏️ Editar
+                                </button>
+                                <form action="{{ url_for('clientes_bp.alternar_cliente', id_cliente=emp['id_cliente']) }}" method="POST" class="m-0">
+                                    <button type="submit" class="btn btn-sm {% if emp['activo'] %}btn-outline-warning{% else %}btn-outline-success{% endif %} rounded-pill fw-bold"
+                                            title="{% if emp['activo'] %}Ocultar de mostrador{% else %}Reactivar en mostrador{% endif %}">
+                                        {% if emp['activo'] %}👁️ Ocultar{% else %}🔄 Reactivar{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                            <a href="/historial-cliente?id_cliente={{ emp['id_cliente'] }}" class="btn btn-outline-primary w-100 fw-bold rounded-pill">
+                                Ver Historial &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL DE EDICIÓN PARA CADA EMPRESA -->
+                <div class="modal fade" id="modalEditarCliente{{ emp['id_cliente'] }}" tabindex="-1" aria-labelledby="modalLabel{{ emp['id_cliente'] }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <form action="{{ url_for('clientes_bp.editar_cliente', id_cliente=emp['id_cliente']) }}" method="POST">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title fw-bold text-primary" id="modalLabel{{ emp['id_cliente'] }}">
+                                        Editar Empresa
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary">Razón Social / Nombre</label>
+                                        <input type="text" name="nombre" class="form-control" value="{{ emp['nom_cli'] }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary">CUIT</label>
+                                        <input type="text" name="cuit" class="form-control" value="{{ emp['cuit'] or '' }}" placeholder="Ej: 30-71234567-9">
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-secondary">Teléfono</label>
+                                            <input type="text" name="tel" class="form-control" value="{{ emp['tel'] or '' }}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-secondary">Email</label>
+                                            <input type="email" name="mail" class="form-control" value="{{ emp['mail'] or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-secondary">Condición IVA</label>
+                                            <select name="con_iva" class="form-select">
+                                                <option value="1" {% if emp['con_iva'] %}selected{% endif %}>Con IVA (21%)</option>
+                                                <option value="0" {% if not emp['con_iva'] %}selected{% endif %}>Sin IVA</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-secondary">Lista de Precios</label>
+                                            <select name="lista_precios" class="form-select">
+                                                <option value="1" {% if emp['lista_precios'] == 1 %}selected{% endif %}>Lista 1 (Base)</option>
+                                                <option value="2" {% if emp['lista_precios'] == 2 %}selected{% endif %}>Lista 2 (Flotas)</option>
+                                                <option value="3" {% if emp['lista_precios'] == 3 %}selected{% endif %}>Lista 3 (Cta Cte)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
             {% else %}
             <div class="col-12">
-                <div class="alert alert-info">No hay empresas registradas todavía. ¡Usá el botón verde para agregar la primera!</div>
+                <div class="alert alert-info rounded-4">
+                    No se encontraron empresas con el criterio seleccionado.
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -113,20 +239,20 @@
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
                 <a class="nav-link {% if periodo_seleccionado == 'todos' %}active fw-bold{% endif %}"
-                href="{{ url_for('clientes_bp.clientes', periodo='todos', buscar=buscar) }}">
+                href="{{ url_for('clientes_bp.clientes', periodo='todos', buscar=buscar, estado=filtro_estado) }}">
                     Ver Todos
                 </a>
             </li>
             {% for m in meses_disponibles %}
             <li class="nav-item">
                 <a class="nav-link {% if periodo_seleccionado == m['periodo'] %}active fw-bold{% endif %}"
-                href="{{ url_for('clientes_bp.clientes', periodo=m['periodo'], buscar=buscar) }}">
+                href="{{ url_for('clientes_bp.clientes', periodo=m['periodo'], buscar=buscar, estado=filtro_estado) }}">
                     {{ m['etiqueta'] }}
                 </a>
             </li>
             {% endfor %}
         </ul>
-        <!-- 4. PANEL 2: HISTORIAL GENERAL DE REMITOS -->
+        <!-- 4. HISTORIAL GENERAL DE REMITOS -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="h5 text-secondary fw-bold mb-0 text-uppercase"><span class="hada-decorativa">✨</span> Historial de Remitos <span class="hada-decorativa">✨</span></h2>
             <span class="badge bg-secondary rounded-pill px-3 py-2">{{ remitos|length }} remitos emitidos</span>
