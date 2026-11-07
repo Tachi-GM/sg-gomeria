@@ -7,6 +7,7 @@ from routes.general import general_bp
 from routes.auth import auth_bp
 from routes.trabajos import trabajos_bp
 from routes.clientes import clientes_bp
+from routes.clientes_api import clientes_api_bp
 from routes.cheques import cheques_bp
 from routes.usuarios import usuarios_bp
 from routes.gomeros import gomeros_bp
@@ -123,6 +124,7 @@ app.register_blueprint(general_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(trabajos_bp)
 app.register_blueprint(clientes_bp)
+app.register_blueprint(clientes_api_bp)
 app.register_blueprint(cheques_bp)
 app.register_blueprint(usuarios_bp)
 app.register_blueprint(gomeros_bp)

@@ -1,3 +1,5 @@
+// === UTILIDADES ===
+
 function toggleDetalle(fila) {
     const filaDetalle = fila.nextElementSibling;
     if (filaDetalle && filaDetalle.classList.contains('fila-detalle')) {
@@ -7,7 +9,6 @@ function toggleDetalle(fila) {
 
 function cambiarEstado(select, idTrabajo) {
     const nuevoEstado = select.value;
-
     fetch('/actualizar-estado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -26,16 +27,25 @@ function cambiarEstado(select, idTrabajo) {
     });
 }
 
-// Lógica de checkbox de pago
+// === CHECKBOXES DE PAGO ===
+
+function aplicarEstiloCheckPago(chk) {
+    const fila = chk.closest('tr.fila-remito');
+    if (!fila) return;
+    if (chk.checked) {
+        fila.classList.add('table-success');
+        fila.classList.remove('table-warning');
+    } else {
+        fila.classList.remove('table-success');
+    }
+}
+
 function inicializarCheckboxesPago() {
     document.querySelectorAll('.check-pago').forEach(chk => {
-        // Estilo inicial
         aplicarEstiloCheckPago(chk);
-
         chk.addEventListener('change', function () {
             const idTrabajo = this.dataset.id;
             const nuevoEstado = this.checked ? 'PAGADO' : 'PENDIENTE';
-
             fetch('/actualizar-estado', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -51,7 +61,6 @@ function inicializarCheckboxesPago() {
                     this.title = nuevoEstado;
                     aplicarEstiloCheckPago(this);
                 } else {
-                    // Revertir si hubo error
                     this.checked = !this.checked;
                     alert('No se pudo actualizar el estado. Intentá de nuevo.');
                 }
@@ -65,31 +74,18 @@ function inicializarCheckboxesPago() {
     });
 }
 
-function aplicarEstiloCheckPago(chk) {
-    const fila = chk.closest('tr.fila-remito');
-    if (!fila) return;
-    if (chk.checked) {
-        fila.classList.add('table-success');
-        fila.classList.remove('table-warning');
-    } else {
-        fila.classList.remove('table-success');
-    }
-}
+// === ORDENAR TABLA ===
 
-// Variable para recordar la dirección del orden (ascendente o descendente)
 let ordenAscendente = true;
 let ultimaColumna = -1;
 
 function ordenarTabla(nColumna, esNumero = false) {
-    const tabla = document.querySelector(".tabla-remitos table");
+    const tabla = document.querySelector('.tabla-remitos table');
     if (!tabla) return;
-    const tbody = tabla.querySelector("tbody");
-    
-    // 1. Buscamos solo las filas de remito principales
-    const filasRemito = Array.from(tbody.querySelectorAll("tr.fila-remito"));
+    const tbody = tabla.querySelector('tbody');
+    const filasRemito = Array.from(tbody.querySelectorAll('tr.fila-remito'));
     if (filasRemito.length <= 1) return;
 
-    // 2. Alternamos dirección
     if (ultimaColumna === nColumna) {
         ordenAscendente = !ordenAscendente;
     } else {
@@ -97,129 +93,150 @@ function ordenarTabla(nColumna, esNumero = false) {
         ultimaColumna = nColumna;
     }
 
-    // 3. Emparejamos cada remito con su fila de detalle siguiente
     const pares = filasRemito.map(fila => ({
         remito: fila,
         detalle: fila.nextElementSibling
     }));
 
-    // 4. Ordenamos las parejas basándonos en la fila de remito
     pares.sort((a, b) => {
-        let celdaA = a.remito.children[nColumna];
-        let celdaB = b.remito.children[nColumna];
+        const celdaA = a.remito.children[nColumna];
+        const celdaB = b.remito.children[nColumna];
         if (!celdaA || !celdaB) return 0;
-
-        let selectA = celdaA.querySelector("select");
-        let selectB = celdaB.querySelector("select");
-        let textoA = selectA ? selectA.value : celdaA.innerText.trim();
-        let textoB = selectB ? selectB.value : celdaB.innerText.trim();
-
+        const selectA = celdaA.querySelector('select');
+        const selectB = celdaB.querySelector('select');
+        const textoA = selectA ? selectA.value : celdaA.innerText.trim();
+        const textoB = selectB ? selectB.value : celdaB.innerText.trim();
         if (esNumero) {
-            let numA = parseFloat(textoA.replace(/[^0-9,-]+/g, "").replace(",", ".")) || 0;
-            let numB = parseFloat(textoB.replace(/[^0-9,-]+/g, "").replace(",", ".")) || 0;
+            const numA = parseFloat(textoA.replace(/[^0-9,-]+/g, '').replace(',', '.')) || 0;
+            const numB = parseFloat(textoB.replace(/[^0-9,-]+/g, '').replace(',', '.')) || 0;
             return ordenAscendente ? numA - numB : numB - numA;
-        } else {
-            return ordenAscendente 
-                ? textoA.localeCompare(textoB) 
-                : textoB.localeCompare(textoA);
         }
+        return ordenAscendente ? textoA.localeCompare(textoB) : textoB.localeCompare(textoA);
     });
 
-    // 5. Volvemos a insertar ambos en orden: remito y luego su detalle
     pares.forEach(par => {
         tbody.appendChild(par.remito);
         if (par.detalle) tbody.appendChild(par.detalle);
     });
 }
 
-// Inicialización de la edición modal de remitos
-document.addEventListener("DOMContentLoaded", () => {
-    // Inicializar checkboxes de pago
-    inicializarCheckboxesPago();
-    const modalElement = document.getElementById("modalEditarRemito");
+// === MODAL EDITAR REMITO ===
+
+function inicializarModalRemito() {
+    const modalElement = document.getElementById('modalEditarRemito');
     if (!modalElement) return;
 
     const modalInstance = new bootstrap.Modal(modalElement);
-    const formEditar = document.getElementById("form-editar-remito");
-    const inputId = document.getElementById("edit-id-trabajo");
-    const inputFecha = document.getElementById("edit-fecha");
-    const selectTipo = document.getElementById("edit-tipo");
-    const inputRemito = document.getElementById("edit-remito");
-    const hintRemito = document.getElementById("edit-remito-hint");
-    const alertaError = document.getElementById("alerta-error-modal");
-
-    let filaActual = null;
+    const formEditar = document.getElementById('form-editar-remito');
+    const inputId = document.getElementById('edit-id-trabajo');
+    const inputFecha = document.getElementById('edit-fecha');
+    const selectTipo = document.getElementById('edit-tipo');
+    const inputRemito = document.getElementById('edit-remito');
+    const hintRemito = document.getElementById('edit-remito-hint');
+    const alertaError = document.getElementById('alerta-error-modal');
 
     function actualizarHint() {
         if (!hintRemito) return;
-        if (selectTipo.value === "OI") {
-            hintRemito.textContent = "OI: 5 dígitos numéricos (ej. 12345). Si ingresás menos, se completará con ceros.";
+        if (selectTipo.value === 'OI') {
+            hintRemito.textContent = 'OI: 5 dígitos numéricos (ej. 12345). Si ingresás menos, se completará con ceros.';
         } else {
-            hintRemito.textContent = "OIB: Formato 00XXXX (4 dígitos tras el 00, ej. 001234).";
+            hintRemito.textContent = 'OIB: Formato 00XXXX (4 dígitos tras el 00, ej. 001234).';
         }
     }
 
-    if (selectTipo) {
-        selectTipo.addEventListener("change", actualizarHint);
-    }
+    if (selectTipo) selectTipo.addEventListener('change', actualizarHint);
 
-    document.querySelectorAll(".btn-editar-remito").forEach(btn => {
-        btn.addEventListener("click", (e) => {
+    document.querySelectorAll('.btn-editar-remito').forEach(btn => {
+        btn.addEventListener('click', e => {
             e.stopPropagation();
-            filaActual = btn.closest(".fila-remito");
-            inputId.value = btn.dataset.id || "";
-            selectTipo.value = btn.dataset.tipo || "OI";
-            inputRemito.value = btn.dataset.remito || "";
-            inputFecha.value = btn.dataset.fecha || "";
+            inputId.value = btn.dataset.id || '';
+            selectTipo.value = btn.dataset.tipo || 'OI';
+            inputRemito.value = btn.dataset.remito || '';
+            inputFecha.value = btn.dataset.fecha || '';
             actualizarHint();
-
-            alertaError.classList.add("d-none");
-            alertaError.textContent = "";
+            alertaError.classList.add('d-none');
+            alertaError.textContent = '';
             modalInstance.show();
         });
     });
 
     if (formEditar) {
-        formEditar.addEventListener("submit", (e) => {
+        formEditar.addEventListener('submit', e => {
             e.preventDefault();
-            alertaError.classList.add("d-none");
-            alertaError.textContent = "";
-
-            const formData = new FormData(formEditar);
-
-            fetch("/editar-remito", {
-                method: "POST",
-                body: formData
-            })
-            .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+            alertaError.classList.add('d-none');
+            alertaError.textContent = '';
+            fetch('/editar-remito', { method: 'POST', body: new FormData(formEditar) })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
             .then(resultado => {
                 if (!resultado.ok) {
-                    alertaError.textContent = resultado.data.mensaje || "Error al actualizar remito.";
-                    alertaError.classList.remove("d-none");
+                    alertaError.textContent = resultado.data.mensaje || 'Error al actualizar remito.';
+                    alertaError.classList.remove('d-none');
                     return;
                 }
-
-                // Actualizar la fila en el DOM
-                if (filaActual) {
-                    const btn = filaActual.querySelector(".btn-editar-remito");
-                    if (btn) {
-                        btn.dataset.tipo = resultado.data.tipo;
-                        btn.dataset.remito = resultado.data.remito;
-                        btn.dataset.fecha = resultado.data.fecha;
-                    }
-                    const celdaFecha = filaActual.querySelector(".celda-fecha");
-                    const celdaRemito = filaActual.querySelector(".celda-remito");
-                    if (celdaFecha) celdaFecha.textContent = resultado.data.fecha;
-                    if (celdaRemito) celdaRemito.textContent = `${resultado.data.tipo} #${resultado.data.remito}`;
-                }
-
                 modalInstance.hide();
+                location.reload();
             })
-            .catch(err => {
-                console.error(err);
-                alertaError.textContent = "Error de comunicación con el servidor. Intente nuevamente.";
-                alertaError.classList.remove("d-none");
+            .catch(() => {
+                alertaError.textContent = 'Error de comunicación. Intentá de nuevo.';
+                alertaError.classList.remove('d-none');
             });
         });
     }
+}
+
+// === VALIDACIÓN CUIT EN TIEMPO REAL ===
+
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
+function validarCuit(input) {
+    const cuit = input.value.trim();
+    const errDiv = input.parentElement.querySelector('.cuit-error');
+
+    if (!cuit) {
+        input.classList.remove('is-invalid');
+        if (errDiv) errDiv.classList.add('d-none');
+        return;
+    }
+
+    const payload = { cuit };
+    const idCliente = input.dataset.idcliente;
+    if (idCliente) payload.id_cliente = Number(idCliente);
+
+    fetch('/clientes/validar-cuit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.exists) {
+            input.classList.add('is-invalid');
+            if (errDiv) {
+                errDiv.textContent = data.message;
+                errDiv.classList.remove('d-none');
+            }
+        } else {
+            input.classList.remove('is-invalid');
+            if (errDiv) errDiv.classList.add('d-none');
+        }
+    })
+    .catch(err => console.error('Error validando CUIT:', err));
+}
+
+// === INICIALIZACIÓN GENERAL ===
+
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarCheckboxesPago();
+    inicializarModalRemito();
+
+    // Validación CUIT en tiempo real (modales de edición)
+    document.querySelectorAll('.cuit-input').forEach(inp => {
+        inp.addEventListener('input', debounce(() => validarCuit(inp), 300));
+    });
 });

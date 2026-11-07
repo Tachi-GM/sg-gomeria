@@ -188,7 +188,8 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold text-secondary">CUIT</label>
-                                        <input type="text" name="cuit" class="form-control" value="{{ emp['cuit'] or '' }}" placeholder="Ej: 30-71234567-9">
+                                        <input type="text" name="cuit" class="form-control cuit-input" data-idcliente="{{ emp['id_cliente'] }}" value="{{ emp['cuit'] or '' }}" placeholder="Ej: 30-71234567-9">
+                                        <div class="cuit-error invalid-feedback d-none"></div>
                                     </div>
                                     <div class="row g-2 mb-3">
                                         <div class="col-md-6">
