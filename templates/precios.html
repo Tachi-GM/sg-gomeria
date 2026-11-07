@@ -5,46 +5,90 @@
 
 {% block content %}
     <div class="container py-4">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                {% for categoria, mensaje in mensajes %}
+                    <div class="alert alert-{{ categoria }} alert-dismissible fade show shadow-sm rounded-4 mb-4" role="alert">
+                        {{ mensaje }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
         <div class="tarjeta-precios">
-            <div class="p-4 border-bottom">
-                <h2 class="h4 mb-1 fw-bold"><span class="hada-decorativa">✨</span> Lista de precios <span class="hada-decorativa">✨</span></h2>
-                <p class="text-muted mb-0">Precios actualizados de nuestros productos y servicios</p>
+            <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="h4 mb-1 fw-bold"><span class="hada-decorativa">✨</span> Lista de precios <span class="hada-decorativa">✨</span></h2>
+                    <p class="text-muted mb-0">Precios actualizados de nuestros productos y servicios</p>
+                </div>
+
+                <!-- FILTRO DE ESTADO: ACTIVAS / OCULTAS / TODAS -->
+                <div class="btn-group shadow-sm rounded-pill overflow-hidden" role="group">
+                    <a href="{{ url_for('trabajos_bp.precios', estado='activas') }}"
+                       class="btn btn-sm {% if filtro_estado == 'activas' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %} px-3">
+                        Activas ({{ conteo_activas }})
+                    </a>
+                    <a href="{{ url_for('trabajos_bp.precios', estado='inactivas') }}"
+                       class="btn btn-sm {% if filtro_estado == 'inactivas' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %} px-3">
+                        Ocultas / Inactivas ({{ conteo_inactivas }})
+                    </a>
+                    <a href="{{ url_for('trabajos_bp.precios', estado='todas') }}"
+                       class="btn btn-sm {% if filtro_estado == 'todas' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %} px-3">
+                        Todas ({{ conteo_activas + conteo_inactivas }})
+                    </a>
+                </div>
             </div>
+
             <div class="table-responsive">
-                <table class="table table-hover mb-0 tabla-precios">
+                <table class="table table-hover mb-0 tabla-precios align-middle">
                     <thead>
                         <tr>
-                            <th scope="col">Producto</th>
-                            <th scope="col">Lista 1</th>
-                            <th scope="col">Lista 2</th>
-                            <th scope="col">Lista 3</th>
+                            <th scope="col">Producto / Servicio</th>
+                            <th scope="col">Lista 1 (Base)</th>
+                            <th scope="col">Lista 2 (Flotas)</th>
+                            <th scope="col">Lista 3 (Cta Cte)</th>
+                            <th scope="col" class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for t in tareas %}
-                        <tr>
-                            <td class="fw-bold">{{ t['nom_tar'] }}</td>
+                        <tr class="{% if not t['activa'] %}opacity-75 bg-light{% endif %}">
+                            <td class="fw-bold">
+                                {{ t['nom_tar'] }}
+                                {% if not t['activa'] %}
+                                    <span class="badge bg-secondary rounded-pill ms-2 small">Inactiva</span>
+                                {% endif %}
+                            </td>
                             <td><span class="chip-precio chip-l1">${{ "{:,.2f}".format(t['precio']) if t['precio'] else '0.00' }}</span></td>
                             <td><span class="chip-precio chip-l2">${{ "{:,.2f}".format(t['precio2']) if t['precio2'] else '0.00' }}</span></td>
                             <td><span class="chip-precio chip-l3">${{ "{:,.2f}".format(t['precio3']) if t['precio3'] else '0.00' }}</span></td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
-                                    data-bs-toggle="modal" data-bs-target="#modalEditarTarea"
-                                    onclick="cargarDatosTarea(this)"
-                                    data-id="{{ t['id_tarea'] }}"
-                                    data-nombre="{{ t['nom_tar'] }}"
-                                    data-precio1="{{ t['precio'] }}"
-                                    data-precio2="{{ t['precio2'] }}"
-                                    data-precio3="{{ t['precio3'] }}">
-                                    Editar
-                                </button>
+                            <td class="text-center">
+                                <div class="d-inline-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarTarea"
+                                        onclick="cargarDatosTarea(this)"
+                                        data-id="{{ t['id_tarea'] }}"
+                                        data-nombre="{{ t['nom_tar'] }}"
+                                        data-precio1="{{ t['precio'] }}"
+                                        data-precio2="{{ t['precio2'] }}"
+                                        data-precio3="{{ t['precio3'] }}">
+                                        ✏️ Editar
+                                    </button>
+
+                                    <form action="{{ url_for('trabajos_bp.alternar_tarea', id_tarea=t['id_tarea'], estado=filtro_estado) }}" method="POST" class="m-0">
+                                        <button type="submit" class="btn btn-sm {% if t['activa'] %}btn-outline-warning{% else %}btn-outline-success{% endif %} rounded-pill fw-bold"
+                                                title="{% if t['activa'] %}Ocultar del mostrador{% else %}Reactivar en el mostrador{% endif %}">
+                                            {% if t['activa'] %}👁️ Ocultar{% else %}🔄 Reactivar{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
-                                No hay tareas cargadas en el catálogo todavía.
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                No se encontraron tareas para el filtro seleccionado.
                             </td>
                         </tr>
                         {% endfor %}
@@ -52,39 +96,42 @@
                 </table>
             </div>
         </div>
-    <div class="modal fade" id="modalEditarTarea" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            <form action="/modificar-tarea" method="POST">
-                <div class="modal-header">
-                <h5 class="modal-title">Editar Tarea</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+        <!-- MODAL EDITAR TAREA -->
+        <div class="modal fade" id="modalEditarTarea" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <form action="/modificar-tarea" method="POST">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold text-primary">Editar Tarea</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <input type="hidden" name="id_tarea" id="edit-id">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-secondary">Nombre de la Tarea</label>
+                                <input type="text" name="nombre" id="edit-nombre" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-secondary">Precio 1 (Mostrador Base)</label>
+                                <input type="number" step="any" name="precio1" id="edit-precio1" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-secondary">Precio 2 (Flotas Amigas)</label>
+                                <input type="number" step="any" name="precio2" id="edit-precio2" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-secondary">Precio 3 (Cuenta Corriente)</label>
+                                <input type="number" step="any" name="precio3" id="edit-precio3" class="form-control">
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Guardar Cambios</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-body">
-                <input type="hidden" name="id_tarea" id="edit-id">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-secondary">Nombre</label>
-                    <input type="text" name="nombre" id="edit-nombre" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-secondary">Precio 1</label>
-                    <input type="number" name="precio1" id="edit-precio1" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-secondary">Precio 2</label>
-                    <input type="number" name="precio2" id="edit-precio2" class="form-control">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-secondary">Precio 3</label>
-                    <input type="number" name="precio3" id="edit-precio3" class="form-control">
-                </div>
-                </div>
-                <div class="modal-footer">
-                <button type="submit" class="btn btn-primary rounded-pill">Guardar Cambios</button>
-                </div>
-            </form>
             </div>
-        </div>
         </div>
     </div>
 {% endblock %}

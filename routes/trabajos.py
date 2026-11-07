@@ -195,12 +195,40 @@ def precios():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
-    tareas = cursor.execute(
-        "SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas ORDER BY nom_tar ASC"
-    ).fetchall()
+    filtro_estado = request.args.get("estado", "activas").strip().lower()
+
+    if filtro_estado == "activas":
+        where_clause = "WHERE COALESCE(activa, 1) = 1"
+    elif filtro_estado == "inactivas":
+        where_clause = "WHERE COALESCE(activa, 1) = 0"
+    else:
+        filtro_estado = "todas"
+        where_clause = ""
+
+    query_tareas = f"""
+        SELECT id_tarea, nom_tar, precio, precio2, precio3, COALESCE(activa, 1) AS activa
+        FROM tareas
+        {where_clause}
+        ORDER BY nom_tar ASC
+    """
+    tareas = cursor.execute(query_tareas).fetchall()
+
+    conteo_activas = cursor.execute(
+        "SELECT COUNT(*) FROM tareas WHERE COALESCE(activa, 1) = 1"
+    ).fetchone()[0]
+    conteo_inactivas = cursor.execute(
+        "SELECT COUNT(*) FROM tareas WHERE COALESCE(activa, 1) = 0"
+    ).fetchone()[0]
 
     conexion.close()
-    return render_template("precios.html", tareas=tareas, milagritos=modo_activo())
+    return render_template(
+        "precios.html",
+        tareas=tareas,
+        filtro_estado=filtro_estado,
+        conteo_activas=conteo_activas,
+        conteo_inactivas=conteo_inactivas,
+        milagritos=modo_activo(),
+    )
 
 
 # Funciones de Agregar y Modificar Tareas
@@ -305,6 +333,50 @@ def modificar_tarea():
         conexion.close()
 
     return redirect(url_for("trabajos_bp.precios"))
+
+
+@trabajos_bp.route("/alternar-tarea/<int:id_tarea>", methods=["POST"])
+@login_requerido
+def alternar_tarea(id_tarea):
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    tarea = cursor.execute(
+        "SELECT id_tarea, nom_tar, COALESCE(activa, 1) AS activa FROM tareas WHERE id_tarea = ?",
+        (id_tarea,),
+    ).fetchone()
+
+    if not tarea:
+        conexion.close()
+        flash("La tarea seleccionada no existe.", "danger")
+        return redirect(url_for("trabajos_bp.precios"))
+
+    nuevo_estado = 0 if tarea["activa"] == 1 else 1
+    accion_texto = (
+        "desactivada y ocultada del mostrador"
+        if nuevo_estado == 0
+        else "reactivada exitosamente"
+    )
+
+    try:
+        cursor.execute(
+            "UPDATE tareas SET activa = ? WHERE id_tarea = ?",
+            (nuevo_estado, id_tarea),
+        )
+        conexion.commit()
+        registrar_auditoria(
+            "ESTADO_TAREA",
+            f"Tarea ID {id_tarea} ('{tarea['nom_tar']}') marcada como activa={nuevo_estado}",
+        )
+        flash(f"Tarea '{tarea['nom_tar']}' {accion_texto}.", "success")
+    except Exception as e:
+        logger.exception(f"Error al cambiar estado de tarea ID {id_tarea}: {e}")
+        flash("Ocurrió un error al cambiar el estado de la tarea.", "danger")
+    finally:
+        conexion.close()
+
+    estado_actual = request.args.get("estado", "activas")
+    return redirect(url_for("trabajos_bp.precios", estado=estado_actual))
 
 
 # Endpoint asíncrono para marcar/desmarcar remito como pagado
