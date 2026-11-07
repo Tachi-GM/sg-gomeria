@@ -3,14 +3,18 @@ import logging
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
-from utils.formateadores import obtener_meses_disponibles, validar_y_formatear_cuit
+from utils.formateadores import (
+    obtener_meses_disponibles,
+    validar_y_formatear_cuit,
+    parse_int_seguro,
+)
 
 logger = logging.getLogger("SG_Gomeria")
 
 clientes_bp = Blueprint("clientes_bp", __name__)
 
 
-# Pantall Clientes y Dashboard General
+# Pantalla Clientes y Dashboard General
 @clientes_bp.route("/clientes")
 @login_requerido
 def clientes():
@@ -19,35 +23,48 @@ def clientes():
 
     buscar = request.args.get("buscar", "").strip()
     periodo_seleccionado = request.args.get("periodo", "todos")
+    filtro_estado = request.args.get("estado", "activos").strip().lower()
+
+    condiciones = []
+    parametros_empresas = []
+
+    if filtro_estado == "activos":
+        condiciones.append("COALESCE(clientes.activo, 1) = 1")
+    elif filtro_estado == "inactivos":
+        condiciones.append("COALESCE(clientes.activo, 1) = 0")
+    # Si es 'todos', no se filtra por activo
 
     if buscar:
-        empresas = cursor.execute(
-            """
-            SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
-                   (SELECT COUNT(*) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente)
-                       AS cantidad_remitos,
-                   COALESCE(
-                       (SELECT SUM(t.total) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente),
-                       0
-                   ) AS total_facturado
-            FROM clientes
-            WHERE nom_cli LIKE ? OR cuit LIKE ? OR tel LIKE ?
-            ORDER BY nom_cli
-        """,
-            (f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"),
-        ).fetchall()
-    else:
-        empresas = cursor.execute("""
-            SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
-                   (SELECT COUNT(*) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente)
-                       AS cantidad_remitos,
-                   COALESCE(
-                       (SELECT SUM(t.total) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente),
-                       0
-                   ) AS total_facturado
-            FROM clientes
-            ORDER BY nom_cli
-        """).fetchall()
+        condiciones.append("(nom_cli LIKE ? OR cuit LIKE ? OR tel LIKE ?)")
+        busqueda_param = f"%{buscar}%"
+        parametros_empresas.extend([busqueda_param, busqueda_param, busqueda_param])
+
+    where_clause = ""
+    if condiciones:
+        where_clause = "WHERE " + " AND ".join(condiciones)
+
+    query_empresas = f"""
+        SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
+               COALESCE(activo, 1) AS activo,
+               (SELECT COUNT(*) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente)
+                   AS cantidad_remitos,
+               COALESCE(
+                   (SELECT SUM(t.total) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente),
+                   0
+               ) AS total_facturado
+        FROM clientes
+        {where_clause}
+        ORDER BY nom_cli
+    """
+    empresas = cursor.execute(query_empresas, parametros_empresas).fetchall()
+
+    # Contadores de activos e inactivos para badges informativos
+    conteo_activos = cursor.execute(
+        "SELECT COUNT(*) FROM clientes WHERE COALESCE(activo, 1) = 1"
+    ).fetchone()[0]
+    conteo_inactivos = cursor.execute(
+        "SELECT COUNT(*) FROM clientes WHERE COALESCE(activo, 1) = 0"
+    ).fetchone()[0]
 
     # Armamos la consulta de remitos, sumando el filtro de mes si corresponde
     query_remitos = """
@@ -91,6 +108,9 @@ def clientes():
         remitos=remitos,
         buscar=buscar,
         periodo_seleccionado=periodo_seleccionado,
+        filtro_estado=filtro_estado,
+        conteo_activos=conteo_activos,
+        conteo_inactivos=conteo_inactivos,
         meses_disponibles=meses_disponibles,
         detalles_por_trabajo=detalles_por_trabajo,
         milagritos=modo_activo(),
@@ -108,9 +128,17 @@ def historial_cliente():
     cursor = conexion.cursor()
 
     cliente = cursor.execute(
-        "SELECT id_cliente, nom_cli, cuit FROM clientes WHERE id_cliente = ?",
+        """SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
+                  COALESCE(activo, 1) AS activo
+           FROM clientes WHERE id_cliente = ?""",
         (id_cliente,),
     ).fetchone()
+
+    if not cliente:
+        conexion.close()
+        flash("El cliente solicitado no existe.", "danger")
+        return redirect(url_for("clientes_bp.clientes"))
+
     # 1. Armamos la consulta base y la lista de parámetros
     query = """
         SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, c.nom_cli, t.total, t.detalle,
@@ -147,12 +175,11 @@ def historial_cliente():
     # 5. Obtenemos el total y el total por mes
     total_mes = sum(r["total"] for r in remitos)
 
-    # NUEVO: traemos el detalle solo de los trabajos que aparecen en `remitos`
+    # Detalle solo de los trabajos que aparecen en `remitos`
     ids_trabajo = [r["id_trabajo"] for r in remitos]
     detalles_por_trabajo = {}
 
     if ids_trabajo:
-        # Generamos "?, ?, ?" según cuántos ids haya, para el IN de SQL
         placeholders = ",".join("?" for _ in ids_trabajo)
         detalles_raw = cursor.execute(
             f"""
@@ -184,7 +211,7 @@ def historial_cliente():
     )
 
 
-# Funcion para agregar clientes
+# Función para agregar clientes
 @clientes_bp.route("/agregar-cliente", methods=["POST"])
 @login_requerido
 def agregar_cliente():
@@ -195,9 +222,13 @@ def agregar_cliente():
     cuit_raw = request.form.get("cuit", "").strip()
     tel = request.form.get("tel", "").strip()
     mail = request.form.get("mail", "").strip()
+    con_iva = 1 if request.form.get("con_iva", "1") == "1" else 0
+    lista_precios = parse_int_seguro(request.form.get("lista_precios", 1), 1)
+    if lista_precios not in (1, 2, 3):
+        lista_precios = 1
 
     if not nom_cli:
-        flash("El nombre o razón social del cliente es obligatorio", "danger")
+        flash("El nombre o razón social del cliente es obligatorio.", "danger")
         return redirect(url_for("clientes_bp.clientes"))
 
     cuit_final = None
@@ -211,10 +242,10 @@ def agregar_cliente():
     try:
         cursor.execute(
             """
-            INSERT INTO clientes (nom_cli, cuit, tel, mail)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO clientes (nom_cli, cuit, tel, mail, con_iva, lista_precios, activo)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
         """,
-            (nom_cli, cuit_final, tel, mail),
+            (nom_cli, cuit_final, tel, mail, con_iva, lista_precios),
         )
         conexion.commit()
         registrar_auditoria(
@@ -229,6 +260,131 @@ def agregar_cliente():
     except Exception as e:
         logger.exception(f"Error inesperado al agregar cliente: {e}")
         flash("Ocurrió un error inesperado al registrar el cliente.", "danger")
+    finally:
+        conexion.close()
+
+    return redirect(url_for("clientes_bp.clientes"))
+
+
+# Función para editar clientes existentes
+@clientes_bp.route("/editar-cliente/<int:id_cliente>", methods=["POST"])
+@login_requerido
+def editar_cliente(id_cliente):
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    cliente_existente = cursor.execute(
+        "SELECT id_cliente, nom_cli, cuit FROM clientes WHERE id_cliente = ?",
+        (id_cliente,),
+    ).fetchone()
+
+    if not cliente_existente:
+        conexion.close()
+        flash("El cliente que intentás editar no existe.", "danger")
+        return redirect(url_for("clientes_bp.clientes"))
+
+    nom_cli = request.form.get("nombre", "").strip()
+    cuit_raw = request.form.get("cuit", "").strip()
+    tel = request.form.get("tel", "").strip()
+    mail = request.form.get("mail", "").strip()
+    con_iva = 1 if request.form.get("con_iva", "1") == "1" else 0
+    lista_precios = parse_int_seguro(request.form.get("lista_precios", 1), 1)
+    if lista_precios not in (1, 2, 3):
+        lista_precios = 1
+
+    if not nom_cli:
+        conexion.close()
+        flash("El nombre o razón social no puede estar vacío.", "danger")
+        return redirect(url_for("clientes_bp.clientes"))
+
+    cuit_final = None
+    if cuit_raw:
+        cuit_valido, cuit_resultado = validar_y_formatear_cuit(cuit_raw)
+        if not cuit_valido:
+            conexion.close()
+            flash(f"Error en CUIT: {cuit_resultado}", "danger")
+            return redirect(url_for("clientes_bp.clientes"))
+        cuit_final = cuit_resultado
+
+        # Verificar unicidad de CUIT excluyendo al cliente actual
+        duplicado = cursor.execute(
+            "SELECT id_cliente, nom_cli FROM clientes WHERE cuit = ? AND id_cliente != ?",
+            (cuit_final, id_cliente),
+        ).fetchone()
+        if duplicado:
+            conexion.close()
+            flash(
+                f"El CUIT '{cuit_final}' ya pertenece a la empresa '{duplicado['nom_cli']}'.",
+                "danger",
+            )
+            return redirect(url_for("clientes_bp.clientes"))
+
+    try:
+        cursor.execute(
+            """
+            UPDATE clientes
+            SET nom_cli = ?, cuit = ?, tel = ?, mail = ?, con_iva = ?, lista_precios = ?
+            WHERE id_cliente = ?
+        """,
+            (nom_cli, cuit_final, tel, mail, con_iva, lista_precios, id_cliente),
+        )
+        conexion.commit()
+        registrar_auditoria(
+            "MODIFICACION_CLIENTE",
+            f"Cliente ID {id_cliente} actualizado a '{nom_cli}' (CUIT: {cuit_final}, L{lista_precios}, IVA:{con_iva})",
+        )
+        flash(f"Cliente '{nom_cli}' actualizado con éxito.", "success")
+    except sqlite3.IntegrityError:
+        flash(
+            "Error de integridad: Ya existe un cliente con ese CUIT o nombre.", "danger"
+        )
+    except Exception as e:
+        logger.exception(f"Error al editar cliente ID {id_cliente}: {e}")
+        flash("Ocurrió un error inesperado al actualizar el cliente.", "danger")
+    finally:
+        conexion.close()
+
+    return redirect(url_for("clientes_bp.clientes"))
+
+
+# Función para conmutar estado Activo / Inactivo (Ocultar / Reactivar)
+@clientes_bp.route("/alternar-cliente/<int:id_cliente>", methods=["POST"])
+@login_requerido
+def alternar_cliente(id_cliente):
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    cliente = cursor.execute(
+        "SELECT id_cliente, nom_cli, COALESCE(activo, 1) AS activo FROM clientes WHERE id_cliente = ?",
+        (id_cliente,),
+    ).fetchone()
+
+    if not cliente:
+        conexion.close()
+        flash("El cliente seleccionado no existe.", "danger")
+        return redirect(url_for("clientes_bp.clientes"))
+
+    nuevo_estado = 0 if cliente["activo"] == 1 else 1
+    accion_texto = (
+        "desactivado y ocultado del mostrador"
+        if nuevo_estado == 0
+        else "reactivado exitosamente"
+    )
+
+    try:
+        cursor.execute(
+            "UPDATE clientes SET activo = ? WHERE id_cliente = ?",
+            (nuevo_estado, id_cliente),
+        )
+        conexion.commit()
+        registrar_auditoria(
+            "ESTADO_CLIENTE",
+            f"Cliente ID {id_cliente} ('{cliente['nom_cli']}') marcado como activo={nuevo_estado}",
+        )
+        flash(f"Cliente '{cliente['nom_cli']}' {accion_texto}.", "success")
+    except Exception as e:
+        logger.exception(f"Error al cambiar estado de cliente ID {id_cliente}: {e}")
+        flash("Ocurrió un error al cambiar el estado del cliente.", "danger")
     finally:
         conexion.close()
 

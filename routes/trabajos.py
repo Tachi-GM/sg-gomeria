@@ -40,7 +40,10 @@ def mataburros():
     conexion = obtener_conexion()
 
     empresas = conexion.execute(
-        "SELECT id_cliente, nom_cli, cuit, con_iva, lista_precios FROM clientes ORDER BY nom_cli ASC"
+        """SELECT id_cliente, nom_cli, cuit, con_iva, lista_precios
+           FROM clientes
+           WHERE COALESCE(activo, 1) = 1
+           ORDER BY nom_cli ASC"""
     ).fetchall()
     tareas = conexion.execute(
         "SELECT id_tarea, nom_tar, precio, precio2, precio3 FROM tareas WHERE activa = 1 ORDER BY nom_tar ASC"
