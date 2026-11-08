@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-BASE = Path(__file__).resolve().parent  # la carpeta donde vive ESTE script
+BASE = Path(__file__).resolve().parent.parent  # raíz del proyecto
 RUTA_EXCEL = BASE / "datos_privados" / "CUIT Clientes.xls"
 RUTA_DB = BASE / "datos_privados" / "sg_gomeria2.db"
 RUTA_REVISION = BASE / "datos_privados" / "clientes_a_revisar.xlsx"
