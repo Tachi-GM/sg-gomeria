@@ -4,10 +4,12 @@ venv/
 .vscode/
 datos_privados/
 *.db
+*.sqbpro
 backups/
 uploads/
 *.xls
 *.xlsx
+!docs/Extras/*.xlsx
 .env
 *.log
 .coverage
@@ -17,3 +19,4 @@ opencode.jsonc
 *-journal
 *-wal
 *-shm
+fotos_remitos/

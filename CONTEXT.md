@@ -151,9 +151,7 @@ SG - Gomería/
 
 ### Media prioridad
 - [ ] **Cheques: vincular estado con remitos** (mostrar si el remito asociado está pagado o pendiente).
-- [ ] **Remitos con y sin IVA:** listado Factura A (sin descontar el 21%) y listado sin IVA (con el 21% descontado). Falta definir la fórmula con Tachi.
-- [ ] **Eliminar clientes de verdad.** Hoy se pueden editar y ocultar, pero no borrar.
-- [ ] **Confirmar ordenamiento de la tabla de remitos** por columnas. El README lo lista como hecho, pero `clientes.js` debe verificarse.
+- [ ] **Remitos con y sin IVA:** listado Factura A (sin descontar el 21%) y listado sin IVA (con el 21% descontado). Falta definir la formula exacta con Tachi.
 
 ### Baja prioridad / Ideas futuras
 - [ ] **Comprobante PDF** imprimible o para WhatsApp.
