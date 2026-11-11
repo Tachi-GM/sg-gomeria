@@ -1,5 +1,7 @@
 """Generadores de archivos para exportaciones mensuales."""
 
+from copy import copy
+from datetime import datetime
 from io import BytesIO
 from textwrap import wrap
 
@@ -83,6 +85,11 @@ def generar_excel_general(datos):
 
     for hoja in libro.worksheets:
         hoja.sheet_view.showGridLines = True
+        for fila in hoja.iter_rows():
+            for celda in fila:
+                fuente = copy(celda.font)
+                fuente.name = "Arial"
+                celda.font = fuente
 
     salida = BytesIO()
     libro.save(salida)
@@ -119,13 +126,13 @@ def _generar_hoja_mensual(libro, datos, con_iva, nombre, nombre_cliente):
         celda.font = Font(bold=True)
         celda.border = Border(bottom=Side(style="thin", color="000000"))
 
-    saldo_anterior = 0
     for fila, remito in enumerate(datos["remitos"], start=3):
-        importe, iva, total = _calcular_importes(remito, con_iva)
-        pagado = importe if remito["estado"] == "PAGADO" else 0
+        importe, _iva, total = _calcular_importes(remito, con_iva)
         hoja.cell(fila, 1, remito["remito"])
-        hoja.cell(fila, 2, remito["fecha"])
-        hoja.cell(fila, 3, remito["detalle"] or _texto_tareas(remito))
+        fecha = datetime.strptime(remito["fecha"], "%Y-%m-%d")
+        hoja.cell(fila, 2, fecha)
+        hoja.cell(fila, 2).number_format = "d-mmm"
+        hoja.cell(fila, 3, remito["detalle"] or "")
         if con_iva:
             hoja.cell(fila, 4, f"=E{fila}/1.21")
             hoja.cell(fila, 5, total)
@@ -144,8 +151,6 @@ def _generar_hoja_mensual(libro, datos, con_iva, nombre, nombre_cliente):
         )
         for columna in range(4, 8):
             hoja.cell(fila, columna).number_format = "#,##0.00"
-        saldo_anterior += importe - pagado
-
     primera = 3
     ultima = 2 + len(datos["remitos"])
     fila_subtotal = ultima + 2

@@ -43,6 +43,10 @@ class TestExportacionesMensuales(unittest.TestCase):
                 [celda.value for celda in libro["Agosto"][2]],
                 ["OI N°", "Fecha", "Detalle", "Importe", "Total", "Pagado", "Saldo"],
             )
+            self.assertEqual(libro["Agosto"]["B3"].number_format, "d-mmm")
+            self.assertIsNone(libro["Agosto"]["C3"].value)
+            self.assertEqual(libro["Agosto"]["A1"].font.name, "Arial")
+            self.assertEqual(libro["Agosto"]["B3"].font.name, "Arial")
             self.assertEqual(libro["Agosto"]["D3"].value, "=E3/1.21")
             self.assertEqual(libro["Agosto"]["E3"].value, 60000)
             libro.close()
@@ -124,7 +128,7 @@ class TestExportacionesMensuales(unittest.TestCase):
             conexion.commit()
             conexion.close()
 
-    def test_exportacion_excel_incluye_tareas_temporales(self):
+    def test_exportacion_excel_omite_tareas_si_no_hay_detalle_original(self):
         conexion = obtener_conexion()
         conexion.execute(
             """
@@ -144,12 +148,7 @@ class TestExportacionesMensuales(unittest.TestCase):
             from openpyxl import load_workbook
 
             libro = load_workbook(BytesIO(respuesta.data), read_only=True)
-            valores = [
-                celda.value for fila in libro["Agosto"].iter_rows() for celda in fila
-            ]
-            self.assertTrue(
-                any("Tarea temporal exportada x 2" in str(valor) for valor in valores)
-            )
+            self.assertIsNone(libro["Agosto"]["C3"].value)
             libro.close()
         finally:
             conexion = obtener_conexion()
