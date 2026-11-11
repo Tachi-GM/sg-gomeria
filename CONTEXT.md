@@ -139,6 +139,7 @@ SG - Gomería/
 - [x] Manual de usuario en PDF, plan de capacitación y diagramas ER y de casos de uso.
 - [x] Tests automatizados (`test_rutas.py`, `test_trabajos_service.py`).
 - [x] Importador de clientes desde Excel (`importar_clientes.py`), con backup previo.
+- [x] Importador de precios desde Excel (`scripts/importar_precios.py`), con validación de IVA y backup previo.
 - [x] **Eliminar `templates/pagos.html`** (vacío, reemplazado por `gomeros.html`).
 
 ---

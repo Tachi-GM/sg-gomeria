@@ -24,7 +24,7 @@ def _volver_a_semana():
     return redirect(url_for("gomeros_bp.control_gomeros", semana=semana or None))
 
 
-@gomeros_bp.route("/gomeros")
+@gomeros_bp.route("/gomeros.control_gomeros")
 @login_requerido
 def control_gomeros():
     referencia = request.args.get("semana") or date.today().isoformat()
