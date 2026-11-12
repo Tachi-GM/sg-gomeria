@@ -518,6 +518,20 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         finally:
             respuesta.close()
 
+    def test_datos_empresa_disponibles_para_admin(self):
+        respuesta = self.client.get("/empresa")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn(b"Datos de la empresa", respuesta.data)
+
+    def test_datos_empresa_bloqueados_para_usuario_comun(self):
+        with self.client.session_transaction() as sess:
+            sess["usuario"] = "operador"
+            sess["rol"] = "usuario"
+
+        respuesta = self.client.get("/empresa", follow_redirects=False)
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertEqual(respuesta.headers.get("Location"), "/")
+
     def test_solo_admin_bloquea_usuario_comun(self):
         """Un usuario sin rol de admin es redirigido al intentar hacer backup."""
         with self.client.session_transaction() as sess:

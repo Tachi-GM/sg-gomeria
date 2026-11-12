@@ -3,6 +3,7 @@ import logging
 from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 
+from config.empresa_loader import obtener_datos_empresa
 from routes.general import general_bp
 from routes.auth import auth_bp
 from routes.trabajos import trabajos_bp
@@ -48,6 +49,8 @@ def inject_global_vars():
     return {
         "milagritos": session.get("modo_milagritos", False),
         "modo_activo": modo_activo,
+        # Datos compartidos con Jinja2 para evitar repetir imports en cada ruta.
+        "empresa": obtener_datos_empresa(),
     }
 
 

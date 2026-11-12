@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import Blueprint, current_app, render_template, send_file
 from database.connection import get_db_path
 from services.dashboard_service import obtener_resumen_inicio
+from config.empresa_loader import obtener_datos_empresa
 from utils.seguridad import (
     login_requerido,
     solo_admin,
@@ -25,6 +26,18 @@ def home():
         "index.html",
         milagritos=modo_activo(),
         resumen=obtener_resumen_inicio(),
+    )
+
+
+@general_bp.route("/empresa")
+@login_requerido
+@solo_admin
+def datos_empresa():
+    """Muestra los datos comerciales; el acceso está limitado a administradores."""
+    return render_template(
+        "empresa.html",
+        empresa=obtener_datos_empresa(),
+        milagritos=modo_activo(),
     )
 
 
