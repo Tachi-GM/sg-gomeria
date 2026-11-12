@@ -20,3 +20,5 @@ opencode.jsonc
 *-wal
 *-shm
 fotos_remitos/
+# Configuración privada con datos comerciales reales.
+config/empresa.py
