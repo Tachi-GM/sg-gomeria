@@ -1,0 +1,58 @@
+{% extends "base/base.html" %}
+
+{% block title %}Datos de la empresa{% endblock %}
+{% block subtitle %}Datos de la empresa{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="tarjeta-formulario p-4 p-md-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-4">
+            <div>
+                <h2 class="fs-4 fw-bold mb-1">🏢 {{ empresa.nombre or "Empresa sin configurar" }}</h2>
+                <p class="text-secondary mb-0">Información comercial configurada para el sistema.</p>
+            </div>
+            <span class="badge text-bg-light">Solo administradores</span>
+        </div>
+
+        {% if not empresa.nombre and not empresa.direccion and not empresa.cuit %}
+        <div class="alert alert-warning" role="alert">
+            Todavía no se cargaron los datos reales. Copiá <code>config/empresa_ejemplo.py</code>
+            como <code>config/empresa.py</code> y completá ese archivo en el servidor.
+        </div>
+        {% endif %}
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-secondary">Razón / nombre</dt>
+            <dd class="col-sm-9">{{ empresa.nombre or "Sin configurar" }}</dd>
+
+            <dt class="col-sm-3 text-secondary">Dirección</dt>
+            <dd class="col-sm-9">{{ empresa.direccion or "Sin configurar" }}</dd>
+
+            <dt class="col-sm-3 text-secondary">CUIT</dt>
+            <dd class="col-sm-9">{{ empresa.cuit or "Sin configurar" }}</dd>
+
+            <dt class="col-sm-3 text-secondary">Correo</dt>
+            <dd class="col-sm-9">{{ empresa.email or "Sin configurar" }}</dd>
+
+            <dt class="col-sm-3 text-secondary">Teléfonos</dt>
+            <dd class="col-sm-9">
+                {% if empresa.telefonos %}
+                    {{ empresa.telefonos | join(" · ") }}
+                {% else %}
+                    Sin configurar
+                {% endif %}
+            </dd>
+
+            <dt class="col-sm-3 text-secondary">Horario</dt>
+            <dd class="col-sm-9">
+                Lunes a viernes: {{ empresa.horarios.lunes_viernes or "Sin configurar" }}<br>
+                Sábados: {{ empresa.horarios.sabados or "Sin configurar" }}
+            </dd>
+        </dl>
+        <p class="small text-secondary border-top pt-3 mt-4 mb-0">
+            Para modificar esta información, editá el archivo privado <code>config/empresa.py</code>.
+            No se guarda en la base de datos ni se publica en GitHub.
+        </p>
+    </div>
+</div>
+{% endblock %}
