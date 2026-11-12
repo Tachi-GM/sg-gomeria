@@ -21,6 +21,14 @@
             {% endif %}
         {% endwith %}
         <div class="tarjeta-formulario p-4 p-md-5">
+            <!-- Identificación comercial que acompaña la carga del remito. -->
+            <div class="border rounded-3 bg-light p-3 mb-4">
+                <h3 class="h6 fw-bold mb-1">{{ empresa.nombre or "Empresa sin configurar" }}</h3>
+                <div class="small text-secondary">
+                    {% if empresa.direccion %}<span>{{ empresa.direccion }}</span>{% endif %}
+                    {% if empresa.cuit %}<span class="ms-2">CUIT: {{ empresa.cuit }}</span>{% endif %}
+                </div>
+            </div>
             <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4 flex-wrap gap-3">
                 <h2 class="fs-4 fw-bold mb-0 text-dark">
                     <span class="hada-decorativa">✨</span>Nuevo Remito de Trabajo<span class="hada-decorativa">✨</span>
