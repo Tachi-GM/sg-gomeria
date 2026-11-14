@@ -161,6 +161,34 @@ def crear_tablas():
     );
     CREATE INDEX IF NOT EXISTS idx_ausencias_gomeros_gomero_fecha
         ON ausencias_gomeros(gomero_id, fecha);
+
+    -- 11. Proveedores de insumos y mercadería (Borrador inicial)
+    CREATE TABLE IF NOT EXISTS proveedores (
+        id_proveedor INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL COLLATE NOCASE UNIQUE,
+        cuit TEXT,
+        telefono TEXT,
+        contacto TEXT,
+        rubro TEXT,
+        activo INTEGER NOT NULL DEFAULT 1 CHECK (activo IN (0, 1)),
+        creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 12. Cuentas y gastos con proveedores
+    CREATE TABLE IF NOT EXISTS cuentas_proveedores (
+        id_cuenta INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_proveedor INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        detalle TEXT NOT NULL,
+        total REAL NOT NULL DEFAULT 0 CHECK (total >= 0),
+        estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Pagado')),
+        id_cheque INTEGER,
+        creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_proveedor) REFERENCES proveedores(id_proveedor) ON DELETE RESTRICT,
+        FOREIGN KEY (id_cheque) REFERENCES cheques(id_cheque) ON DELETE SET NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_cuentas_proveedores_proveedor_fecha
+        ON cuentas_proveedores(id_proveedor, fecha);
     """
 
     conexion = obtener_conexion()

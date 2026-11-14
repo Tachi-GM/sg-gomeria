@@ -42,12 +42,15 @@ Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Su
   - Despliegue en acordeón de los renglones de tareas realizadas por remito sin recargar la página.
   - Actualización del estado de cobro (`PENDIENTE`, `EN PROCESO`, `PAGADO`) mediante peticiones asíncronas (`fetch` POST).
   - Carga opcional de foto del remito (JPG, PNG, GIF o WEBP, hasta 5 MB) con acceso protegido desde el detalle.
+  - Vista imprimible formal estilo talonario (`/remito/<id>/imprimir`): reproducción fiel del comprobante físico en A4 con datos comerciales, detalle de tareas y patentes, recuadro de firmas y guardado directo en PDF sin barras de navegación.
   - Exportación general por cliente a Excel, con una pestaña por mes y cálculo de Importe, IVA, Total y Saldo según la condición de IVA.
   - Exportación mensual a imagen PNG, incluyendo tareas, totales, estado y miniaturas disponibles.
 
 - **Módulo de Cheques:**
-  - Registro y seguimiento de cartera de cheques recibidos de clientes (número, banco emisor, cliente asociado, fecha de emisión, fecha de cobro e importe).
-  - Control de estados: `Pendiente`, `Cobrado`, `Rechazado` y registro de endosos.
+  - Registro y seguimiento de cartera de cheques recibidos de clientes (número, banco emisor, cliente asociado por `id_cliente`, fecha de emisión, fecha de cobro e importe).
+  - Selector de cliente interactivo con búsqueda en tiempo real mediante **Choices.js** (mismo comportamiento de Mataburros).
+  - Control de estados: `Pendiente`, `Cobrado`, `Rechazado` y sugerencias automáticas de endosos previos.
+  - Listado relacional con `LEFT JOIN clientes` para reflejar siempre la razón social canónica.
 
 - **Autenticación y Control de Acceso por Roles:**
   - Inicio y cierre de sesión seguro (`/login`, `/logout`) con contraseñas protegidas mediante hashing criptográfico con sal (`werkzeug.security`).
@@ -212,7 +215,7 @@ Y luego abrir en el navegador: **http://127.0.0.1:5000/login**
 
 ## Ejecución de Pruebas y Calidad de Código
 
-El proyecto cuenta con **35 pruebas automatizadas** desarrolladas con el módulo nativo `unittest` de Python, alcanzando un **91% de cobertura de código**:
+El proyecto cuenta con **90 pruebas automatizadas** desarrolladas con el módulo nativo `unittest` de Python:
 
 ### 1. Ejecutar las pruebas
 ```bash
@@ -221,7 +224,7 @@ python -m unittest discover tests
 
 Salida esperada:
 ```
-Ran 35 tests in 0.890s
+Ran 90 tests in 2.100s
 OK
 ```
 

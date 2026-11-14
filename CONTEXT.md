@@ -85,6 +85,8 @@ SG - Gomería/
 | `usuarios` | Acceso | `usuario`, `contraseña` (hash), `rol` (usuario/admin) |
 | `vehiculos` | Vehículos por cliente | `patente`, `id_cliente` (se mantiene para trabajos particulares) |
 | `ausencias_gomeros` | Días no trabajados de gomeros | `gomero_id`, `fecha`, `created_at` |
+| `proveedores` | Proveedores de insumos y mercadería (borrador) | `nombre`, `cuit`, `telefono`, `rubro`, `activo` |
+| `cuentas_proveedores` | Cuentas y gastos con proveedores (borrador) | `id_proveedor`, `fecha`, `detalle`, `total`, `estado`, `id_cheque` |
 
 ---
 
