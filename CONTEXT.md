@@ -128,6 +128,7 @@ SG - Gomería/
 
 ### Cheques
 - [x] Cartera con alta, estado (Pendiente / Cobrado / Rechazado), endoso y cliente por `id_cliente`.
+- [x] **Buscador Choices.js de clientes y sugerencias de endosados:** selección interactiva de empresas con `id_cliente` (igual que en Mataburros) y consulta relacional mediante `LEFT JOIN clientes` para mostrar siempre el nombre oficial.
 - [x] Resumen con cantidad, pendientes e importe pendiente.
 
 ### Gomeros

@@ -86,8 +86,30 @@ function cambiarEstadoCheque(select, idCheque) {
     });
 }
 
+// Instancia de Choices.js para búsqueda de clientes
+let choicesCliente = null;
+const selectClienteElem = document.getElementById('select-cliente');
+if (selectClienteElem && typeof Choices !== 'undefined') {
+    choicesCliente = new Choices(selectClienteElem, {
+        searchEnabled: true,
+        itemSelectText: '',
+        noResultsText: 'No se encontraron empresas',
+        noChoicesText: 'No hay más empresas para seleccionar',
+        placeholder: true,
+        placeholderValue: 'Buscar o seleccionar empresa...',
+        searchPlaceholderValue: 'Escribí el nombre o CUIT...',
+        shouldSort: false
+    });
+}
+
 // Eventos del modal
-document.getElementById('new-check').onclick = () => modal.showModal();
+document.getElementById('new-check').onclick = () => {
+    form.reset();
+    if (choicesCliente) {
+        choicesCliente.setChoiceByValue('');
+    }
+    modal.showModal();
+};
 document.getElementById('close').onclick = () => modal.close();
 document.getElementById('cancel').onclick = () => modal.close();
 
@@ -124,17 +146,23 @@ form.addEventListener('submit', e => {
         method: 'POST',
         body: formData
     })
-    .then(res => {
-        if (!res.ok) throw new Error('Error al guardar');
-        return res.json();
+    .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.mensaje || 'Error al guardar el cheque');
+        }
+        return data;
     })
     .then(nuevoCheque => {
         checks.unshift(nuevoCheque);
         form.reset();
+        if (choicesCliente) {
+            choicesCliente.setChoiceByValue('');
+        }
         modal.close();
         render();
     })
-    .catch(err => alert('Error al registrar el cheque en el sistema.'));
+    .catch(err => alert(err.message || 'Error al registrar el cheque en el sistema.'));
 });
 
 // Renderizado inicial

@@ -519,6 +519,50 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         )
         self.assertEqual(resp_eliminar.status_code, 200)
 
+    def test_agregar_cheque_con_id_cliente_y_join(self):
+        """Guardar un cheque con id_cliente de empresa existente y verificar JOIN."""
+        resp = self.client.post(
+            "/agregar-cheque",
+            data={
+                "numero": "CH-ID-7788",
+                "id_cliente": "1",
+                "banco": "Banco Santander",
+                "fecha_emision": "2026-11-01",
+                "fecha_pago": "2026-11-30",
+                "importe": "125000.00",
+                "estado": "Pendiente",
+                "endosado": "Proveedor Cubiertas Norte",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        datos = resp.get_json()
+        self.assertEqual(datos["id_cliente"], 1)
+        self.assertEqual(datos["cliente"], "Toyota")
+        id_cheque = datos["id_cheque"]
+
+        # Verificar en base de datos
+        conn = obtener_conexion()
+        fila = conn.execute(
+            """SELECT ch.id_cheque, ch.id_cliente, c.nom_cli
+               FROM cheques ch
+               LEFT JOIN clientes c ON ch.id_cliente = c.id_cliente
+               WHERE ch.id_cheque = ?""",
+            (id_cheque,),
+        ).fetchone()
+        conn.close()
+        self.assertIsNotNone(fila)
+        self.assertEqual(fila["id_cliente"], 1)
+        self.assertEqual(fila["nom_cli"], "Toyota")
+
+        # Verificar que la pantalla /cheques traiga los datos en el JSON
+        resp_lista = self.client.get("/cheques")
+        self.assertEqual(resp_lista.status_code, 200)
+        self.assertIn(b"CH-ID-7788", resp_lista.data)
+        self.assertIn(b"Proveedor Cubiertas Norte", resp_lista.data)
+
+        # Limpiar
+        self.client.post("/eliminar-cheque", data={"id_cheque": id_cheque})
+
     def test_backup_descarga_archivo_db(self):
         """Un usuario administrador descarga BD y fotos en un ZIP restaurable."""
         carpeta_fotos = Path(app.config["UPLOAD_DIR"]) / "fotos_remitos"
