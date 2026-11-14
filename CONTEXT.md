@@ -1,6 +1,6 @@
 # CONTEXT.md — Estado actual del proyecto SG Gomería
 > **Leer este archivo al iniciar cada sesión** para conocer el estado real del proyecto.
-> Última actualización: 2026-11-07 (sincronizado con el log de `main`, commit `436bdb6`).
+> Última actualización: 2026-11-14 (incorporada vista imprimible de remitos / PDF).
 
 Leyenda: `[x]` hecho · `[~]` parcial · `[ ]` pendiente · `[-]` descartado
 
@@ -107,6 +107,7 @@ SG - Gomería/
 - [x] Edición de cabecera de remito (tipo, número, fecha) con control de duplicados.
 - [x] **Tareas temporales:** se usan en un remito sin guardarlas en el tarifario. Cubre el checkbox "guardar tarea nueva".
 - [x] Foto del remito (JPG / PNG / GIF / WEBP, hasta 5 MB), con acceso protegido desde el detalle.
+- [x] **Vista imprimible de remito:** comprobante comercial formal optimizado para impresión y guardado directo como PDF del navegador (`/remito/<id>/imprimir`), con datos institucionales de la empresa, desglose de tareas estándar y temporales, y área de firmas.
 
 ### Clientes e historial
 - [x] Alta de empresa con CUIT validado (módulo 11 de AFIP).

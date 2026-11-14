@@ -56,6 +56,12 @@ class TestSeguridadYAutenticacion(unittest.TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn(b"incorrectos", respuesta.data)
 
+    def test_remito_imprimir_sin_sesion_redirige_a_login(self):
+        """Acceso anonimo a impresion de remito debe redirigir a /login."""
+        respuesta = self.client.get("/remito/1/imprimir")
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertIn("/login", respuesta.headers.get("Location", ""))
+
 
 class TestRutasConSesionIniciada(unittest.TestCase):
     def setUp(self):
@@ -120,6 +126,26 @@ class TestRutasConSesionIniciada(unittest.TestCase):
         """La pantalla de cheques /cheques debe responder 200."""
         respuesta = self.client.get("/cheques")
         self.assertEqual(respuesta.status_code, 200)
+
+    def test_remito_imprimir_existente_responde_200(self):
+        """La vista imprimible de un remito existente debe responder 200 y contener datos clave."""
+        conn = obtener_conexion()
+        trabajo = conn.execute(
+            "SELECT id_trabajo, remito FROM trabajos LIMIT 1"
+        ).fetchone()
+        conn.close()
+        self.assertIsNotNone(trabajo)
+
+        respuesta = self.client.get(f"/remito/{trabajo['id_trabajo']}/imprimir")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn(b"ORDEN DE TRABAJO INTERNO", respuesta.data)
+        self.assertIn(trabajo["remito"].encode("utf-8"), respuesta.data)
+        self.assertIn(b"Imprimir / Guardar como PDF", respuesta.data)
+
+    def test_remito_imprimir_inexistente_responde_404(self):
+        """La vista imprimible de un remito inexistente debe devolver 404."""
+        respuesta = self.client.get("/remito/99999999/imprimir")
+        self.assertEqual(respuesta.status_code, 404)
 
     def test_acerca_de_responde_200(self):
         """La pantalla /acerca-de debe responder 200."""

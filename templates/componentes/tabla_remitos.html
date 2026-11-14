@@ -25,9 +25,9 @@
             <th class="py-3 text-center" style="width: 75px;">
                 Pago
             </th>
-            <!-- Columna 6: Acción (editar) -->
-            <th class="py-3 text-center" style="width: 70px;">
-                Editar
+            <!-- Columna 6: Acciones (imprimir y editar) -->
+            <th class="py-3 text-center" style="width: 105px;">
+                Acciones
             </th>
         </tr>
     </thead>
@@ -53,17 +53,26 @@
                     >
                 </div>
             </td>
-            <!-- Columna Editar: botón modal -->
+            <!-- Columna Acciones: imprimir y editar -->
             <td class="py-3 text-center" onclick="event.stopPropagation()">
-                <button type="button"
-                        class="btn btn-sm btn-outline-secondary btn-editar-remito rounded-pill"
-                        data-id="{{ r['id_trabajo'] }}"
-                        data-tipo="{{ r['tipo'] }}"
-                        data-remito="{{ r['remito'] }}"
-                        data-fecha="{{ r['fecha'] }}"
-                        title="Editar remito y fecha">
-                    ✏️
-                </button>
+                <div class="d-inline-flex gap-1">
+                    <a href="{{ url_for('trabajos_bp.imprimir_remito', id_trabajo=r['id_trabajo']) }}"
+                       class="btn btn-sm btn-outline-primary rounded-pill px-2"
+                       target="_blank"
+                       rel="noopener"
+                       title="Imprimir o guardar remito en PDF">
+                        🖨️
+                    </a>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary btn-editar-remito rounded-pill px-2"
+                            data-id="{{ r['id_trabajo'] }}"
+                            data-tipo="{{ r['tipo'] }}"
+                            data-remito="{{ r['remito'] }}"
+                            data-fecha="{{ r['fecha'] }}"
+                            title="Editar remito y fecha">
+                        ✏️
+                    </button>
+                </div>
             </td>
         </tr>
         <tr class="fila-detalle d-none">
@@ -74,6 +83,15 @@
                     <li>{{ d['nom_tar'] }} &times; {{ d['cantidad'] }} &mdash; ${{ "{:,.2f}".format(d['subtotal']) }}</li>
                     {% endfor %}
                 </ul>
+                <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
+                    <a href="{{ url_for('trabajos_bp.imprimir_remito', id_trabajo=r['id_trabajo']) }}"
+                       class="btn btn-sm btn-outline-primary rounded-pill fw-bold"
+                       target="_blank"
+                       rel="noopener"
+                       onclick="event.stopPropagation()">
+                        🖨️ Ver / Imprimir Comprobante
+                    </a>
+                </div>
                 {% if r['foto_remito'] %}
                 <div class="mt-3">
                     <strong class="d-block mb-2 text-secondary text-uppercase small">Foto del remito</strong>

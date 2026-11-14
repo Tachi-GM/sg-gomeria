@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from utils.seguridad import login_requerido
 from database.connection import obtener_conexion
 
@@ -7,6 +7,7 @@ logger = logging.getLogger("SG_Gomeria")
 
 # Blueprint para la API de clientes (rutas ligeras JSON)
 clientes_api_bp = Blueprint('clientes_api_bp', __name__, url_prefix='/clientes')
+
 
 @clientes_api_bp.route('/validar-cuit', methods=['POST'])
 @login_requerido

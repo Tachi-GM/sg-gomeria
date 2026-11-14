@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remito {{ trabajo.tipo }} #{{ trabajo.remito }} - {{ cliente.nom_cli }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #525659;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+            color: #000000;
+            margin: 0;
+            padding: 20px 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .barra-herramientas {
+            max-width: 800px;
+            margin: 0 auto 15px auto;
+        }
+
+        /* Contenedor principal que simula la hoja física del talonario */
+        .talonario-hoja {
+            background: #ffffff;
+            width: 790px;
+            min-height: 1080px;
+            margin: 0 auto;
+            padding: 24px 28px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+
+        /* Borde exterior que encuadra todo el comprobante */
+        .talonario-marco {
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 12px 14px;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        /* --- ENCABEZADO SUPERIOR --- */
+        .encabezado-superior {
+            border-bottom: 2px solid #000000;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .empresa-nombre-fantasia {
+            font-family: Arial, "Arial Black", Impact, sans-serif;
+            font-style: italic;
+            font-weight: 900;
+            font-size: 2.1rem;
+            line-height: 1;
+            letter-spacing: 0.5px;
+            color: #111111;
+        }
+
+        .empresa-rubro {
+            font-size: 0.88rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-top: 2px;
+            line-height: 1.1;
+        }
+
+        .empresa-titular {
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .empresa-domicilios {
+            font-size: 0.70rem;
+            line-height: 1.25;
+            color: #222222;
+        }
+
+        .empresa-cond-iva {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Letra central tipo X */
+        .col-letra-central {
+            border-left: 1px solid #000000;
+            border-right: 1px solid #000000;
+            padding: 0 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .caja-letra-x {
+            border: 2px solid #000000;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            line-height: 1;
+            background: #ffffff;
+        }
+
+        .letra-leyenda {
+            font-size: 0.46rem;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.05;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        /* Lado derecho: Comprobante y AFIP */
+        .titulo-orden {
+            font-size: 1.05rem;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            text-align: right;
+            margin-bottom: 2px;
+        }
+
+        .numero-remito-display {
+            font-family: "Courier New", Courier, monospace, monospace;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-align: right;
+            color: #1a3c6e;
+            margin-bottom: 6px;
+        }
+
+        .datos-fiscales-emisor {
+            font-size: 0.73rem;
+            line-height: 1.3;
+            text-align: left;
+            padding-left: 14px;
+        }
+
+        .fecha-renglon {
+            font-size: 0.88rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .fecha-valor {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 1.05rem;
+            letter-spacing: 1.5px;
+            font-weight: bold;
+            color: #0d47a1;
+        }
+
+        /* --- SECCIÓN DATOS DEL CLIENTE --- */
+        .seccion-cliente {
+            font-size: 0.77rem;
+            line-height: 1.35;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .linea-puntos {
+            border-bottom: 1px dotted #555555;
+            display: inline-block;
+            min-height: 1.1em;
+            vertical-align: bottom;
+        }
+
+        .check-box {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border: 1px solid #000000;
+            margin-right: 4px;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 9px;
+            font-size: 9px;
+            font-weight: bold;
+            background: #ffffff;
+        }
+
+        .tabla-cond-iva {
+            width: 100%;
+            margin: 4px 0;
+            font-size: 0.64rem;
+        }
+
+        .tabla-cond-iva td {
+            padding: 1px 2px;
+            white-space: nowrap;
+        }
+
+        /* --- TABLA PRINCIPAL DE TRABAJOS --- */
+        .tabla-talonario {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+
+        .tabla-talonario th {
+            border: 1px solid #000000;
+            border-top: none;
+            padding: 5px 6px;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            background: #ffffff;
+        }
+
+        .tabla-talonario td {
+            border-left: 1px solid #000000;
+            border-right: 1px solid #000000;
+            border-bottom: 1px solid #222222;
+            padding: 5px 8px;
+            height: 25px;
+            vertical-align: middle;
+            box-sizing: border-box;
+        }
+
+        .col-cant {
+            width: 65px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .col-desc {
+            text-align: left;
+        }
+
+        .col-importe {
+            width: 130px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .renglon-detalle-patentes {
+            font-family: "Courier New", Courier, monospace;
+            font-weight: bold;
+            font-size: 0.96rem;
+            letter-spacing: 1.5px;
+            text-align: center;
+            color: #1a3c6e;
+        }
+
+        /* --- PIE DE PÁGINA Y FIRMAS --- */
+        .seccion-firmas {
+            border-top: 2px solid #000000;
+            padding-top: 8px;
+            margin-top: 0;
+            font-size: 0.78rem;
+        }
+
+        .linea-firma-puntos {
+            border-bottom: 1px dotted #333333;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+
+        .pie-legal {
+            font-size: 0.62rem;
+            color: #333333;
+            line-height: 1.25;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        /* --- CONFIGURACIÓN PARA IMPRESIÓN Y PDF --- */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0.8cm 0.6cm;
+            }
+
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .d-print-none {
+                display: none !important;
+            }
+
+            .talonario-hoja {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .talonario-marco {
+                border-width: 1.5px !important;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de acciones en pantalla (se oculta al imprimir) -->
+    <div class="barra-herramientas d-print-none d-flex justify-content-between align-items-center">
+        <a href="javascript:history.length > 1 ? history.back() : window.close()" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold">
+            &larr; Volver
+        </a>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                🖨️ Imprimir / Guardar como PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Hoja física que reproduce el talonario real -->
+    <div class="talonario-hoja">
+        <div class="talonario-marco">
+
+            <!-- 1. ENCABEZADO SUPERIOR -->
+            <div class="encabezado-superior">
+                <div class="row g-0 align-items-stretch">
+                    <!-- Columna Izquierda: Datos del Emisor -->
+                    <div class="col-6 pe-2">
+                        <div class="empresa-nombre-fantasia">
+                            {{ empresa.nombre or "EL PUENTE" }}
+                        </div>
+                        <div class="empresa-rubro">
+                            NEUMÁTICOS Y SERVICIOS
+                        </div>
+                        <div class="empresa-titular">
+                            de Jorge Marino Esquivel
+                        </div>
+                        <div class="empresa-domicilios">
+                            {% if empresa.direccion %}
+                                <div>{{ empresa.direccion }}</div>
+                            {% else %}
+                                <div>Saenz Peña 2283 (2800) Zárate - Bs. As.</div>
+                                <div>Ruta 12, Km 84 (2800) Zárate - Bs. As.</div>
+                            {% endif %}
+                            <div>
+                                {% if empresa.telefonos %}
+                                    Cel: {{ empresa.telefonos | join(" / ") }}
+                                {% else %}
+                                    Cel: (3487) 588646 / 319532
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="empresa-cond-iva">
+                            IVA RESPONSABLE INSCRIPTO
+                        </div>
+                    </div>
+
+                    <!-- Columna Central: Letra Identificadora "X" -->
+                    <div class="col-1 col-letra-central">
+                        <div class="caja-letra-x">
+                            X
+                        </div>
+                        <div class="letra-leyenda">
+                            DOCUMENTO<br>
+                            NO VALIDO<br>
+                            COMO<br>
+                            FACTURA
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Tipo de Orden, Número y Datos Fiscales -->
+                    <div class="col-5 ps-3 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="titulo-orden">
+                                {% if trabajo.tipo == 'OIB' %}
+                                    ORDEN DE TRABAJO INTERNO (B)
+                                {% else %}
+                                    ORDEN DE TRABAJO INTERNO
+                                {% endif %}
+                            </div>
+                            <div class="numero-remito-display">
+                                {% if trabajo.remito|length < 8 and trabajo.remito.isdigit() %}
+                                    {{ "%08d"|format(trabajo.remito|int) }}
+                                {% else %}
+                                    {{ trabajo.remito }}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Fecha y datos de inscripción -->
+                        <div class="datos-fiscales-emisor">
+                            {% set partes_fecha = trabajo.fecha.split('-') if '-' in trabajo.fecha else [] %}
+                            <div class="fecha-renglon">
+                                Fecha : 
+                                <span class="fecha-valor">
+                                    {% if partes_fecha|length == 3 %}
+                                        {{ partes_fecha[2] }} / {{ partes_fecha[1] }} / {{ partes_fecha[0][2:] }}
+                                    {% else %}
+                                        {{ trabajo.fecha }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div><strong>CUIT:</strong> {{ empresa.cuit or "20-12444502-8" }}</div>
+                            <div><strong>ING. BRUTOS:</strong> {{ empresa.cuit or "20-12444502-8" }}</div>
+                            <div><strong>INICIO DE ACTIVIDAD:</strong> Noviembre 2011</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DATOS DEL CLIENTE / RECEPTOR -->
+            <div class="seccion-cliente">
+                <!-- Señor(es) -->
+                <div class="d-flex align-items-end mb-1">
+                    <span class="fw-bold me-2" style="white-space: nowrap;">Señor (es):</span>
+                    <span class="fw-bold fs-6 flex-grow-1 ps-2" style="border-bottom: 1px dotted #333; text-transform: uppercase;">
+                        {{ cliente.nom_cli }}
+                    </span>
+                </div>
+
+                <!-- Domicilio -->
+                <div class="d-flex align-items-end mb-1">
+                    <span class="me-2" style="white-space: nowrap;">Domicilio:</span>
+                    <span class="flex-grow-1 ps-2 linea-puntos text-secondary small">
+                        {% if cliente.tel %}Tel: {{ cliente.tel }}{% endif %}
+                        {% if cliente.mail %} &mdash; Email: {{ cliente.mail }}{% endif %}
+                    </span>
+                </div>
+
+                <!-- Tabla de Casilleros de Condición de IVA y CUIT -->
+                <table class="tabla-cond-iva">
+                    <tr>
+                        <td style="width: 25%;">
+                            <span class="check-box">{% if trabajo.con_iva == 1 or cliente.con_iva == 1 %}X{% endif %}</span>
+                            IVA Resp. Insc.
+                        </td>
+                        <td style="width: 24%;">
+                            <span class="check-box"></span>
+                            No Resp. IVA
+                        </td>
+                        <td style="width: 27%;">
+                            <span class="check-box"></span>
+                            Pequeño Contribuyente Eventual Social
+                        </td>
+                        <td rowspan="3" style="width: 24%; vertical-align: middle; text-align: right; padding-left: 6px;">
+                            <div class="text-start ps-2" style="border-left: 1px solid #000;">
+                                <span class="fw-bold">CUIT:</span><br>
+                                <span class="fw-bold" style="font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
+                                    {{ cliente.cuit }}
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="check-box"></span>
+                            Resp. Monotributo
+                        </td>
+                        <td>
+                            <span class="check-box"></span>
+                            Monotributista Social
+                        </td>
+                        <td>
+                            <span class="check-box"></span>
+                            Pequeño Contribuyente Eventual
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="check-box">{% if trabajo.con_iva == 0 and cliente.con_iva == 0 %}X{% endif %}</span>
+                            IVA Exento
+                        </td>
+                        <td>
+                            <span class="check-box"></span>
+                            No Categorizado
+                        </td>
+                        <td>
+                            <span class="check-box"></span>
+                            Consumidor Final
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Condiciones de Venta -->
+                <div class="d-flex align-items-end mt-1">
+                    <span class="fw-bold me-2" style="white-space: nowrap;">Condiciones de Venta:</span>
+                    <span class="flex-grow-1 ps-2 linea-puntos fw-semibold">
+                        Cuenta Corriente
+                    </span>
+                </div>
+            </div>
+
+            <!-- 3. CUERPO DE TABLA / TRABAJOS REALIZADOS -->
+            <table class="tabla-talonario">
+                <thead>
+                    <tr>
+                        <th class="col-cant">CANT.</th>
+                        <th class="col-desc">DESCRIPCIÓN</th>
+                        <th class="col-importe">IMPORTE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Filas con las tareas -->
+                    {% for item in items %}
+                    <tr>
+                        <td class="col-cant">{{ item.cantidad }}</td>
+                        <td class="col-desc fw-semibold">{{ item.descripcion }}</td>
+                        <td class="col-importe">${{ "{:,.2f}".format(item.subtotal) }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Renglón para vehículo / patentes / observaciones cargadas en el detalle -->
+                    {% if trabajo.detalle %}
+                    <tr>
+                        <td class="col-cant"></td>
+                        <td class="col-desc renglon-detalle-patentes py-2">
+                            {% for linea in trabajo.detalle.split('\n') %}
+                                <div>{{ linea.strip() }}</div>
+                            {% endfor %}
+                        </td>
+                        <td class="col-importe"></td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Renglones vacíos simulando el rayado del talonario físico (total aprox 13 filas) -->
+                    {% set filas_ocupadas = items|length + (1 if trabajo.detalle else 0) %}
+                    {% set filas_restantes = 13 - filas_ocupadas %}
+                    {% if filas_restantes > 0 %}
+                        {% for i in range(filas_restantes) %}
+                        <tr>
+                            <td class="col-cant"></td>
+                            <td class="col-desc"></td>
+                            <td class="col-importe"></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="text-end fw-bold py-2 pe-3 text-uppercase" style="border: 1px solid #000; font-size: 0.9rem;">
+                            Total:
+                        </td>
+                        <td class="col-importe py-2 fs-6" style="border: 1px solid #000; background: #fafafa;">
+                            ${{ "{:,.2f}".format(trabajo.total) }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- 4. FIRMAS Y PIE DE PÁGINA -->
+            <div class="seccion-firmas">
+                <div class="fw-bold mb-1">Recibí Conforme:</div>
+                <div class="row g-4 pt-2">
+                    <div class="col-6">
+                        <div class="linea-firma-puntos"></div>
+                        <div class="small fw-bold">Firma</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="linea-firma-puntos"></div>
+                        <div class="small fw-bold">Aclaración</div>
+                    </div>
+                </div>
+
+                <div class="pie-legal">
+                    <div>
+                        <div>Fecha de Impresión: Mayo 2026</div>
+                        <div>Numerado de 0001-00027301 al 0001-00028300</div>
+                        <div class="fw-bold mt-1">Original / Duplicado</div>
+                    </div>
+                    <div class="text-end">
+                        <div>Imprenta: GRAFICOLOR &nbsp; 11-5990-8430</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

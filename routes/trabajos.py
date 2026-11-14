@@ -22,6 +22,7 @@ from utils.formateadores import parse_int_seguro, parse_float_seguro
 from services.trabajos_service import (
     crear_trabajo_completo,
     editar_cabecera_remito,
+    obtener_remito_para_impresion,
 )
 from utils.fotos import (
     guardar_foto_remito,
@@ -407,3 +408,31 @@ def actualizar_estado():
         return jsonify({"exito": False, "mensaje": "Error interno"}), 500
     finally:
         conexion.close()
+
+
+@trabajos_bp.route("/remito/<int:id_trabajo>/imprimir")
+@login_requerido
+def imprimir_remito(id_trabajo):
+    """
+    Muestra la vista imprimible oficial de un remito.
+    Permite imprimir directamente o guardar como PDF desde el navegador.
+    """
+    datos = obtener_remito_para_impresion(id_trabajo)
+    if not datos:
+        abort(404)
+
+    trabajo = datos["trabajo"]
+    cliente = datos["cliente"]
+    items = datos["items"]
+
+    registrar_auditoria(
+        "IMPRESION_REMITO",
+        f"Comprobante {trabajo['tipo']} #{trabajo['remito']} visualizado para impresión",
+    )
+
+    return render_template(
+        "remito_imprimible.html",
+        trabajo=trabajo,
+        cliente=cliente,
+        items=items,
+    )

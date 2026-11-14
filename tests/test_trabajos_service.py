@@ -16,7 +16,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tests.support import obtener_conexion
-from services.trabajos_service import crear_trabajo_completo, editar_cabecera_remito
+from services.trabajos_service import (
+    crear_trabajo_completo,
+    editar_cabecera_remito,
+    obtener_remito_para_impresion,
+)
 from utils.formateadores import validar_y_formatear_cuit, validar_y_formatear_remito
 
 
@@ -195,6 +199,49 @@ class TestTrabajosService(unittest.TestCase):
         exito, msg, _ = editar_cabecera_remito(9999999, "OI", "12345", "2026-10-18")
         self.assertFalse(exito)
         self.assertIn("no existe", msg)
+
+    def test_obtener_remito_para_impresion_inexistente(self):
+        datos = obtener_remito_para_impresion(99999999)
+        self.assertIsNone(datos)
+
+    def test_obtener_remito_para_impresion_existente(self):
+        exito, msg = crear_trabajo_completo(
+            "99005",
+            9998,
+            "1",
+            "OI",
+            "Detalle Vehiculo ABC",
+            ["9999", "temporal:token123"],
+            ["2", "1"],
+            tareas_temporales=[
+                {
+                    "token": "token123",
+                    "nom_tar": "Parche temporal",
+                    "precio": 500.0,
+                    "precio2": 500.0,
+                    "precio3": 500.0,
+                }
+            ],
+        )
+        self.assertTrue(exito)
+
+        cursor = self.conexion.cursor()
+        trabajo_row = cursor.execute(
+            "SELECT id_trabajo FROM trabajos WHERE remito = '99005'"
+        ).fetchone()
+        self.assertIsNotNone(trabajo_row)
+        id_trabajo = trabajo_row["id_trabajo"]
+
+        datos = obtener_remito_para_impresion(id_trabajo)
+        self.assertIsNotNone(datos)
+        self.assertEqual(datos["trabajo"]["remito"], "99005")
+        self.assertEqual(datos["trabajo"]["tipo"], "OI")
+        self.assertEqual(datos["cliente"]["nom_cli"], "Cliente Con IVA Test")
+        self.assertEqual(datos["cliente"]["cuit"], "20-00009998-9")
+        self.assertEqual(len(datos["items"]), 2)
+        descripciones = [item["descripcion"] for item in datos["items"]]
+        self.assertIn("Tarea Test 1210", descripciones)
+        self.assertIn("Parche temporal", descripciones)
 
 
 class TestFormateadores(unittest.TestCase):

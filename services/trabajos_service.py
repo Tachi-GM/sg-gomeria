@@ -275,3 +275,59 @@ def editar_cabecera_remito(id_trabajo, nuevo_tipo, nuevo_remito, nueva_fecha):
         return False, "Error inesperado al actualizar el remito", None
     finally:
         conexion.close()
+
+
+def obtener_remito_para_impresion(id_trabajo):
+    """
+    Obtiene los datos consolidados de un remito para su vista de impresión:
+    cabecera de trabajo, datos de cliente y detalle unificado de tareas
+    (estándar y temporales).
+    Retorna un diccionario con {trabajo, cliente, items} o None si no existe.
+    """
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+    try:
+        trabajo = cursor.execute(
+            """
+            SELECT t.id_trabajo, t.remito, t.tipo, t.fecha, t.total, t.detalle,
+                   t.estado, t.foto_remito, t.id_cliente, t.con_iva,
+                   c.nom_cli, c.cuit, c.tel, c.mail, c.con_iva AS cliente_con_iva
+            FROM trabajos t
+            JOIN clientes c ON t.id_cliente = c.id_cliente
+            WHERE t.id_trabajo = ?
+            """,
+            (id_trabajo,),
+        ).fetchone()
+
+        if not trabajo:
+            return None
+
+        items = cursor.execute(
+            """
+            SELECT tar.nom_tar AS descripcion, dt.cantidad, dt.precio_unitario, dt.subtotal
+            FROM detalle_trabajos dt
+            JOIN tareas tar ON dt.id_tarea = tar.id_tarea
+            WHERE dt.id_trabajo = ?
+            UNION ALL
+            SELECT dtt.nombre_tarea AS descripcion, dtt.cantidad, dtt.precio_unitario, dtt.subtotal
+            FROM detalle_temporal_trabajos dtt
+            WHERE dtt.id_trabajo = ?
+            ORDER BY descripcion ASC
+            """,
+            (id_trabajo, id_trabajo),
+        ).fetchall()
+
+        return {
+            "trabajo": dict(trabajo),
+            "cliente": {
+                "id_cliente": trabajo["id_cliente"],
+                "nom_cli": trabajo["nom_cli"],
+                "cuit": trabajo["cuit"],
+                "tel": trabajo["tel"],
+                "mail": trabajo["mail"],
+                "con_iva": trabajo["cliente_con_iva"],
+            },
+            "items": [dict(item) for item in items],
+        }
+    finally:
+        conexion.close()
