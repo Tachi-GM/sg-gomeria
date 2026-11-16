@@ -53,6 +53,7 @@ def acerca_de():
 
 @general_bp.route("/backup")
 @login_requerido
+@solo_admin
 def hacer_backup():
     # 1. Armamos un nombre único con fecha y hora
     fecha_hora = datetime.now().strftime("%Y-%m-%d_%H-%M")
