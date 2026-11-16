@@ -9,10 +9,18 @@ import os
 import sqlite3
 from pathlib import Path
 from dotenv import load_dotenv
+import shutil  # junto a los otros imports
 
-# Ubicación base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env.example")
+ENV_PATH = BASE_DIR / ".env"
+ENV_EJEMPLO = BASE_DIR / ".env.example"
+
+# Si todavía no existe .env, se crea copiando la plantilla .env.example
+if not ENV_PATH.exists() and ENV_EJEMPLO.exists():
+    shutil.copyfile(ENV_EJEMPLO, ENV_PATH)
+    print("[INFO] No existía .env: se creó a partir de .env.example. Revisá SECRET_KEY y FLASK_DEBUG.")
+
+load_dotenv(ENV_PATH)
 
 # Obtener ruta configurada o usar 'sg_gomeria.db' por defecto
 db_env = os.getenv("DATABASE_PATH", "sg_gomeria.db")

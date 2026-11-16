@@ -3,24 +3,19 @@
 -- Todo es ficticio (empresas, CUIT, patentes, importes, cheques).
 --
 -- Cómo usarlo (DB Browser for SQLite):
---   1. Trabajá sobre una COPIA de la base (ej. sg_gomeria_demo.db).
+--   1. Partí de una base RECIÉN CREADA con:  python database/init_db.py
+--      (trae los datos semilla que este script necesita: Toyota, Transporte Gomez,
+--      Logística Norte, las 5 tareas originales y las 3 patentes originales).
+--      No lo ejecutes sobre una base que ya tiene estos datos cargados.
 --   2. Pestaña "Ejecutar SQL" > abrir este archivo > "Ejecutar todo" (Ctrl+Return).
 --   3. Guardar los cambios con "Escribir cambios" (Ctrl+S).
 --   Ejecutarlo UNA sola vez. Si algo sale mal: "Revertir cambios" y volver a empezar.
 --
+-- Los gomeros NO se modifican: quedan tal cual los crea init_db.py.
+--
 -- Resultado: 6 clientes, 14 tareas (13 activas), 24 remitos, 12 cheques,
 -- 10 vehículos (7 nuevos), y movimientos de gomeros para la semana actual.
 -- =====================================================================
-
-
--- ---------------------------------------------------------------------
--- 0. ANONIMIZAR GOMEROS
---    La base actual tiene nombres y sueldos de empleados que parecen reales.
---    Se reemplazan por datos genéricos antes de subir nada a Git.
--- ---------------------------------------------------------------------
-UPDATE gomeros
-SET nombre = 'Gomero ' || id_gomero,
-    sueldo_semanal = 300000;
 
 
 -- ---------------------------------------------------------------------
@@ -158,9 +153,16 @@ WHERE total = 0;
 
 
 -- ---------------------------------------------------------------------
--- 6. CHEQUES (10 nuevos; con los 2 existentes quedan 12)
+-- 6. CHEQUES (11 nuevos; con el que trae init_db.py quedan 12)
 --    Estados Pendiente/Cobrado/Rechazado, algunos endosados, algunos a futuro.
 -- ---------------------------------------------------------------------
+-- Cheque que ya estaba cargado en la base de pruebas (no lo crea init_db.py)
+INSERT INTO cheques (numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado, id_cliente)
+SELECT '13122333', nom_cli, 'Banco BBVA', '2026-11-13', '2026-11-20', 50000.0, 'Pendiente', '', id_cliente
+FROM clientes
+WHERE cuit = '30-68312345-4';
+
+-- Cheques de demostración
 WITH ch(numero, cuit, banco, fecha_emision, fecha_pago, importe, estado, endosado) AS (VALUES
   ('00412087', '30-71239845-9', 'Banco Santander', '2026-08-28', '2026-09-28', 185000.00, 'Cobrado',   ''),
   ('55210934', '30-65498712-3', 'Banco Nación',    '2026-09-01', '2026-10-01', 120000.00, 'Cobrado',   ''),
@@ -220,4 +222,8 @@ UNION ALL SELECT 'remitos',    COUNT(*) FROM trabajos
 UNION ALL SELECT 'renglones',  COUNT(*) FROM detalle_trabajos
 UNION ALL SELECT 'cheques',    COUNT(*) FROM cheques
 UNION ALL SELECT 'vehículos',  COUNT(*) FROM vehiculos
-UNION ALL SELECT 'movimientos de gomeros', COUNT(*) FROM movimientos_gomeros;
+UNION ALL SELECT 'movimientos de gomeros', COUNT(*) FROM movimientos_gomeros
+UNION ALL SELECT 'CONTROL (1 = todo bien, 0 = revisar)',
+       (SELECT COUNT(*) FROM clientes) = 6 AND (SELECT COUNT(*) FROM tareas) = 14
+   AND (SELECT COUNT(*) FROM trabajos) = 24 AND (SELECT COUNT(*) FROM detalle_trabajos) = 43
+   AND (SELECT COUNT(*) FROM cheques) = 12 AND (SELECT COUNT(*) FROM vehiculos) = 10;
