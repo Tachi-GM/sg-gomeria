@@ -13,6 +13,7 @@ from routes.cheques import cheques_bp
 from routes.usuarios import usuarios_bp
 from routes.gomeros import gomeros_bp
 from routes.exportaciones import exportaciones_bp
+from utils.seguridad import login_requerido, solo_admin
 
 # 1. Configuración de variables de entorno
 load_dotenv()
@@ -103,6 +104,8 @@ def error_500(e):
 
 
 @app.route("/probar-error")
+@login_requerido
+@solo_admin
 def probar_error():
     return 1 / 0  # Fuerza un ZeroDivisionError a propósito
 
