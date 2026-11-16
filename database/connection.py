@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 # Ubicación base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.example")
 
 # Obtener ruta configurada o usar 'sg_gomeria.db' por defecto
 db_env = os.getenv("DATABASE_PATH", "sg_gomeria.db")
