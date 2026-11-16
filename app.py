@@ -30,7 +30,7 @@ logging.basicConfig(
             logging.FileHandler("sistema.log", encoding="utf-8"),
             logging.StreamHandler(),
         ]
-    ),
+    )
 )
 logger = logging.getLogger("SG_Gomeria")
 

@@ -1,0 +1,419 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1552.719 1016" width="1552.719" height="1016" style="--bg:#18181B;--fg:#F4F4F5;--line:#71717A;--muted:#A1A1AA;--surface:#27272A;--border:#3F3F46;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', ui-monospace, monospace; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+</defs>
+<polyline class="er-relationship" data-entity1="CLIENTES" data-entity2="VEHICULOS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="posee" points="193.39999999999998,592 213.39999999999998,592 213.39999999999998,792 416.05,792" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="CLIENTES" data-entity2="TRABAJOS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="solicita" points="193.39999999999998,639 203.39999999999998,639 203.39999999999998,912 750.7760000000001,912 750.7760000000001,884 830.7760000000001,884" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="CLIENTES" data-entity2="CHEQUES" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="emite" points="193.39999999999998,545 412.75,545" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="VEHICULOS" data-entity2="TRABAJOS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="asignado_en" points="576.05,792 830.7760000000001,792" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="TRABAJOS" data-entity2="DETALLE_TRABAJOS" data-cardinality1="one" data-cardinality2="many" data-identifying="true" data-label="contiene" points="990.7760000000001,792 1181.21,792 1181.21,602.3333333333333 1261.21,602.3333333333333" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="TAREAS" data-entity2="DETALLE_TRABAJOS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="incluida_en" points="990.7760000000001,547 1261.21,547" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="TRABAJOS" data-entity2="DETALLE_TEMPORAL_TRABAJOS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="incluye_temporal" points="990.7760000000001,884 1261.21,884" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="GOMEROS" data-entity2="MOVIMIENTOS_GOMEROS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="registra" points="366.79999999999995,123 595.654,123" fill="none" stroke="var(--_line)" stroke-width="1" />
+<polyline class="er-relationship" data-entity1="GOMEROS" data-entity2="AUSENCIAS_GOMEROS" data-cardinality1="one" data-cardinality2="zero-many" data-identifying="true" data-label="acumula" points="366.79999999999995,156.33333333333331 376.79999999999995,156.33333333333331 376.79999999999995,337 595.654,337" fill="none" stroke="var(--_line)" stroke-width="1" />
+<g class="entity" data-id="CLIENTES" data-label="CLIENTES">
+  <rect x="40" y="498" width="153.39999999999998" height="188" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="498" width="153.39999999999998" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="116.69999999999999" y="515" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">CLIENTES</text>
+  <line x1="40" y1="532" x2="193.39999999999998" y2="532" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="46" y="536" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="57.155" y="543" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="76.31" y="543" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="185.39999999999998" y="543" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_cliente</tspan></text>
+  <text x="48" y="565" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="565" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">nom_cli</tspan></text>
+  <rect x="46" y="580" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="57.155" y="587" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">UK</text>
+  <text x="76.31" y="587" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="587" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">cuit</tspan></text>
+  <text x="48" y="609" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="609" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">tel</tspan></text>
+  <text x="48" y="631" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="631" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">mail</tspan></text>
+  <g><title>0 o 1</title>
+  <text x="48" y="653" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="185.39999999999998" y="653" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">con_iva</tspan></text>
+  </g>
+  <g><title>1, 2 o 3</title>
+  <text x="48" y="675" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="185.39999999999998" y="675" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">lista_precios</tspan></text>
+  </g>
+</g>
+<g class="entity" data-id="VEHICULOS" data-label="VEHICULOS">
+  <rect x="416.05" y="742" width="160" height="100" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="416.05" y="742" width="160" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="496.05" y="759" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">VEHICULOS</text>
+  <line x1="416.05" y1="776" x2="576.05" y2="776" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="422.05" y="780" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="433.205" y="787" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="452.36" y="787" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="568.05" y="787" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_vehiculo</tspan></text>
+  <rect x="422.05" y="802" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="433.205" y="809" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">UK</text>
+  <text x="452.36" y="809" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="568.05" y="809" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">patente</tspan></text>
+  <g><title>ON DELETE CASCADE</title>
+  <rect x="422.05" y="824" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="433.205" y="831" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="452.36" y="831" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="568.05" y="831" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_cliente</tspan></text>
+  </g>
+</g>
+<g class="entity" data-id="TRABAJOS" data-label="TRABAJOS">
+  <rect x="830.7760000000001" y="700" width="160" height="276" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="830.7760000000001" y="700" width="160" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="910.7760000000001" y="717" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">TRABAJOS</text>
+  <line x1="830.7760000000001" y1="734" x2="990.7760000000001" y2="734" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="836.7760000000001" y="738" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="847.931" y="745" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="867.086" y="745" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="982.7760000000001" y="745" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_trabajo</tspan></text>
+  <g><title>XXXXX o 00XXXX</title>
+  <rect x="836.7760000000001" y="760" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="847.931" y="767" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">UK</text>
+  <text x="867.086" y="767" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="767" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">remito</tspan></text>
+  </g>
+  <g><title>YYYY-MM-DD</title>
+  <text x="838.7760000000001" y="789" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="789" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">fecha</tspan></text>
+  </g>
+  <g><title>ON DELETE RESTRICT</title>
+  <rect x="836.7760000000001" y="804" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="847.931" y="811" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="867.086" y="811" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="982.7760000000001" y="811" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_cliente</tspan></text>
+  </g>
+  <g><title>ON DELETE SET NULL</title>
+  <rect x="836.7760000000001" y="826" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="847.931" y="833" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="867.086" y="833" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="982.7760000000001" y="833" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_vehiculo</tspan></text>
+  </g>
+  <g><title>&gt;= 0</title>
+  <text x="838.7760000000001" y="855" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="982.7760000000001" y="855" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">total</tspan></text>
+  </g>
+  <g><title>PENDIENTE, EN PROCESO, PAGADO</title>
+  <text x="838.7760000000001" y="877" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="877" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">estado</tspan></text>
+  </g>
+  <g><title>OI o OIB</title>
+  <text x="838.7760000000001" y="899" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="899" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">tipo</tspan></text>
+  </g>
+  <g><title>Observaciones</title>
+  <text x="838.7760000000001" y="921" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="921" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">detalle</tspan></text>
+  </g>
+  <g><title>Ruta archivo seguro</title>
+  <text x="838.7760000000001" y="943" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="943" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">foto_remito</tspan></text>
+  </g>
+  <g><title>0 o 1</title>
+  <text x="838.7760000000001" y="965" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="982.7760000000001" y="965" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">con_iva</tspan></text>
+  </g>
+</g>
+<g class="entity" data-id="CHEQUES" data-label="CHEQUES">
+  <rect x="412.75" y="418" width="166.6" height="254" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="412.75" y="418" width="166.6" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="496.05" y="435" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">CHEQUES</text>
+  <line x1="412.75" y1="452" x2="579.35" y2="452" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="418.75" y="456" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="429.905" y="463" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="449.06" y="463" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="571.35" y="463" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_cheque</tspan></text>
+  <text x="420.75" y="485" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="485" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">numero</tspan></text>
+  <text x="420.75" y="507" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="507" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">cliente</tspan></text>
+  <text x="420.75" y="529" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="529" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">banco</tspan></text>
+  <text x="420.75" y="551" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="551" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">fecha_emision</tspan></text>
+  <text x="420.75" y="573" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="573" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">fecha_pago</tspan></text>
+  <text x="420.75" y="595" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="571.35" y="595" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">importe</tspan></text>
+  <g><title>Pendiente, Cobrado, Rechazado</title>
+  <text x="420.75" y="617" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="617" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">estado</tspan></text>
+  </g>
+  <g><title>Detalle tercero</title>
+  <text x="420.75" y="639" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="571.35" y="639" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">endosado</tspan></text>
+  </g>
+  <g><title>ON DELETE RESTRICT</title>
+  <rect x="418.75" y="654" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="429.905" y="661" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="449.06" y="661" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="571.35" y="661" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_cliente</tspan></text>
+  </g>
+</g>
+<g class="entity" data-id="DETALLE_TRABAJOS" data-label="DETALLE_TRABAJOS">
+  <rect x="1261.21" y="491.66666666666663" width="170.73999999999995" height="166" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="1261.21" y="491.66666666666663" width="170.73999999999995" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="1346.58" y="508.66666666666663" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">DETALLE_TRABAJOS</text>
+  <line x1="1261.21" y1="525.6666666666666" x2="1431.95" y2="525.6666666666666" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="1267.21" y="529.6666666666666" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="1278.365" y="536.6666666666666" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="1297.52" y="536.6666666666666" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1423.95" y="536.6666666666666" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_detalle</tspan></text>
+  <g><title>ON DELETE CASCADE</title>
+  <rect x="1267.21" y="551.6666666666666" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="1278.365" y="558.6666666666666" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="1297.52" y="558.6666666666666" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1423.95" y="558.6666666666666" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_trabajo</tspan></text>
+  </g>
+  <g><title>ON DELETE RESTRICT</title>
+  <rect x="1267.21" y="573.6666666666666" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="1278.365" y="580.6666666666666" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="1297.52" y="580.6666666666666" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1423.95" y="580.6666666666666" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_tarea</tspan></text>
+  </g>
+  <g><title>&gt;= 1</title>
+  <text x="1269.21" y="602.6666666666666" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1423.95" y="602.6666666666666" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">cantidad</tspan></text>
+  </g>
+  <text x="1269.21" y="624.6666666666666" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="1423.95" y="624.6666666666666" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">precio_unitario</tspan></text>
+  <text x="1269.21" y="646.6666666666666" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="1423.95" y="646.6666666666666" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">subtotal</tspan></text>
+</g>
+<g class="entity" data-id="TAREAS" data-label="TAREAS">
+  <rect x="837.3760000000001" y="464" width="153.39999999999998" height="166" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="837.3760000000001" y="464" width="153.39999999999998" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="914.076" y="481" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">TAREAS</text>
+  <line x1="837.3760000000001" y1="498" x2="990.7760000000001" y2="498" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="843.3760000000001" y="502" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="854.5310000000001" y="509" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="873.686" y="509" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="982.7760000000001" y="509" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_tarea</tspan></text>
+  <rect x="843.3760000000001" y="524" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="854.5310000000001" y="531" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">UK</text>
+  <text x="873.686" y="531" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="982.7760000000001" y="531" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">nom_tar</tspan></text>
+  <g><title>Lista 1 - Base</title>
+  <text x="845.3760000000001" y="553" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="982.7760000000001" y="553" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">precio</tspan></text>
+  </g>
+  <g><title>Lista 2 - Flota</title>
+  <text x="845.3760000000001" y="575" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="982.7760000000001" y="575" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">precio2</tspan></text>
+  </g>
+  <g><title>Lista 3 - Cta Cte</title>
+  <text x="845.3760000000001" y="597" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="982.7760000000001" y="597" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">precio3</tspan></text>
+  </g>
+  <g><title>0 o 1</title>
+  <text x="845.3760000000001" y="619" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="982.7760000000001" y="619" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">activa</tspan></text>
+  </g>
+</g>
+<g class="entity" data-id="DETALLE_TEMPORAL_TRABAJOS" data-label="DETALLE_TEMPORAL_TRABAJOS">
+  <rect x="1261.21" y="801" width="251.5089999999999" height="166" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="1261.21" y="801" width="251.5089999999999" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="1386.9645" y="818" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">DETALLE_TEMPORAL_TRABAJOS</text>
+  <line x1="1261.21" y1="835" x2="1512.719" y2="835" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="1267.21" y="839" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="1278.365" y="846" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="1297.52" y="846" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1504.719" y="846" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_detalle_temporal</tspan></text>
+  <g><title>ON DELETE CASCADE</title>
+  <rect x="1267.21" y="861" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="1278.365" y="868" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="1297.52" y="868" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1504.719" y="868" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_trabajo</tspan></text>
+  </g>
+  <text x="1269.21" y="890" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="1504.719" y="890" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">nombre_tarea</tspan></text>
+  <g><title>&gt;= 1</title>
+  <text x="1269.21" y="912" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="1504.719" y="912" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">cantidad</tspan></text>
+  </g>
+  <text x="1269.21" y="934" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="1504.719" y="934" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">precio_unitario</tspan></text>
+  <text x="1269.21" y="956" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">real</tspan></text>
+  <text x="1504.719" y="956" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">subtotal</tspan></text>
+</g>
+<g class="entity" data-id="GOMEROS" data-label="GOMEROS">
+  <rect x="213.39999999999998" y="89.66666666666667" width="153.39999999999998" height="100" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="213.39999999999998" y="89.66666666666667" width="153.39999999999998" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="290.09999999999997" y="106.66666666666667" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">GOMEROS</text>
+  <line x1="213.39999999999998" y1="123.66666666666667" x2="366.79999999999995" y2="123.66666666666667" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="219.39999999999998" y="127.66666666666669" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="230.55499999999998" y="134.66666666666669" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="249.70999999999998" y="134.66666666666669" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="358.79999999999995" y="134.66666666666669" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_gomero</tspan></text>
+  <rect x="219.39999999999998" y="149.66666666666669" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="230.55499999999998" y="156.66666666666669" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">UK</text>
+  <text x="249.70999999999998" y="156.66666666666669" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="358.79999999999995" y="156.66666666666669" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">nombre</tspan></text>
+  <g><title>Base</title>
+  <text x="221.39999999999998" y="178.66666666666669" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="358.79999999999995" y="178.66666666666669" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">sueldo_semanal</tspan></text>
+  </g>
+</g>
+<g class="entity" data-id="MOVIMIENTOS_GOMEROS" data-label="MOVIMIENTOS_GOMEROS">
+  <rect x="595.654" y="40" width="192.22899999999993" height="166" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="595.654" y="40" width="192.22899999999993" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="691.7684999999999" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">MOVIMIENTOS_GOMEROS</text>
+  <line x1="595.654" y1="74" x2="787.8829999999999" y2="74" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="601.654" y="78" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="612.809" y="85" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="631.9639999999999" y="85" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="779.8829999999999" y="85" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_movimiento</tspan></text>
+  <g><title>ON DELETE CASCADE</title>
+  <rect x="601.654" y="100" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="612.809" y="107" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="631.9639999999999" y="107" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="779.8829999999999" y="107" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_gomero</tspan></text>
+  </g>
+  <g><title>adelanto o gasto</title>
+  <text x="603.654" y="129" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="779.8829999999999" y="129" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">tipo</tspan></text>
+  </g>
+  <text x="603.654" y="151" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="779.8829999999999" y="151" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">monto</tspan></text>
+  <text x="603.654" y="173" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="779.8829999999999" y="173" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">descripcion</tspan></text>
+  <text x="603.654" y="195" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="779.8829999999999" y="195" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">fecha</tspan></text>
+</g>
+<g class="entity" data-id="AUSENCIAS_GOMEROS" data-label="AUSENCIAS_GOMEROS">
+  <rect x="595.654" y="276" width="175.92699999999996" height="122" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="595.654" y="276" width="175.92699999999996" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="683.6175" y="293" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">AUSENCIAS_GOMEROS</text>
+  <line x1="595.654" y1="310" x2="771.5809999999999" y2="310" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="601.654" y="314" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="612.809" y="321" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="631.9639999999999" y="321" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="763.5809999999999" y="321" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id</tspan></text>
+  <g><title>ON DELETE CASCADE</title>
+  <rect x="601.654" y="336" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="612.809" y="343" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">FK</text>
+  <text x="631.9639999999999" y="343" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="763.5809999999999" y="343" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">gomero_id</tspan></text>
+  </g>
+  <g><title>YYYY-MM-DD</title>
+  <text x="603.654" y="365" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="763.5809999999999" y="365" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">fecha</tspan></text>
+  </g>
+  <text x="603.654" y="387" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="763.5809999999999" y="387" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">created_at</tspan></text>
+</g>
+<g class="entity" data-id="USUARIOS" data-label="USUARIOS">
+  <rect x="40" y="40" width="153.39999999999998" height="122" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="40" width="153.39999999999998" height="34" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="116.69999999999999" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="var(--_text)" dy="4.55">USUARIOS</text>
+  <line x1="40" y1="74" x2="193.39999999999998" y2="74" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <rect x="46" y="78" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="57.155" y="85" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">PK</text>
+  <text x="76.31" y="85" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">int</tspan></text>
+  <text x="185.39999999999998" y="85" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">id_usuario</tspan></text>
+  <rect x="46" y="100" width="22.31" height="14" rx="2" ry="2" fill="var(--_key-badge)" />
+  <text x="57.155" y="107" text-anchor="middle" dy="0.35em" font-size="9" font-weight="600" fill="var(--_text-sec)">UK</text>
+  <text x="76.31" y="107" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="107" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">usuario</tspan></text>
+  <g><title>Hash seguro Werkzeug</title>
+  <text x="48" y="129" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="129" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">contraseña</tspan></text>
+  </g>
+  <g><title>usuario o admin</title>
+  <text x="48" y="151" class="mono" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-muted)">string</tspan></text>
+  <text x="185.39999999999998" y="151" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400"><tspan fill="var(--_text-sec)">rol</tspan></text>
+  </g>
+</g>
+<line x1="197.39999999999998" y1="586" x2="197.39999999999998" y2="598" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="201.39999999999998" y1="586" x2="201.39999999999998" y2="598" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="412.05" y1="799" x2="400.05" y2="792" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="412.05" y1="792" x2="400.05" y2="792" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="412.05" y1="785" x2="400.05" y2="792" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="396.05" cy="792" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="197.39999999999998" y1="633" x2="197.39999999999998" y2="645" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="201.39999999999998" y1="633" x2="201.39999999999998" y2="645" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="826.7760000000001" y1="891" x2="814.7760000000001" y2="884" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="826.7760000000001" y1="884" x2="814.7760000000001" y2="884" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="826.7760000000001" y1="877" x2="814.7760000000001" y2="884" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="810.7760000000001" cy="884" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="197.39999999999998" y1="539" x2="197.39999999999998" y2="551" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="201.39999999999998" y1="539" x2="201.39999999999998" y2="551" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="408.75" y1="552" x2="396.75" y2="545" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="408.75" y1="545" x2="396.75" y2="545" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="408.75" y1="538" x2="396.75" y2="545" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="392.75" cy="545" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="580.05" y1="786" x2="580.05" y2="798" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="584.05" y1="786" x2="584.05" y2="798" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="826.7760000000001" y1="799" x2="814.7760000000001" y2="792" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="826.7760000000001" y1="792" x2="814.7760000000001" y2="792" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="826.7760000000001" y1="785" x2="814.7760000000001" y2="792" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="810.7760000000001" cy="792" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="994.7760000000001" y1="786" x2="994.7760000000001" y2="798" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="998.7760000000001" y1="786" x2="998.7760000000001" y2="798" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="609.3333333333333" x2="1245.21" y2="602.3333333333333" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="602.3333333333333" x2="1245.21" y2="602.3333333333333" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="595.3333333333333" x2="1245.21" y2="602.3333333333333" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="994.7760000000001" y1="541" x2="994.7760000000001" y2="553" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="998.7760000000001" y1="541" x2="998.7760000000001" y2="553" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="554" x2="1245.21" y2="547" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="547" x2="1245.21" y2="547" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="540" x2="1245.21" y2="547" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="1241.21" cy="547" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="994.7760000000001" y1="878" x2="994.7760000000001" y2="890" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="998.7760000000001" y1="878" x2="998.7760000000001" y2="890" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="891" x2="1245.21" y2="884" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="884" x2="1245.21" y2="884" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="1257.21" y1="877" x2="1245.21" y2="884" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="1241.21" cy="884" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="370.79999999999995" y1="117" x2="370.79999999999995" y2="129" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="374.79999999999995" y1="117" x2="374.79999999999995" y2="129" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="591.654" y1="130" x2="579.654" y2="123" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="591.654" y1="123" x2="579.654" y2="123" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="591.654" y1="116" x2="579.654" y2="123" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="575.654" cy="123" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="370.79999999999995" y1="150.33333333333331" x2="370.79999999999995" y2="162.33333333333331" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="374.79999999999995" y1="150.33333333333331" x2="374.79999999999995" y2="162.33333333333331" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="591.654" y1="344" x2="579.654" y2="337" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="591.654" y1="337" x2="579.654" y2="337" stroke="var(--_line)" stroke-width="1.25" />
+<line x1="591.654" y1="330" x2="579.654" y2="337" stroke="var(--_line)" stroke-width="1.25" />
+<circle cx="575.654" cy="337" r="4" fill="var(--bg)" stroke="var(--_line)" stroke-width="1.25" />
+<rect x="193.72499999999997" y="773.1750000000001" width="39.35" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="213.39999999999998" y="783.325" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">posee</text>
+<rect x="368.13100000000003" y="901.85" width="42.91400000000001" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="389.588" y="912" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">solicita</text>
+<rect x="286.37" y="534.85" width="33.41" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="303.075" y="545" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">emite</text>
+<rect x="667.7" y="781.85" width="71.42600000000002" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="703.413" y="792" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">asignado_en</text>
+<rect x="1156.189" y="742.2336666666666" width="50.042" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="1181.21" y="752.3836666666666" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">contiene</text>
+<rect x="1093.844" y="536.85" width="64.298" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="1125.993" y="547" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">incluida_en</text>
+<rect x="1080.7759999999998" y="873.85" width="90.43400000000001" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="1125.993" y="884" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">incluye_temporal</text>
+<rect x="457.394" y="112.85" width="47.666" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="481.227" y="123" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">registra</text>
+<rect x="366.4666666666666" y="326.85" width="48.854000000000006" height="20.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="390.8936666666666" y="337" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">acumula</text>
+</svg>
