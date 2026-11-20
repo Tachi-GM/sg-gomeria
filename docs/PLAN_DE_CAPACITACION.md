@@ -58,6 +58,10 @@ La capacitación se divide en **4 bloques secuenciales**, ordenados de lo más f
    - **Foto del remito de papel:** Subir una foto del talonario físico firmado por el chofer desde la computadora/celular (máximo 5 MB en formato JPG o PNG). Así el taller nunca pierde el papel físico.
    - **Detalle u observaciones:** Anotar si vino un chofer específico, patente o aclaración del neumático.
    - **Guardar:** Presionar el botón grande *"Guardar Remito y Calcular Total"*.
+3. **Imprimir o enviar el remito como PDF:**
+   - Una vez guardado el remito, se puede presionar **"Imprimir"** para abrir la vista oficial del comprobante.
+   - En esa pantalla, usar **Archivo → Imprimir** del navegador (o `Ctrl+P`) y seleccionar "Guardar como PDF".
+   - El comprobante incluye los datos del taller, el detalle de tareas, el desglose de IVA y el recuadro de firmas.
 
 ---
 
@@ -90,10 +94,11 @@ La capacitación se divide en **4 bloques secuenciales**, ordenados de lo más f
 
 ## 3. CHECKLIST DE EVALUACIÓN PRÁCTICA (SIMULACIÓN FINAL)
 
-Para confirmar que la capacitación fue exitosa, la operadora realizará **2 ejercicios reales por su cuenta** sin ayuda:
+Para confirmar que la capacitación fue exitosa, la operadora realizará **3 ejercicios reales por su cuenta** sin ayuda:
 
 - [ ] **Ejercicio 1 (Carga completa):** Cargar un remito OI para "Transporte El Rápido", con 2 Parches, 1 Arme/Desarme, subir una foto de prueba y guardar.
-- [ ] **Ejercicio 2 (Cobranza y Reporte):** Entrar al cliente, marcar el remito anterior como PAGADO y descargar el reporte en Excel.
+- [ ] **Ejercicio 2 (Imprimir/PDF):** Abrir el remito guardado y generar el PDF del comprobante con `Ctrl+P → Guardar como PDF`.
+- [ ] **Ejercicio 3 (Cobranza y Reporte):** Entrar al cliente, marcar el remito anterior como PAGADO y descargar el reporte en Excel.
 
 ---
 

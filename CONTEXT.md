@@ -1,6 +1,6 @@
 # CONTEXT.md — Estado actual del proyecto SG Gomería
 > **Leer este archivo al iniciar cada sesión** para conocer el estado real del proyecto.
-> Última actualización: 2026-11-14 (incorporada vista imprimible de remitos / PDF).
+> Última actualización: 2026-11-20 (README y PLAN_DE_CAPACITACION actualizados; bug de tests en test_exportaciones documentado).
 
 Leyenda: `[x]` hecho · `[~]` parcial · `[ ]` pendiente · `[-]` descartado
 
@@ -171,7 +171,7 @@ SG - Gomería/
 
 - `templates/cheques.html` tiene `<body>` dentro de `{% block content %}`, lo que anida un `<body>` dentro de `base.html`. Hay que quitarlo.
 - `historial_cliente` falla si se entra sin `id_cliente` o con un id inexistente. Conviene validarlo y devolver 404.
-- **Documentación desincronizada:** el README dice 35 tests y el CONTEXT dice cobertura 91%. Revisar y dejar un solo dato. El README también muestra credenciales de demo en un repo público.
+- **Tests con errores:** `test_exportaciones.py` tiene 3 tests que fallan con `TypeError: generar_excel_general() got an unexpected keyword argument 'periodo'`. La firma del servicio cambió y los tests no se actualizaron.
 
 ---
 

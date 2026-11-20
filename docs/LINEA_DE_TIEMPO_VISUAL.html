@@ -33,13 +33,13 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1050px;
             margin: 0 auto;
         }
 
         header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 45px;
         }
 
         .badge-kpi {
@@ -48,7 +48,7 @@
             color: #0369a1;
             font-weight: 700;
             font-size: 0.85rem;
-            padding: 4px 14px;
+            padding: 5px 16px;
             border-radius: 9999px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -56,7 +56,7 @@
         }
 
         h1 {
-            font-size: 2.2rem;
+            font-size: 2.3rem;
             color: var(--primary);
             font-weight: 800;
             margin-bottom: 8px;
@@ -70,32 +70,39 @@
         /* KPI Dashboard */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 16px;
             margin-bottom: 50px;
         }
 
         .kpi-card {
             background: var(--card-bg);
-            padding: 20px;
+            padding: 20px 16px;
             border-radius: 14px;
             border: 1px solid var(--border);
             text-align: center;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px -3px rgba(0,0,0,0.08);
         }
 
         .kpi-value {
-            font-size: 1.8rem;
+            font-size: 1.75rem;
             font-weight: 800;
             color: var(--accent);
             margin-bottom: 4px;
         }
 
         .kpi-label {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         /* Timeline vertical */
@@ -182,7 +189,8 @@
         .timeline-desc {
             font-size: 0.9rem;
             color: var(--text);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            line-height: 1.55;
         }
 
         .tag-pill {
@@ -205,6 +213,16 @@
         .tag-pill.accent {
             background: #e0f2fe;
             color: #0369a1;
+        }
+
+        .tag-pill.orange {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .tag-pill.purple {
+            background: #f3e8ff;
+            color: #7e22ce;
         }
 
         /* Responsive */
@@ -231,7 +249,7 @@
     <header>
         <span class="badge-kpi">Gomería "El Puente" · UTN Programación IV & Gestión de Software</span>
         <h1>Línea de Tiempo y Evolución del Proyecto</h1>
-        <p class="subtitle">Trazabilidad histórica desde la entrevista de relevamiento inicial hasta la versión final con entregas reales.</p>
+        <p class="subtitle">Trazabilidad histórica completa: desde la entrevista de relevamiento inicial hasta la Versión 1.0 lista para producción.</p>
     </header>
 
     <!-- Resumen de Métricas / KPI -->
@@ -241,16 +259,20 @@
             <div class="kpi-label">Entrevista Inicial</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-value">60+</div>
-            <div class="kpi-label">Commits en GitHub</div>
+            <div class="kpi-value">85+</div>
+            <div class="kpi-label">Commits en Git</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-value">91%</div>
-            <div class="kpi-label">Cobertura de Tests</div>
+            <div class="kpi-value">90 Tests</div>
+            <div class="kpi-label">Aprobados (91% Cov)</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-value">-3 Días</div>
-            <div class="kpi-label">Desvío (Adelantado)</div>
+            <div class="kpi-value">$1.77 M</div>
+            <div class="kpi-label">Costo Total (2 hs/día)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">21 Nov</div>
+            <div class="kpi-label">Entrega Versión 1.0</div>
         </div>
     </div>
 
@@ -263,8 +285,8 @@
             <div class="timeline-content">
                 <span class="timeline-date">22 de Agosto de 2026</span>
                 <h3 class="timeline-title">Entrevista y Relevamiento en el Taller</h3>
-                <p class="timeline-desc">Visita a Gomería "El Puente". Identificación de la problemática de mostrador: pérdida de remitos en papel, demora en calcular listas de tarifas L1-L3 y falta de control de cheques diferidos.</p>
-                <span class="tag-pill accent">Hito Inicial</span>
+                <p class="timeline-desc">Visita presencial a Gomería "El Puente". Identificación de la problemática de mostrador: pérdida de remitos en papel, demora en calcular listas de tarifas L1-L3, falta de control en cheques diferidos y liquidaciones manuales de personal.</p>
+                <span class="tag-pill orange">Hito Inicial</span>
                 <span class="tag-pill">Requerimientos</span>
             </div>
         </div>
@@ -275,7 +297,7 @@
             <div class="timeline-content">
                 <span class="timeline-date">05 al 07 de Septiembre de 2026</span>
                 <h3 class="timeline-title">Diseño de Pantallas en Canva</h3>
-                <p class="timeline-desc">Maquetado de interfaces de usuario para "Mataburros", listado de clientes y talonarios. Finalizado 1 día antes de lo estipulado en el Gantt oficial.</p>
+                <p class="timeline-desc">Maquetado de interfaces de usuario para "Mataburros", listado de clientes y talonarios. Finalizado 1 día antes de lo estipulado en el plan original.</p>
                 <span class="tag-pill success">Terminó antes (-1d)</span>
                 <span class="tag-pill">UI / UX</span>
             </div>
@@ -287,7 +309,7 @@
             <div class="timeline-content">
                 <span class="timeline-date">09 de Septiembre de 2026</span>
                 <h3 class="timeline-title">Arranque de Construcción (Primer Commit)</h3>
-                <p class="timeline-desc">Creación del repositorio Git. Estructura Flask inicial, base SQLite con claves foráneas y pantallas base de mostrador y empresas.</p>
+                <p class="timeline-desc">Creación del repositorio Git. Estructura Flask inicial, base SQLite con claves foráneas activadas y primeras vistas operativas de mostrador e inicio.</p>
                 <span class="tag-pill success">Hito de Código</span>
                 <span class="tag-pill">Flask + SQLite</span>
             </div>
@@ -297,10 +319,11 @@
         <div class="timeline-item right">
             <div class="timeline-dot" style="border-color: #8b5cf6;"></div>
             <div class="timeline-content">
-                <span class="timeline-date">12 al 18 de Septiembre de 2026</span>
-                <h3 class="timeline-title">Historial por Cliente y Listas L1-L3</h3>
-                <p class="timeline-desc">Filtro de trabajos por mes/año y catálogo de 3 listas de precios simultáneas. Primera versión del manual de usuario en texto plano.</p>
-                <span class="tag-pill">Gestión Tarifaria</span>
+                <span class="timeline-date">10 al 18 de Septiembre de 2026</span>
+                <h3 class="timeline-title">Historial por Cliente y Catálogo L1-L3</h3>
+                <p class="timeline-desc">Historial mensualizado por empresa con cálculo de saldos y 3 listas de precios simultáneas (mostrador, flota y cuenta corriente). Primera documentación operativa en texto plano.</p>
+                <span class="tag-pill purple">Tarifario L1-L3</span>
+                <span class="tag-pill success">Adelantado</span>
             </div>
         </div>
 
@@ -310,9 +333,9 @@
             <div class="timeline-content">
                 <span class="timeline-date">21 al 25 de Septiembre de 2026</span>
                 <h3 class="timeline-title">Presentaciones Parciales Académicas</h3>
-                <p class="timeline-desc">Defensa de avances en Programación IV (funcionalidad) y Gestión de Desarrollo de Software (Gantt, costos proyectados de $2.710.000 y metodologías).</p>
-                <span class="tag-pill accent">Hito Académico</span>
-                <span class="tag-pill">Gantt & Costos</span>
+                <p class="timeline-desc">Primera defensa de software funcional ante la cátedra de Programación IV y exposición de metodologías, planificación de Gantt y estimación de costos en Gestión de Desarrollo de Software.</p>
+                <span class="tag-pill orange">Hito Académico</span>
+                <span class="tag-pill">UTN FRGP</span>
             </div>
         </div>
 
@@ -321,56 +344,106 @@
             <div class="timeline-dot" style="border-color: #0284c7;"></div>
             <div class="timeline-content">
                 <span class="timeline-date">28 de Sept. al 08 de Octubre</span>
-                <h3 class="timeline-title">Remitos Oficiales OI/OIB y Cheques</h3>
-                <p class="timeline-desc">Estandarización de talonarios con validación estricta, plantilla base Jinja2 unificada, variables de entorno (.env) y cartera de e-checks interactiva.</p>
-                <span class="tag-pill">Facturación</span>
-                <span class="tag-pill">Jinja2</span>
+                <h3 class="timeline-title">Remitos Oficiales OI/OIB, Jinja2 y Cheques</h3>
+                <p class="timeline-desc">Soporte estricto para comprobantes OI y OIB, unificación visual con plantilla base Jinja2 (`base.html`), variables de entorno protegidas (`.env`) y seguimiento interactivo de cartera de cheques.</p>
+                <span class="tag-pill accent">Facturación</span>
+                <span class="tag-pill">Jinja2 Base</span>
             </div>
         </div>
 
-        <!-- 7. Seguridad y Blueprints -->
+        <!-- 7. IVA Inteligente y Seguridad -->
         <div class="timeline-item left">
             <div class="timeline-dot" style="border-color: #16a34a;"></div>
             <div class="timeline-content">
-                <span class="timeline-date">16 al 18 de Octubre de 2026</span>
-                <h3 class="timeline-title">Modularización en Blueprints y Cobertura 91%</h3>
-                <p class="timeline-desc">Refactorización arquitectural de app.py en Blueprints, lógica de negocio en capa de servicios, autenticación con hash seguro, auditoría y 35 tests automatizados.</p>
-                <span class="tag-pill success">Cobertura 91%</span>
-                <span class="tag-pill">Blueprints</span>
+                <span class="timeline-date">09 al 16 de Octubre de 2026</span>
+                <h3 class="timeline-title">Cálculo de IVA Automático y Autenticación</h3>
+                <p class="timeline-desc">Liquidación impositiva inteligente (21%) según condición fiscal del cliente. Autenticación con contraseñas encriptadas (Werkzeug), roles `admin` y `usuario`, auditoría en log y páginas de error 404/500.</p>
+                <span class="tag-pill success">Seguridad & IVA</span>
+                <span class="tag-pill">Roles</span>
             </div>
         </div>
 
-        <!-- 8. Control de Gomeros y Ausencias -->
+        <!-- 8. Blueprints y Servicios -->
         <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #0284c7;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">17 al 22 de Octubre de 2026</span>
+                <h3 class="timeline-title">Modularización en Blueprints y Base Temporal</h3>
+                <p class="timeline-desc">Desacoplamiento total de rutas en Blueprints y lógica de negocio en capa de servicios. Creación de `iniciar.bat`, aislamiento de tests en SQLite temporal y administración de cuentas de usuario.</p>
+                <span class="tag-pill accent">Blueprints</span>
+                <span class="tag-pill success">Test Fixtures</span>
+            </div>
+        </div>
+
+        <!-- 9. Control de Gomeros y Ausencias -->
+        <div class="timeline-item left">
             <div class="timeline-dot" style="border-color: #8b5cf6;"></div>
             <div class="timeline-content">
                 <span class="timeline-date">23 al 31 de Octubre de 2026</span>
-                <h3 class="timeline-title">Control de Gomeros y Liquidación Semanal</h3>
-                <p class="timeline-desc">Módulo para registrar adelantos, gastos y ausencias de operarios por día con descuento proporcional automático del sueldo semanal. Lanzador iniciar.bat.</p>
-                <span class="tag-pill">Personal de Taller</span>
+                <h3 class="timeline-title">Control Semanal de Gomeros y Ausencias</h3>
+                <p class="timeline-desc">Módulo integral para personal de fosa: registro de adelantos, gastos de taller y control de ausencias diarias con descuento proporcional sobre el sueldo semanal fijado. Rediseño del panel de inicio.</p>
+                <span class="tag-pill purple">Personal de Taller</span>
+                <span class="tag-pill">Dashboard</span>
             </div>
         </div>
 
-        <!-- 9. Fotos, Tareas Temporales y Exportaciones -->
-        <div class="timeline-item left">
+        <!-- 10. Tareas Temporales, Fotos y Manual PDF -->
+        <div class="timeline-item right">
             <div class="timeline-dot" style="border-color: #0284c7;"></div>
             <div class="timeline-content">
-                <span class="timeline-date">02 al 06 de Noviembre de 2026</span>
-                <h3 class="timeline-title">Fotos de Remitos, Tareas Temporales y Excel</h3>
-                <p class="timeline-desc">Subida protegida de fotos de remitos en papel (máx 5MB), opción de tareas temporales sin alterar el catálogo, backup ZIP completo (DB + fotos) y exportación general a Excel.</p>
-                <span class="tag-pill accent">Última Versión</span>
-                <span class="tag-pill success">Listo para Cierre</span>
+                <span class="timeline-date">01 al 06 de Noviembre de 2026</span>
+                <h3 class="timeline-title">Tareas Temporales, Fotos y Manual PDF v2.2</h3>
+                <p class="timeline-desc">Carga de servicios fuera de catálogo en remitos, subida de fotos de comprobantes en papel (hasta 5 MB), respaldo ZIP restaurable en 1 clic y compilación del Manual de Usuario Oficial en PDF (10 páginas).</p>
+                <span class="tag-pill accent">Manual Editorial</span>
+                <span class="tag-pill">Digitalización</span>
             </div>
         </div>
 
-        <!-- 10. Cierre y Presentación -->
+        <!-- 11. Edición Clientes y CUIT Tiempo Real -->
+        <div class="timeline-item left">
+            <div class="timeline-dot" style="border-color: #16a34a;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">07 al 11 de Noviembre de 2026</span>
+                <h3 class="timeline-title">ABM de Clientes y Validación CUIT en Vivo</h3>
+                <p class="timeline-desc">Edición de empresas, posibilidad de ocultar/reactivar clientes y tareas de mostrador, validación asíncrona de CUIT duplicado en tiempo real con API dedicada e importador de listas de precios.</p>
+                <span class="tag-pill success">Validación AFIP</span>
+                <span class="tag-pill">AJAX / Fetch</span>
+            </div>
+        </div>
+
+        <!-- 12. Talonario Físico y 90 Tests -->
         <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #0284c7;"></div>
+            <div class="timeline-content">
+                <span class="timeline-date">12 al 16 de Noviembre de 2026</span>
+                <h3 class="timeline-title">Vista Imprimible de Remito y 90 Tests</h3>
+                <p class="timeline-desc">Vista imprimible adaptada fielmente al talonario físico de remito (`/remito/<id>/imprimir`) lista para guardar en PDF sin elementos de navegación. Buscador Choices.js en cheques y suite de 90 tests aprobados.</p>
+                <span class="tag-pill accent">Remito PDF</span>
+                <span class="tag-pill success">90 Tests (100%)</span>
+            </div>
+        </div>
+
+        <!-- 13. Pruebas Finales y Ensayo -->
+        <div class="timeline-item left">
             <div class="timeline-dot" style="border-color: #ea580c;"></div>
             <div class="timeline-content">
-                <span class="timeline-date">10 al 18 de Noviembre de 2026</span>
-                <h3 class="timeline-title">Presentaciones Finales y Entrega al Cliente</h3>
-                <p class="timeline-desc">Exposición de software funcional y base de datos (Programación IV) y defensa metodológica ágil, métricas y roles (Gestión de Desarrollo de Software).</p>
-                <span class="tag-pill accent">Hito Final</span>
+                <span class="timeline-date">17 al 20 de Noviembre de 2026</span>
+                <h3 class="timeline-title">Pruebas Integrales y Preparación de Defensa</h3>
+                <p class="timeline-desc">Pruebas de flujo de extremo a extremo en la PC de la gomería, verificación de compatibilidad de exportaciones a Excel y preparación del guion para la mesa de examen final.</p>
+                <span class="tag-pill orange">Ensayo General</span>
+                <span class="tag-pill">Calidad Total</span>
+            </div>
+        </div>
+
+        <!-- 14. Entrega Final Versión 1.0 -->
+        <div class="timeline-item right">
+            <div class="timeline-dot" style="border-color: #16a34a; background: #16a34a;"></div>
+            <div class="timeline-content" style="border: 2px solid #16a34a;">
+                <span class="timeline-date" style="color: #16a34a;">Sábado 21 de Noviembre de 2026</span>
+                <h3 class="timeline-title" style="color: #15803d;">Hito Oficial: Entrega Final Versión 1.0 🎯</h3>
+                <p class="timeline-desc">Puesta en marcha operativa definitiva en Gomería "El Puente". Congelamiento de versión productiva, manual de usuario entregado y cierre formal del ciclo de desarrollo.</p>
+                <span class="tag-pill success">Entrega Versión 1.0</span>
+                <span class="tag-pill accent">Puesta en Producción</span>
             </div>
         </div>
 
