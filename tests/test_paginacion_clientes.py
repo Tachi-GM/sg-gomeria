@@ -73,6 +73,12 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
         self.assertIn("PG000001", datos["html"])
         self.assertIn("PG000002", datos["html"])
 
+    def test_manual_usuario_entrega_pdf(self):
+        respuesta = self.client.get("/manual")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.mimetype, "application/pdf")
+        self.assertTrue(respuesta.data.startswith(b"%PDF"))
+
     def test_endpoint_rechaza_offset_negativo(self):
         respuesta = self.client.get(
             "/clientes/remitos-pagina?id_cliente="
