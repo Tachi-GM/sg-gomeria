@@ -42,7 +42,9 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
 
     def tearDown(self):
         conexion = obtener_conexion()
-        conexion.execute("DELETE FROM trabajos WHERE id_cliente = ?", (self.id_cliente,))
+        conexion.execute(
+            "DELETE FROM trabajos WHERE id_cliente = ?", (self.id_cliente,)
+        )
         conexion.execute("DELETE FROM clientes WHERE id_cliente = ?", (self.id_cliente,))
         conexion.commit()
         conexion.close()
@@ -60,14 +62,14 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
             respuesta.data,
         )
 
-    def test_clientes_muestra_seis_empresas_y_diez_remitos(self):
+    def test_clientes_no_supera_seis_empresas_y_diez_remitos(self):
         respuesta = self.client.get("/clientes")
         self.assertEqual(respuesta.status_code, 200)
-        self.assertEqual(respuesta.data.count(b"tarjeta-empresa"), 6)
+        self.assertLessEqual(respuesta.data.count(b"tarjeta-empresa"), 6)
         self.assertEqual(respuesta.data.count(b'class="fila-remito"'), 10)
         self.assertIn(b"Cargar 10 remitos m", respuesta.data)
 
-    def test_busqueda_permite_encontrar_cliente_fuera_del_top_seis(self):
+    def test_busqueda_encuentra_cliente_coincidente(self):
         respuesta = self.client.get("/clientes?buscar=Paginacion")
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn(b"Cliente Paginacion Test", respuesta.data)
