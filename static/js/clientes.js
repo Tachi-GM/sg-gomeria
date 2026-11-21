@@ -4,6 +4,12 @@ function toggleDetalle(fila) {
     const filaDetalle = fila.nextElementSibling;
     if (filaDetalle && filaDetalle.classList.contains('fila-detalle')) {
         filaDetalle.classList.toggle('d-none');
+        if (!filaDetalle.classList.contains('d-none')) {
+            filaDetalle.querySelectorAll('img[data-src]').forEach(img => {
+                img.src = img.dataset.src;
+                delete img.dataset.src;
+            });
+        }
     }
 }
 
