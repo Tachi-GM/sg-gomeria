@@ -45,7 +45,9 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
         conexion.execute(
             "DELETE FROM trabajos WHERE id_cliente = ?", (self.id_cliente,)
         )
-        conexion.execute("DELETE FROM clientes WHERE id_cliente = ?", (self.id_cliente,))
+        conexion.execute(
+            "DELETE FROM clientes WHERE id_cliente = ?", (self.id_cliente,)
+        )
         conexion.commit()
         conexion.close()
 
@@ -58,7 +60,10 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
         self.assertIn(b"12 remito(s) en este historial", respuesta.data)
         self.assertIn(b"Cargar 10 remitos m", respuesta.data)
         self.assertIn(
-            b"Este remito corresponde al historial anterior al registro detallado de tareas.",
+            (
+                b"Este remito corresponde al historial anterior al "
+                b"registro detallado de tareas."
+            ),
             respuesta.data,
         )
 
