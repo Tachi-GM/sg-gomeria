@@ -4,6 +4,12 @@ function toggleDetalle(fila) {
     const filaDetalle = fila.nextElementSibling;
     if (filaDetalle && filaDetalle.classList.contains('fila-detalle')) {
         filaDetalle.classList.toggle('d-none');
+        if (!filaDetalle.classList.contains('d-none')) {
+            filaDetalle.querySelectorAll('img[data-src]').forEach(img => {
+                img.src = img.dataset.src;
+                delete img.dataset.src;
+            });
+        }
     }
 }
 
@@ -12,7 +18,7 @@ function cambiarEstado(select, idTrabajo) {
     fetch('/actualizar-estado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `id_trabajo=${idTrabajo}&estado=${encodeURIComponent(nuevoEstado)}`
+        body: 'id_trabajo=' + encodeURIComponent(idTrabajo) + '&estado=' + encodeURIComponent(nuevoEstado)
     })
     .then(respuesta => {
         if (!respuesta.ok) throw new Error('No se pudo actualizar');
@@ -27,7 +33,7 @@ function cambiarEstado(select, idTrabajo) {
     });
 }
 
-// === CHECKBOXES DE PAGO ===
+// === CHECKBOXES DE PAGO: delegación para incluir filas cargadas por AJAX ===
 
 function aplicarEstiloCheckPago(chk) {
     const fila = chk.closest('tr.fila-remito');
@@ -41,35 +47,36 @@ function aplicarEstiloCheckPago(chk) {
 }
 
 function inicializarCheckboxesPago() {
-    document.querySelectorAll('.check-pago').forEach(chk => {
-        aplicarEstiloCheckPago(chk);
-        chk.addEventListener('change', function () {
-            const idTrabajo = this.dataset.id;
-            const nuevoEstado = this.checked ? 'PAGADO' : 'PENDIENTE';
-            fetch('/actualizar-estado', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `id_trabajo=${idTrabajo}&estado=${encodeURIComponent(nuevoEstado)}`
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Error del servidor');
-                return res.json();
-            })
-            .then(data => {
-                if (data.exito) {
-                    this.dataset.estado = nuevoEstado;
-                    this.title = nuevoEstado;
-                    aplicarEstiloCheckPago(this);
-                } else {
-                    this.checked = !this.checked;
-                    alert('No se pudo actualizar el estado. Intentá de nuevo.');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                this.checked = !this.checked;
-                alert('Error de comunicación. Intentá de nuevo.');
-            });
+    document.querySelectorAll('.check-pago').forEach(aplicarEstiloCheckPago);
+    document.addEventListener('change', function (event) {
+        const chk = event.target.closest('.check-pago');
+        if (!chk) return;
+
+        const idTrabajo = chk.dataset.id;
+        const nuevoEstado = chk.checked ? 'PAGADO' : 'PENDIENTE';
+        fetch('/actualizar-estado', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id_trabajo=' + encodeURIComponent(idTrabajo) + '&estado=' + encodeURIComponent(nuevoEstado)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Error del servidor');
+            return res.json();
+        })
+        .then(data => {
+            if (data.exito) {
+                chk.dataset.estado = nuevoEstado;
+                chk.title = nuevoEstado;
+                aplicarEstiloCheckPago(chk);
+            } else {
+                chk.checked = !chk.checked;
+                alert('No se pudo actualizar el estado. Intentá de nuevo.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            chk.checked = !chk.checked;
+            alert('Error de comunicación. Intentá de nuevo.');
         });
     });
 }
@@ -86,26 +93,19 @@ function ordenarTabla(nColumna, esNumero = false) {
     const filasRemito = Array.from(tbody.querySelectorAll('tr.fila-remito'));
     if (filasRemito.length <= 1) return;
 
-    if (ultimaColumna === nColumna) {
-        ordenAscendente = !ordenAscendente;
-    } else {
+    if (ultimaColumna === nColumna) ordenAscendente = !ordenAscendente;
+    else {
         ordenAscendente = true;
         ultimaColumna = nColumna;
     }
 
-    const pares = filasRemito.map(fila => ({
-        remito: fila,
-        detalle: fila.nextElementSibling
-    }));
-
+    const pares = filasRemito.map(fila => ({ remito: fila, detalle: fila.nextElementSibling }));
     pares.sort((a, b) => {
         const celdaA = a.remito.children[nColumna];
         const celdaB = b.remito.children[nColumna];
         if (!celdaA || !celdaB) return 0;
-        const selectA = celdaA.querySelector('select');
-        const selectB = celdaB.querySelector('select');
-        const textoA = selectA ? selectA.value : celdaA.innerText.trim();
-        const textoB = selectB ? selectB.value : celdaB.innerText.trim();
+        const textoA = celdaA.innerText.trim();
+        const textoB = celdaB.innerText.trim();
         if (esNumero) {
             const numA = parseFloat(textoA.replace(/[^0-9,-]+/g, '').replace(',', '.')) || 0;
             const numB = parseFloat(textoB.replace(/[^0-9,-]+/g, '').replace(',', '.')) || 0;
@@ -113,14 +113,59 @@ function ordenarTabla(nColumna, esNumero = false) {
         }
         return ordenAscendente ? textoA.localeCompare(textoB) : textoB.localeCompare(textoA);
     });
-
     pares.forEach(par => {
         tbody.appendChild(par.remito);
         if (par.detalle) tbody.appendChild(par.detalle);
     });
 }
 
-// === MODAL EDITAR REMITO ===
+// === CARGA PROGRESIVA DE REMITOS ===
+
+function inicializarCargaRemitos() {
+    document.addEventListener('click', async event => {
+        const boton = event.target.closest('.btn-cargar-remitos');
+        if (!boton) return;
+
+        const offset = Number.parseInt(boton.dataset.offset || '0', 10);
+        if (!Number.isInteger(offset) || offset < 0) return;
+
+        const parametros = new URLSearchParams({
+            offset: String(offset),
+            periodo: boton.dataset.periodo || 'todos'
+        });
+        if (boton.dataset.idCliente) parametros.set('id_cliente', boton.dataset.idCliente);
+
+        const textoOriginal = boton.textContent;
+        boton.disabled = true;
+        boton.textContent = 'Cargando...';
+
+        try {
+            const respuesta = await fetch('/clientes/remitos-pagina?' + parametros.toString());
+            const datos = await respuesta.json();
+            if (!respuesta.ok) throw new Error(datos.error || 'No se pudieron cargar los remitos.');
+
+            const tbody = document.querySelector('.tabla-remitos tbody');
+            if (!tbody) throw new Error('No se encontró la tabla de remitos.');
+            tbody.insertAdjacentHTML('beforeend', datos.html);
+            tbody.querySelectorAll('.check-pago').forEach(aplicarEstiloCheckPago);
+            boton.dataset.offset = String(offset + datos.cantidad_cargada);
+
+            if (!datos.hay_mas || datos.cantidad_cargada === 0) {
+                boton.closest('.text-center').remove();
+            } else {
+                boton.disabled = false;
+                boton.textContent = textoOriginal;
+            }
+        } catch (error) {
+            console.error(error);
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+            alert(error.message || 'Error de comunicación al cargar remitos.');
+        }
+    });
+}
+
+// === MODAL EDITAR REMITO: delegación para filas agregadas dinámicamente ===
 
 function inicializarModalRemito() {
     const modalElement = document.getElementById('modalEditarRemito');
@@ -137,32 +182,30 @@ function inicializarModalRemito() {
 
     function actualizarHint() {
         if (!hintRemito) return;
-        if (selectTipo.value === 'OI') {
-            hintRemito.textContent = 'OI: 5 dígitos numéricos (ej. 12345). Si ingresás menos, se completará con ceros.';
-        } else {
-            hintRemito.textContent = 'OIB: Formato 00XXXX (4 dígitos tras el 00, ej. 001234).';
-        }
+        hintRemito.textContent = selectTipo.value === 'OI'
+            ? 'OI: 5 dígitos numéricos (ej. 12345). Si ingresás menos, se completará con ceros.'
+            : 'OIB: Formato 00XXXX (4 dígitos tras el 00, ej. 001234).';
     }
 
     if (selectTipo) selectTipo.addEventListener('change', actualizarHint);
 
-    document.querySelectorAll('.btn-editar-remito').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            inputId.value = btn.dataset.id || '';
-            selectTipo.value = btn.dataset.tipo || 'OI';
-            inputRemito.value = btn.dataset.remito || '';
-            inputFecha.value = btn.dataset.fecha || '';
-            actualizarHint();
-            alertaError.classList.add('d-none');
-            alertaError.textContent = '';
-            modalInstance.show();
-        });
+    document.addEventListener('click', event => {
+        const btn = event.target.closest('.btn-editar-remito');
+        if (!btn) return;
+        event.stopPropagation();
+        inputId.value = btn.dataset.id || '';
+        selectTipo.value = btn.dataset.tipo || 'OI';
+        inputRemito.value = btn.dataset.remito || '';
+        inputFecha.value = btn.dataset.fecha || '';
+        actualizarHint();
+        alertaError.classList.add('d-none');
+        alertaError.textContent = '';
+        modalInstance.show();
     });
 
     if (formEditar) {
-        formEditar.addEventListener('submit', e => {
-            e.preventDefault();
+        formEditar.addEventListener('submit', event => {
+            event.preventDefault();
             alertaError.classList.add('d-none');
             alertaError.textContent = '';
             fetch('/editar-remito', { method: 'POST', body: new FormData(formEditar) })
@@ -197,7 +240,6 @@ function debounce(fn, delay) {
 function validarCuit(input) {
     const cuit = input.value.trim();
     const errDiv = input.parentElement.querySelector('.cuit-error');
-
     if (!cuit) {
         input.classList.remove('is-invalid');
         if (errDiv) errDiv.classList.add('d-none');
@@ -234,8 +276,8 @@ function validarCuit(input) {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarCheckboxesPago();
     inicializarModalRemito();
+    inicializarCargaRemitos();
 
-    // Validación CUIT en tiempo real (modales de edición)
     document.querySelectorAll('.cuit-input').forEach(inp => {
         inp.addEventListener('input', debounce(() => validarCuit(inp), 300));
     });

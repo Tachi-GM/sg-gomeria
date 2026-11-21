@@ -33,7 +33,31 @@ class TestExportacionesMensuales(unittest.TestCase):
             from openpyxl import load_workbook
 
             libro = load_workbook(BytesIO(respuesta.data))
-            self.assertEqual(libro.sheetnames, ["Resumen", "Agosto"])
+            conexion = obtener_conexion()
+            periodos = conexion.execute(
+                """
+                SELECT DISTINCT strftime('%Y-%m', fecha) AS periodo
+                FROM trabajos
+                WHERE id_cliente = ? AND fecha IS NOT NULL
+                ORDER BY periodo
+                """,
+                (1,),
+            ).fetchall()
+            conexion.close()
+
+            nombres_usados = set()
+            pestanas_esperadas = ["Resumen"]
+
+            for (periodo,) in periodos:
+                nombre = MESES[periodo[5:7]]
+
+                if nombre in nombres_usados:
+                    nombre = f"{nombre} {periodo[:4]}"
+
+                nombres_usados.add(nombre)
+                pestanas_esperadas.append(nombre)
+
+            self.assertEqual(libro.sheetnames, pestanas_esperadas)
             self.assertEqual(
                 libro["Agosto"]["A1"].value,
                 "Toyota - Agosto",

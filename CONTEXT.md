@@ -1,6 +1,6 @@
 # CONTEXT.md — Estado actual del proyecto SG Gomería
 > **Leer este archivo al iniciar cada sesión** para conocer el estado real del proyecto.
-> Última actualización: 2026-11-20 (README y PLAN_DE_CAPACITACION actualizados; bug de tests en test_exportaciones documentado).
+> Última actualización: 2026-11-21 (se preparó en rama separada la paginación de remitos, optimización de consultas e índice de historial; pendiente de pruebas locales y revisión).
 
 Leyenda: `[x]` hecho · `[~]` parcial · `[ ]` pendiente · `[-]` descartado
 
@@ -166,6 +166,17 @@ SG - Gomería/
 - [ ] **Limpieza de archivos viejos** si quedan copias duplicadas en el repo.
 
 ---
+
+## Trabajo preparado en rama (pendiente de integrar)
+
+- Rama: `perf/paginacion-remitos-manual`.
+- Clientes: muestra inicialmente los seis con más remitos; el buscador sigue permitiendo localizar cualquier empresa.
+- Historial general y por cliente: carga inicial de 10 remitos y botón para sumar 10; los totales siguen calculándose sobre todos los registros del filtro.
+- Los detalles se consultan solo para los remitos de la página actual. Los remitos históricos sin renglones muestran una aclaración, sin inventar tareas ni alterar importes.
+- Las fotos se cargan al expandir el detalle.
+- Manual: ruta autenticada `/manual`, que sirve `docs/MANUAL_DE_USUARIO_SG_GOMERIA.pdf` para abrirlo en otra pestaña.
+- Índices propuestos: migración idempotente `database/migraciones/001_indices_historial.sql`; también están declarados en `database/init_db.py` para bases nuevas.
+- Se agregó `tests/test_paginacion_clientes.py`; la suite todavía debe ejecutarse localmente. Antes de aplicar la migración sobre la base real, generar y verificar un backup.
 
 ## Bugs o puntos a revisar
 
