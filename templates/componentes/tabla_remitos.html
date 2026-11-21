@@ -1,68 +1,17 @@
 <table class="table table-hover align-middle mb-0">
     <thead class="table-light">
         <tr class="text-secondary small text-uppercase">
-            <!-- Columna 0: Fecha (se ordena como texto ISO) -->
-            <th class="py-3 px-4" onclick="ordenarTabla(0)" style="cursor: pointer;">
-                Fecha ⇅
-            </th>
-            <!-- Columna 1: N° Remito (numérico) -->
-            <th class="py-3" onclick="ordenarTabla(1, true)" style="cursor: pointer;">
-                N° Remito ⇅
-            </th>
-            <!-- Columna 2: Empresa (texto) -->
-            <th class="py-3" onclick="ordenarTabla(2)" style="cursor: pointer;">
-                Empresa ⇅
-            </th>
-            <!-- Columna 3: Detalles (texto) -->
-            <th class="py-3" onclick="ordenarTabla(3)" style="cursor: pointer;">
-                Detalles
-            </th>
-            <!-- Columna 4: Total (numérico/precio) -->
-            <th class="py-3 text-end" onclick="ordenarTabla(4, true)" style="cursor: pointer;">
-                Total ⇅
-            </th>
-            <!-- Columna 5: Pago (checkbox) -->
-            <th class="py-3 text-center" style="width: 75px;">
-                Pago
-            </th>
-            <!-- Columna 6: Acciones (imprimir y editar) -->
-            <th class="py-3 text-center" style="width: 105px;">
-                Acciones
-            </th>
+            <th class="py-3 px-4" onclick="ordenarTabla(0)" style="cursor: pointer;">Fecha ⇅</th>
+            <th class="py-3" onclick="ordenarTabla(1, true)" style="cursor: pointer;">N° Remito ⇅</th>
+            <th class="py-3" onclick="ordenarTabla(2)" style="cursor: pointer;">Empresa ⇅</th>
+            <th class="py-3" onclick="ordenarTabla(3)" style="cursor: pointer;">Detalles</th>
+            <th class="py-3 text-end" onclick="ordenarTabla(4, true)" style="cursor: pointer;">Total ⇅</th>
+            <th class="py-3 text-center" style="width: 75px;">Pago</th>
+            <th class="py-3 text-center" style="width: 105px;">Acciones</th>
         </tr>
     </thead>
     <tbody>
         {% include "componentes/filas_remitos.html" %}
-                </ul>
-                <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
-                    <a href="{{ url_for('trabajos_bp.imprimir_remito', id_trabajo=r['id_trabajo']) }}"
-                       class="btn btn-sm btn-outline-primary rounded-pill fw-bold"
-                       target="_blank"
-                       rel="noopener"
-                       onclick="event.stopPropagation()">
-                        🖨️ Ver / Imprimir Comprobante
-                    </a>
-                </div>
-                {% if r['foto_remito'] %}
-                <div class="mt-3">
-                    <strong class="d-block mb-2 text-secondary text-uppercase small">Foto del remito</strong>
-                    <a href="{{ url_for('trabajos_bp.foto_remito', nombre_archivo=r['foto_remito']) }}"
-                       target="_blank" rel="noopener" onclick="event.stopPropagation()">
-                        <img src="{{ url_for('trabajos_bp.foto_remito', nombre_archivo=r['foto_remito']) }}"
-                             alt="Foto del remito {{ r['tipo'] }} #{{ r['remito'] }}"
-                             class="img-thumbnail" style="max-width: 220px; max-height: 180px;">
-                    </a>
-                </div>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="7" class="text-center py-5 text-muted">
-                Aún no se han registrado trabajos en el sistema.
-            </td>
-        </tr>
-        {% endfor %}
     </tbody>
 </table>
 
