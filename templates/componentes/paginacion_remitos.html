@@ -1,0 +1,9 @@
+{% if hay_mas_remitos %}
+<div class="text-center py-3">
+    <button type="button" class="btn btn-outline-primary rounded-pill px-4 fw-bold btn-cargar-remitos"
+        data-id-cliente="{{ cliente['id_cliente'] if cliente is defined else '' }}"
+        data-periodo="{{ periodo_seleccionado }}" data-offset="{{ remitos|length }}">
+        + Cargar 10 remitos más
+    </button>
+</div>
+{% endif %}
