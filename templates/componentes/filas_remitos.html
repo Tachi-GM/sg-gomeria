@@ -54,7 +54,7 @@
             <strong class="d-block mb-2 text-secondary text-uppercase small">Foto del remito</strong>
             <a href="{{ url_for('trabajos_bp.foto_remito', nombre_archivo=r['foto_remito']) }}"
                target="_blank" rel="noopener" onclick="event.stopPropagation()">
-                <img src="{{ url_for('trabajos_bp.foto_remito', nombre_archivo=r['foto_remito']) }}"
+                <img data-src="{{ url_for('trabajos_bp.foto_remito', nombre_archivo=r['foto_remito']) }}"
                      alt="Foto del remito {{ r['tipo'] }} #{{ r['remito'] }}"
                      class="img-thumbnail" style="max-width: 220px; max-height: 180px;">
             </a>
