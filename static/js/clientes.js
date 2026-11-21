@@ -147,6 +147,7 @@ function inicializarCargaRemitos() {
             const tbody = document.querySelector('.tabla-remitos tbody');
             if (!tbody) throw new Error('No se encontró la tabla de remitos.');
             tbody.insertAdjacentHTML('beforeend', datos.html);
+            tbody.querySelectorAll('.check-pago').forEach(aplicarEstiloCheckPago);
             boton.dataset.offset = String(offset + datos.cantidad_cargada);
 
             if (!datos.hay_mas || datos.cantidad_cargada === 0) {
