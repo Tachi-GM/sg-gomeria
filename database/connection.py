@@ -54,6 +54,15 @@ def obtener_conexion() -> sqlite3.Connection:
     except Exception:
         pass
 
+    # Migración transparente para trabajos.cliente_alias si no existe en la base actual
+    try:
+        cols = [c[1] for c in conexion.execute("PRAGMA table_info(trabajos)").fetchall()]
+        if cols and "cliente_alias" not in cols:
+            conexion.execute("ALTER TABLE trabajos ADD COLUMN cliente_alias TEXT;")
+            conexion.commit()
+    except Exception:
+        pass
+
     return conexion
 
 

@@ -45,22 +45,16 @@ def exportar_excel(id_cliente):
         return str(error), 404
     if not datos["meses"]:
         return "No hay remitos registrados para este cliente.", 404
-    # --------------------------------------------------------------
-    #  ¿Se pidió un período concreto?   (ej.: /excel?periodo=2026-08)
-    # --------------------------------------------------------------
-    periodo = request.args.get("periodo")          # puede ser None
-    # Si no se indica período, usamos el mes actual (formato "YYYY‑MM")
-    if not periodo:
-        periodo = datetime.now().strftime("%Y-%m")
-    # Generamos el Excel filtrando por *periodo*
-    archivo = generar_excel_general(datos, periodo=periodo)
+    
+    archivo = generar_excel_general(datos)
+    
     cliente = secure_filename(datos["cliente"]["nom_cli"]) or "cliente"
     fecha_descarga = datetime.now()
     mes_descarga = MESES[fecha_descarga.strftime("%m")].lower()
     nombre = f"remitos_{cliente}_{mes_descarga}_{fecha_descarga.year}.xlsx"
     registrar_auditoria(
         "EXPORTACION_EXCEL",
-        f"Cliente ID {id_cliente}, exportación general (periodo={periodo})",
+        f"Cliente ID {id_cliente}, exportación general",
     )
     return send_file(
         archivo,
