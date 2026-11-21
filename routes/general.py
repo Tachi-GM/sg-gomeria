@@ -4,7 +4,7 @@ import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from flask import Blueprint, current_app, render_template, send_file
+from flask import Blueprint, current_app, render_template, send_file, send_from_directory
 from database.connection import get_db_path
 from services.dashboard_service import obtener_resumen_inicio
 from config.empresa_loader import obtener_datos_empresa
@@ -49,6 +49,19 @@ def salir():
 @general_bp.route("/acerca-de")
 def acerca_de():
     return render_template("acerca-de.html", milagritos=modo_activo())
+
+
+@general_bp.route("/manual")
+@login_requerido
+def manual_usuario():
+    """Abre el manual PDF incluido en docs sin exponer el directorio completo."""
+    carpeta_docs = Path(current_app.root_path) / "docs"
+    return send_from_directory(
+        carpeta_docs,
+        "MANUAL_DE_USUARIO_SG_GOMERIA.pdf",
+        mimetype="application/pdf",
+        as_attachment=False,
+    )
 
 
 @general_bp.route("/backup")
