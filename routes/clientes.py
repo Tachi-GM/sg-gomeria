@@ -1,7 +1,15 @@
 import sqlite3
 import logging
 from datetime import datetime
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
+from flask import (
+    Blueprint,
+    jsonify,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+)
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
 from utils.formateadores import (
@@ -37,7 +45,13 @@ def _rango_fechas_periodo(periodo):
     return fecha.strftime("%Y-%m-01"), siguiente.strftime("%Y-%m-01")
 
 
-def _obtener_remitos(cursor, id_cliente=None, periodo="todos", limite=REMITOS_POR_PAGINA, offset=0):
+def _obtener_remitos(
+    cursor,
+    id_cliente=None,
+    periodo="todos",
+    limite=REMITOS_POR_PAGINA,
+    offset=0,
+):
     """Obtiene una página de cabeceras; trae un registro extra para saber si hay más."""
     condiciones = []
     parametros = []
@@ -165,7 +179,8 @@ def clientes():
                COALESCE(resumen.total_facturado, 0) AS total_facturado
         FROM clientes
         LEFT JOIN (
-            SELECT id_cliente, COUNT(*) AS cantidad_remitos, SUM(total) AS total_facturado
+            SELECT id_cliente, COUNT(*) AS cantidad_remitos,
+                   SUM(total) AS total_facturado
             FROM trabajos
             GROUP BY id_cliente
         ) resumen ON resumen.id_cliente = clientes.id_cliente
