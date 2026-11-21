@@ -32,56 +32,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for r in remitos %}
-        <tr class="fila-remito" onclick="toggleDetalle(this)">
-            <td class="py-3 px-4 fw-medium celda-fecha">{{ r['fecha'] }}</td>
-            <td class="py-3 fw-bold text-primary celda-remito">{{ r['tipo'] }} #{{ r['remito'] }}</td>
-            <td class="py-3 fw-bold">{{ r['nom_cli'] }}</td>
-            <td class="py-3 text-secondary">{{ r['detalle'] | default('', true) }}</td>
-            <td class="py-3 text-end fw-bold text-dark fs-6">${{ "{:,.2f}".format(r['total']) }}</td>
-            <!-- Columna Pago: checkbox para marcar como PAGADO -->
-            <td class="py-3 text-center" onclick="event.stopPropagation()">
-                <div class="form-check d-flex justify-content-center mb-0">
-                    <input
-                        class="form-check-input check-pago"
-                        type="checkbox"
-                        style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
-                        data-id="{{ r['id_trabajo'] }}"
-                        data-estado="{{ r['estado'] }}"
-                        {% if r['estado'] == 'PAGADO' %}checked{% endif %}
-                        title="{{ r['estado'] }}"
-                    >
-                </div>
-            </td>
-            <!-- Columna Acciones: imprimir y editar -->
-            <td class="py-3 text-center" onclick="event.stopPropagation()">
-                <div class="d-inline-flex gap-1">
-                    <a href="{{ url_for('trabajos_bp.imprimir_remito', id_trabajo=r['id_trabajo']) }}"
-                       class="btn btn-sm btn-outline-primary rounded-pill px-2"
-                       target="_blank"
-                       rel="noopener"
-                       title="Imprimir o guardar remito en PDF">
-                        🖨️
-                    </a>
-                    <button type="button"
-                            class="btn btn-sm btn-outline-secondary btn-editar-remito rounded-pill px-2"
-                            data-id="{{ r['id_trabajo'] }}"
-                            data-tipo="{{ r['tipo'] }}"
-                            data-remito="{{ r['remito'] }}"
-                            data-fecha="{{ r['fecha'] }}"
-                            title="Editar remito y fecha">
-                        ✏️
-                    </button>
-                </div>
-            </td>
-        </tr>
-        <tr class="fila-detalle d-none">
-            <td colspan="7" class="px-4 py-3">
-                <strong class="d-block mb-2 text-secondary text-uppercase small">Tareas realizadas</strong>
-                <ul class="mb-0 ps-3">
-                    {% for d in detalles_por_trabajo.get(r['id_trabajo'], []) %}
-                    <li>{{ d['nom_tar'] }} &times; {{ d['cantidad'] }} &mdash; ${{ "{:,.2f}".format(d['subtotal']) }}</li>
-                    {% endfor %}
+        {% include "componentes/filas_remitos.html" %}
                 </ul>
                 <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
                     <a href="{{ url_for('trabajos_bp.imprimir_remito', id_trabajo=r['id_trabajo']) }}"
