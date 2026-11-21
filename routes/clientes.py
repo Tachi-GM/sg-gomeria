@@ -1,6 +1,15 @@
 import sqlite3
 import logging
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from datetime import datetime
+from flask import (
+    Blueprint,
+    jsonify,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+)
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
 from utils.formateadores import (
@@ -12,6 +21,127 @@ from utils.formateadores import (
 logger = logging.getLogger("SG_Gomeria")
 
 clientes_bp = Blueprint("clientes_bp", __name__)
+
+
+# Cantidad de remitos que se muestran inicialmente y por cada carga adicional.
+REMITOS_POR_PAGINA = 10
+
+
+def _rango_fechas_periodo(periodo):
+    """Convierte YYYY-MM en un rango [inicio, fin) aprovechable por índices."""
+    if not periodo or periodo == "todos":
+        return None
+
+    try:
+        fecha = datetime.strptime(periodo, "%Y-%m")
+    except ValueError:
+        return None
+
+    if fecha.month == 12:
+        siguiente = fecha.replace(year=fecha.year + 1, month=1)
+    else:
+        siguiente = fecha.replace(month=fecha.month + 1)
+
+    return fecha.strftime("%Y-%m-01"), siguiente.strftime("%Y-%m-01")
+
+
+def _obtener_remitos(
+    cursor,
+    id_cliente=None,
+    periodo="todos",
+    limite=REMITOS_POR_PAGINA,
+    offset=0,
+):
+    """Obtiene una página de cabeceras; trae un registro extra para saber si hay más."""
+    condiciones = []
+    parametros = []
+
+    if id_cliente is not None:
+        condiciones.append("t.id_cliente = ?")
+        parametros.append(id_cliente)
+
+    rango = _rango_fechas_periodo(periodo)
+    if periodo and periodo != "todos":
+        if not rango:
+            return [], False
+        condiciones.append("t.fecha >= ? AND t.fecha < ?")
+        parametros.extend(rango)
+
+    where_clause = "WHERE " + " AND ".join(condiciones) if condiciones else ""
+    query = f"""
+        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha,
+               COALESCE(NULLIF(t.cliente_alias, ''), c.nom_cli) AS nom_cli,
+               t.total, t.detalle, t.estado, t.foto_remito
+        FROM trabajos t
+        JOIN clientes c ON t.id_cliente = c.id_cliente
+        {where_clause}
+        ORDER BY t.fecha DESC, t.id_trabajo DESC
+        LIMIT ? OFFSET ?
+    """
+    parametros.extend([limite + 1, offset])
+    filas = cursor.execute(query, parametros).fetchall()
+    hay_mas = len(filas) > limite
+    return filas[:limite], hay_mas
+
+
+def _obtener_detalles(cursor, remitos):
+    """Consulta los detalles solo para los remitos de la página actual."""
+    ids_trabajo = [r["id_trabajo"] for r in remitos]
+    if not ids_trabajo:
+        return {}
+
+    placeholders = ",".join("?" for _ in ids_trabajo)
+    query = f"""
+        SELECT id_trabajo, nom_tar, cantidad, subtotal
+        FROM (
+            SELECT dt.id_trabajo, tar.nom_tar AS nom_tar, dt.cantidad, dt.subtotal
+            FROM detalle_trabajos dt
+            JOIN tareas tar ON dt.id_tarea = tar.id_tarea
+            WHERE dt.id_trabajo IN ({placeholders})
+
+            UNION ALL
+
+            SELECT dtt.id_trabajo, dtt.nombre_tarea AS nom_tar,
+                   dtt.cantidad, dtt.subtotal
+            FROM detalle_temporal_trabajos dtt
+            WHERE dtt.id_trabajo IN ({placeholders})
+        )
+        ORDER BY id_trabajo
+    """
+    detalles = cursor.execute(query, ids_trabajo + ids_trabajo).fetchall()
+
+    detalles_por_trabajo = {}
+    for detalle in detalles:
+        detalles_por_trabajo.setdefault(detalle["id_trabajo"], []).append(detalle)
+    return detalles_por_trabajo
+
+
+def _obtener_resumen_remitos(cursor, id_cliente=None, periodo="todos"):
+    """Devuelve cantidad e importe globales, sin depender de la página visible."""
+    condiciones = []
+    parametros = []
+
+    if id_cliente is not None:
+        condiciones.append("id_cliente = ?")
+        parametros.append(id_cliente)
+
+    rango = _rango_fechas_periodo(periodo)
+    if periodo and periodo != "todos":
+        if not rango:
+            return 0, 0
+        condiciones.append("fecha >= ? AND fecha < ?")
+        parametros.extend(rango)
+
+    where_clause = "WHERE " + " AND ".join(condiciones) if condiciones else ""
+    resumen = cursor.execute(
+        f"""
+        SELECT COUNT(*) AS cantidad, COALESCE(SUM(total), 0) AS total
+        FROM trabajos
+        {where_clause}
+        """,
+        parametros,
+    ).fetchone()
+    return resumen["cantidad"], resumen["total"]
 
 
 # Pantalla Clientes y Dashboard General
@@ -32,33 +162,37 @@ def clientes():
         condiciones.append("COALESCE(clientes.activo, 1) = 1")
     elif filtro_estado == "inactivos":
         condiciones.append("COALESCE(clientes.activo, 1) = 0")
-    # Si es 'todos', no se filtra por activo
 
     if buscar:
         condiciones.append("(nom_cli LIKE ? OR cuit LIKE ? OR tel LIKE ?)")
         busqueda_param = f"%{buscar}%"
         parametros_empresas.extend([busqueda_param, busqueda_param, busqueda_param])
 
-    where_clause = ""
-    if condiciones:
-        where_clause = "WHERE " + " AND ".join(condiciones)
+    where_clause = "WHERE " + " AND ".join(condiciones) if condiciones else ""
 
+    # Una sola agregación evita ejecutar dos subconsultas por cada cliente.
     query_empresas = f"""
-        SELECT id_cliente, nom_cli, cuit, tel, mail, con_iva, lista_precios,
-               COALESCE(activo, 1) AS activo,
-               (SELECT COUNT(*) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente)
-                   AS cantidad_remitos,
-               COALESCE(
-                   (SELECT SUM(t.total) FROM trabajos t WHERE t.id_cliente = clientes.id_cliente),
-                   0
-               ) AS total_facturado
+        SELECT clientes.id_cliente, clientes.nom_cli, clientes.cuit,
+               clientes.tel, clientes.mail, clientes.con_iva,
+               clientes.lista_precios, COALESCE(clientes.activo, 1) AS activo,
+               COALESCE(resumen.cantidad_remitos, 0) AS cantidad_remitos,
+               COALESCE(resumen.total_facturado, 0) AS total_facturado
         FROM clientes
+        LEFT JOIN (
+            SELECT id_cliente, COUNT(*) AS cantidad_remitos,
+                   SUM(total) AS total_facturado
+            FROM trabajos
+            GROUP BY id_cliente
+        ) resumen ON resumen.id_cliente = clientes.id_cliente
         {where_clause}
-        ORDER BY nom_cli
+        ORDER BY cantidad_remitos DESC, clientes.nom_cli COLLATE NOCASE
     """
+    # En la vista normal se muestran los seis clientes con más remitos.
+    # La búsqueda conserva todos los resultados coincidentes para no ocultar empresas.
+    if not buscar:
+        query_empresas += " LIMIT 6"
     empresas = cursor.execute(query_empresas, parametros_empresas).fetchall()
 
-    # Contadores de activos e inactivos para badges informativos
     conteo_activos = cursor.execute(
         "SELECT COUNT(*) FROM clientes WHERE COALESCE(activo, 1) = 1"
     ).fetchone()[0]
@@ -66,42 +200,16 @@ def clientes():
         "SELECT COUNT(*) FROM clientes WHERE COALESCE(activo, 1) = 0"
     ).fetchone()[0]
 
-    # Armamos la consulta de remitos, sumando el filtro de mes si corresponde
-    query_remitos = """
-            SELECT t.id_trabajo, t.remito, t.tipo, t.fecha,
-                   COALESCE(NULLIF(t.cliente_alias, ''), c.nom_cli) AS nom_cli,
-                   t.total, t.detalle, t.estado
-            FROM trabajos t
-            JOIN clientes c ON t.id_cliente = c.id_cliente
-        """
-    parametros_remitos = []
+    remitos, hay_mas_remitos = _obtener_remitos(
+        cursor, periodo=periodo_seleccionado
+    )
+    total_remitos, _ = _obtener_resumen_remitos(
+        cursor, periodo=periodo_seleccionado
+    )
+    meses_disponibles = obtener_meses_disponibles(cursor)
+    detalles_por_trabajo = _obtener_detalles(cursor, remitos)
 
-    if periodo_seleccionado and periodo_seleccionado != "todos":
-        query_remitos += " WHERE strftime('%Y-%m', t.fecha) = ?"
-        parametros_remitos.append(periodo_seleccionado)
-
-    query_remitos += " ORDER BY t.fecha DESC, t.id_trabajo DESC"
-
-    remitos = cursor.execute(query_remitos, parametros_remitos).fetchall()
-
-    meses_disponibles = obtener_meses_disponibles(
-        cursor
-    )  # sin id_cliente = todos los clientes
-
-    detalles_raw = cursor.execute("""
-        SELECT dt.id_trabajo, tar.nom_tar, dt.cantidad, dt.subtotal
-        FROM detalle_trabajos dt
-        JOIN tareas tar ON dt.id_tarea = tar.id_tarea
-        UNION ALL
-        SELECT dtt.id_trabajo, dtt.nombre_tarea, dtt.cantidad, dtt.subtotal
-        FROM detalle_temporal_trabajos dtt
-        ORDER BY id_trabajo
-    """).fetchall()
-
-    detalles_por_trabajo = {}
-    for d in detalles_raw:
-        detalles_por_trabajo.setdefault(d["id_trabajo"], []).append(d)
-
+    cursor.close()
     conexion.close()
     return render_template(
         "clientes.html",
@@ -114,6 +222,8 @@ def clientes():
         conteo_inactivos=conteo_inactivos,
         meses_disponibles=meses_disponibles,
         detalles_por_trabajo=detalles_por_trabajo,
+        total_remitos=total_remitos,
+        hay_mas_remitos=hay_mas_remitos,
         milagritos=modo_activo(),
     )
 
@@ -122,8 +232,12 @@ def clientes():
 @clientes_bp.route("/historial-cliente")
 @login_requerido
 def historial_cliente():
-    id_cliente = request.args.get("id_cliente")
+    id_cliente = parse_int_seguro(request.args.get("id_cliente"), 0)
     periodo_seleccionado = request.args.get("periodo", "todos")
+
+    if id_cliente <= 0:
+        flash("Seleccioná una empresa válida para ver su historial.", "warning")
+        return redirect(url_for("clientes_bp.clientes"))
 
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -136,68 +250,19 @@ def historial_cliente():
     ).fetchone()
 
     if not cliente:
+        cursor.close()
         conexion.close()
         flash("El cliente solicitado no existe.", "danger")
         return redirect(url_for("clientes_bp.clientes"))
 
-    # 1. Armamos la consulta base y la lista de parámetros
-    query = """
-        SELECT t.id_trabajo, t.remito, t.tipo, t.fecha,
-               COALESCE(NULLIF(t.cliente_alias, ''), c.nom_cli) AS nom_cli,
-               t.total, t.detalle, t.estado
-        FROM trabajos t
-        LEFT JOIN (
-            SELECT dt.id_trabajo, tar.nom_tar
-            FROM detalle_trabajos dt
-            JOIN tareas tar ON dt.id_tarea = tar.id_tarea
-            UNION ALL
-            SELECT id_trabajo, nombre_tarea
-            FROM detalle_temporal_trabajos
-        ) tar ON t.id_trabajo = tar.id_trabajo
-        LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
-        WHERE t.id_cliente = ?
-    """
-    parametros = [id_cliente]
-
-    # Buscamos qué meses/años tienen trabajos para crear las pestañas
     meses_disponibles = obtener_meses_disponibles(cursor, id_cliente)
-
-    # 2. Si eligió un mes específico (y no "todos"), le sumamos la condición:
-    if periodo_seleccionado and periodo_seleccionado != "todos":
-        query += " AND strftime('%Y-%m', t.fecha) = ?"
-        parametros.append(periodo_seleccionado)
-
-    # 3. Le agregamos el cierre obligatorio (agrupar y ordenar por fecha)
-    query += " GROUP BY t.id_trabajo ORDER BY t.fecha DESC"
-
-    # 4. Ejecutamos la consulta con sus parámetros
-    remitos = cursor.execute(query, parametros).fetchall()
-
-    # 5. Obtenemos el total y el total por mes
-    total_mes = sum(r["total"] for r in remitos)
-
-    # Detalle solo de los trabajos que aparecen en `remitos`
-    ids_trabajo = [r["id_trabajo"] for r in remitos]
-    detalles_por_trabajo = {}
-
-    if ids_trabajo:
-        placeholders = ",".join("?" for _ in ids_trabajo)
-        detalles_raw = cursor.execute(
-            f"""
-            SELECT dt.id_trabajo, tar.nom_tar, dt.cantidad, dt.subtotal
-            FROM detalle_trabajos dt
-            JOIN tareas tar ON dt.id_tarea = tar.id_tarea
-            UNION ALL
-            SELECT dtt.id_trabajo, dtt.nombre_tarea, dtt.cantidad, dtt.subtotal
-            FROM detalle_temporal_trabajos dtt
-            WHERE dtt.id_trabajo IN ({placeholders})
-            ORDER BY id_trabajo
-        """,
-            ids_trabajo,
-        ).fetchall()
-
-        for d in detalles_raw:
-            detalles_por_trabajo.setdefault(d["id_trabajo"], []).append(d)
+    remitos, hay_mas_remitos = _obtener_remitos(
+        cursor, id_cliente=id_cliente, periodo=periodo_seleccionado
+    )
+    cantidad_remitos, total_mes = _obtener_resumen_remitos(
+        cursor, id_cliente=id_cliente, periodo=periodo_seleccionado
+    )
+    detalles_por_trabajo = _obtener_detalles(cursor, remitos)
 
     cursor.close()
     conexion.close()
@@ -206,9 +271,60 @@ def historial_cliente():
         cliente=cliente,
         remitos=remitos,
         total_mes=total_mes,
+        cantidad_remitos=cantidad_remitos,
         meses_disponibles=meses_disponibles,
         detalles_por_trabajo=detalles_por_trabajo,
         periodo_seleccionado=periodo_seleccionado,
+        hay_mas_remitos=hay_mas_remitos,
+    )
+
+
+@clientes_bp.route("/clientes/remitos-pagina")
+@login_requerido
+def cargar_mas_remitos():
+    """Devuelve como HTML seguro la siguiente página de remitos."""
+    id_cliente_raw = request.args.get("id_cliente")
+    id_cliente = None
+    if id_cliente_raw:
+        id_cliente = parse_int_seguro(id_cliente_raw, 0)
+        if id_cliente <= 0:
+            return jsonify({"error": "El cliente indicado no es válido."}), 400
+
+    offset = parse_int_seguro(request.args.get("offset", "0"), -1)
+    if offset < 0 or offset > 100000:
+        return jsonify({"error": "La página solicitada no es válida."}), 400
+
+    periodo = request.args.get("periodo", "todos")
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    if id_cliente is not None:
+        existe = cursor.execute(
+            "SELECT 1 FROM clientes WHERE id_cliente = ?", (id_cliente,)
+        ).fetchone()
+        if not existe:
+            cursor.close()
+            conexion.close()
+            return jsonify({"error": "El cliente solicitado no existe."}), 404
+
+    remitos, hay_mas = _obtener_remitos(
+        cursor, id_cliente=id_cliente, periodo=periodo, offset=offset
+    )
+    detalles_por_trabajo = _obtener_detalles(cursor, remitos)
+
+    html = render_template(
+        "componentes/filas_remitos.html",
+        remitos=remitos,
+        detalles_por_trabajo=detalles_por_trabajo,
+    )
+    cursor.close()
+    conexion.close()
+    return jsonify(
+        {
+            "html": html,
+            "hay_mas": hay_mas,
+            "cantidad_cargada": len(remitos),
+        }
     )
 
 

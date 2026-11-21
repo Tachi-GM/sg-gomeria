@@ -51,10 +51,14 @@
         </div>
         {% endif %}
 
+        <div class="d-flex justify-content-end mb-2">
+            <span class="text-muted small">{{ cantidad_remitos }} remito(s) en este historial</span>
+        </div>
         <div class="tabla-remitos">
             <div class="table-responsive">
                {% include "componentes/tabla_remitos.html" %}
             </div>
+            {% include "componentes/paginacion_remitos.html" %}
         </div>
     </div>
 {% endblock %}

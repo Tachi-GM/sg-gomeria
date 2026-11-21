@@ -187,6 +187,16 @@ def crear_tablas():
     );
     CREATE INDEX IF NOT EXISTS idx_cuentas_proveedores_proveedor_fecha
         ON cuentas_proveedores(id_proveedor, fecha);
+
+    -- Índices para acelerar historial y carga paginada de remitos.
+    CREATE INDEX IF NOT EXISTS idx_trabajos_fecha_id
+        ON trabajos(fecha DESC, id_trabajo DESC);
+    CREATE INDEX IF NOT EXISTS idx_trabajos_cliente_fecha_id
+        ON trabajos(id_cliente, fecha DESC, id_trabajo DESC);
+    CREATE INDEX IF NOT EXISTS idx_detalle_trabajos_id_trabajo
+        ON detalle_trabajos(id_trabajo);
+    CREATE INDEX IF NOT EXISTS idx_detalle_temporal_id_trabajo
+        ON detalle_temporal_trabajos(id_trabajo);
     """
 
     conexion = obtener_conexion()
