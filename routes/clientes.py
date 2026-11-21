@@ -290,7 +290,7 @@ def cargar_mas_remitos():
         if id_cliente <= 0:
             return jsonify({"error": "El cliente indicado no es válido."}), 400
 
-    offset = parse_int_seguro(request.args.get("offset"), 0)
+    offset = parse_int_seguro(request.args.get("offset", "0"), -1)
     if offset < 0 or offset > 100000:
         return jsonify({"error": "La página solicitada no es válida."}), 400
 
