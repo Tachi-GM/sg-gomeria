@@ -94,9 +94,13 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
 
     def test_manual_usuario_entrega_pdf(self):
         respuesta = self.client.get("/manual")
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertEqual(respuesta.mimetype, "application/pdf")
-        self.assertTrue(respuesta.data.startswith(b"%PDF"))
+
+        try:
+            self.assertEqual(respuesta.status_code, 200)
+            self.assertEqual(respuesta.mimetype, "application/pdf")
+            self.assertTrue(respuesta.data.startswith(b"%PDF"))
+        finally:
+            respuesta.close()
 
     def test_endpoint_rechaza_offset_invalido(self):
         respuesta = self.client.get(
