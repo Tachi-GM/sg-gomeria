@@ -60,6 +60,18 @@ class TestPaginacionHistorialClientes(unittest.TestCase):
             respuesta.data,
         )
 
+    def test_clientes_muestra_seis_empresas_y_diez_remitos(self):
+        respuesta = self.client.get("/clientes")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data.count(b"tarjeta-empresa"), 6)
+        self.assertEqual(respuesta.data.count(b'class="fila-remito"'), 10)
+        self.assertIn(b"Cargar 10 remitos m", respuesta.data)
+
+    def test_busqueda_permite_encontrar_cliente_fuera_del_top_seis(self):
+        respuesta = self.client.get("/clientes?buscar=Paginacion")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn(b"Cliente Paginacion Test", respuesta.data)
+
     def test_endpoint_carga_los_dos_remitos_restantes(self):
         respuesta = self.client.get(
             "/clientes/remitos-pagina?id_cliente="
