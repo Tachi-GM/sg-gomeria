@@ -71,15 +71,18 @@ def generar_excel_general(datos):
         _generar_hoja_mensual(
             libro, mes, cliente["con_iva"], nombre_mes, cliente["nom_cli"]
         )
+        for columna in range(2, 5):
+            hoja_resumen.cell(fila, columna).number_format = '#,##0.00'
 
     fila_total = 5 + len(datos["meses"])
     hoja_resumen.cell(fila_total, 1, "TOTAL GENERAL").font = Font(bold=True)
     for columna in range(2, 5):
         letra = chr(64 + columna)
-        hoja_resumen.cell(
+        celda = hoja_resumen.cell(
             fila_total, columna, f"=SUM({letra}5:{letra}{fila_total - 1})"
         )
-        hoja_resumen.cell(fila_total, columna).font = Font(bold=True)
+        celda.font = Font(bold=True)
+        celda.number_format = '#,##0.00'
     for columna, ancho in {"A": 20, "B": 16, "C": 16, "D": 16}.items():
         hoja_resumen.column_dimensions[columna].width = ancho
 
