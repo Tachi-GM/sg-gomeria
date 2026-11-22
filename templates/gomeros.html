@@ -3,6 +3,18 @@
 {% block title %}Control semanal de gomeros - Gomería El Puente{% endblock %}
 {% block subtitle %}Control semanal de gomeros{% endblock %}
 
+{% block extra_css %}
+<style>
+.celda-dia-gomero { position: relative; min-width: 74px; height: 58px; cursor: pointer; vertical-align: middle; transition: background-color .15s ease; }
+.celda-dia-gomero:hover, .celda-dia-gomero:focus-visible { background-color: rgba(13, 110, 253, .08); outline: 2px solid rgba(13, 110, 253, .35); outline-offset: -2px; }
+.selector-asistencia { position: absolute; top: 3px; right: 4px; border: 0; background: transparent; padding: 0 3px; line-height: 1; font-size: 1rem; font-weight: 700; color: #198754; z-index: 2; }
+.selector-asistencia[aria-pressed="true"] { color: #dc3545; }
+.selector-asistencia:disabled { opacity: .45; }
+.importe-dia-gomero { display: flex; align-items: center; justify-content: center; min-height: 100%; padding: 8px 2px 2px; font-size: .88rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.dia-ausente .importe-dia-gomero { opacity: .75; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid container-xl py-4 py-lg-5 control-gomeros">
 
