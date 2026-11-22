@@ -5,7 +5,8 @@ from datetime import date, timedelta
 from tests.support import app, obtener_conexion
 from services.gomeros_service import (
     ErrorGomeros, guardar_gomero, registrar_movimiento, obtener_resumen,
-    registrar_ausencia, eliminar_ausencia,
+    registrar_ausencia, eliminar_ausencia, guardar_aguinaldo,
+    registrar_pago_aguinaldo, obtener_resumen_aguinaldos,
 )
 
 
@@ -17,6 +18,8 @@ class TestControlGomeros(unittest.TestCase):
             sesion["rol"] = "admin"
         conexion = obtener_conexion()
         try:
+            conexion.execute("DELETE FROM pagos_aguinaldo")
+            conexion.execute("DELETE FROM aguinaldos")
             conexion.execute("DELETE FROM ausencias_gomeros")
             conexion.execute("DELETE FROM movimientos_gomeros")
             conexion.execute("DELETE FROM gomeros")
@@ -257,6 +260,98 @@ class TestControlGomeros(unittest.TestCase):
         )
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(respuesta.get_json()["descuento_ausencias"], 0)
+
+
+    def test_guardar_aguinaldo_crea_y_actualiza_un_periodo(self):
+        guardar_aguinaldo(self.id_gomero, "2026-2", "200000")
+        guardar_aguinaldo(self.id_gomero, "2026-2", "210000")
+        resumen = obtener_resumen_aguinaldos()
+        self.assertEqual(len(resumen), 1)
+        self.assertEqual(resumen[0]["importe"], 210000)
+        self.assertEqual(resumen[0]["saldo"], 210000)
+
+    def test_aguinaldo_calcula_adelantos_descuentos_y_pagos(self):
+        guardar_aguinaldo(self.id_gomero, "2026-2", "200000")
+        registrar_movimiento(
+            "ADELANTO", date.today().isoformat(), "50000",
+            self.id_gomero, "AGUINALDO", "2026-2",
+        )
+        registrar_movimiento(
+            "DESCUENTO_AGUINALDO", date.today().isoformat(), "20000",
+            self.id_gomero, "AGUINALDO", "2026-2",
+        )
+        resumen = obtener_resumen_aguinaldos()[0]
+        self.assertEqual(resumen["adelantos"], 50000)
+        self.assertEqual(resumen["descuentos_aplicados"], 20000)
+        self.assertEqual(resumen["adelantos_pendientes"], 30000)
+        self.assertEqual(resumen["saldo"], 150000)
+
+        conexion = obtener_conexion()
+        try:
+            id_aguinaldo = conexion.execute(
+                "SELECT id_aguinaldo FROM aguinaldos WHERE id_gomero = ?",
+                (self.id_gomero,),
+            ).fetchone()["id_aguinaldo"]
+        finally:
+            conexion.close()
+        registrar_pago_aguinaldo(id_aguinaldo, date.today().isoformat(), "30000")
+        resumen = obtener_resumen_aguinaldos()[0]
+        self.assertEqual(resumen["pagos"], 30000)
+        self.assertEqual(resumen["saldo"], 120000)
+
+    def test_pago_aguinaldo_no_permite_superar_saldo(self):
+        guardar_aguinaldo(self.id_gomero, "2026-2", "100000")
+        registrar_movimiento(
+            "ADELANTO", date.today().isoformat(), "40000",
+            self.id_gomero, "AGUINALDO", "2026-2",
+        )
+        conexion = obtener_conexion()
+        try:
+            id_aguinaldo = conexion.execute(
+                "SELECT id_aguinaldo FROM aguinaldos WHERE id_gomero = ?",
+                (self.id_gomero,),
+            ).fetchone()["id_aguinaldo"]
+        finally:
+            conexion.close()
+        with self.assertRaises(ErrorGomeros):
+            registrar_pago_aguinaldo(id_aguinaldo, date.today().isoformat(), "61000")
+
+    def test_no_permite_reducir_aguinaldo_por_debajo_de_lo_comprometido(self):
+        guardar_aguinaldo(self.id_gomero, "2026-2", "100000")
+        registrar_movimiento(
+            "ADELANTO", date.today().isoformat(), "40000",
+            self.id_gomero, "AGUINALDO", "2026-2",
+        )
+        with self.assertRaises(ErrorGomeros):
+            guardar_aguinaldo(self.id_gomero, "2026-2", "30000")
+
+    def test_aguinaldo_rechaza_periodo_invalido(self):
+        with self.assertRaises(ErrorGomeros):
+            guardar_aguinaldo(self.id_gomero, "2026-3", "100000")
+
+    def test_rutas_guardar_aguinaldo_y_registrar_pago(self):
+        respuesta = self.client.post(
+            "/gomeros/aguinaldo/guardar",
+            data={"id_gomero": self.id_gomero, "periodo_aguinaldo": "2026-2",
+                  "importe": "100000", "semana": date.today().isoformat()},
+        )
+        self.assertEqual(respuesta.status_code, 302)
+        conexion = obtener_conexion()
+        try:
+            id_aguinaldo = conexion.execute(
+                "SELECT id_aguinaldo FROM aguinaldos WHERE id_gomero = ?",
+                (self.id_gomero,),
+            ).fetchone()["id_aguinaldo"]
+        finally:
+            conexion.close()
+        respuesta = self.client.post(
+            "/gomeros/aguinaldo/pagar",
+            data={"id_aguinaldo": id_aguinaldo, "fecha": date.today().isoformat(),
+                  "importe": "25000", "concepto": "Pago parcial",
+                  "semana": date.today().isoformat()},
+        )
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertEqual(obtener_resumen_aguinaldos()[0]["saldo"], 75000)
 
 
 if __name__ == "__main__":
