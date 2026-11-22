@@ -42,6 +42,76 @@ class TestControlGomeros(unittest.TestCase):
         finally:
             conexion.close()
 
+    def test_corregir_movimiento_actualiza_fecha_importe_y_concepto(self):
+        fecha = date.today().isoformat()
+        registrar_movimiento("ADELANTO", fecha, "40000", self.id_gomero, "SUELDO", concepto="Adelanto")
+        conexion = obtener_conexion()
+        try:
+            id_movimiento = conexion.execute(
+                "SELECT id_movimiento FROM movimientos_gomeros WHERE id_gomero = ?",
+                (self.id_gomero,),
+            ).fetchone()["id_movimiento"]
+        finally:
+            conexion.close()
+
+        nueva_fecha = (date.today() - timedelta(days=1)).isoformat()
+        from services.gomeros_service import actualizar_movimiento
+        actualizar_movimiento(id_movimiento, nueva_fecha, "50000", "Corrección")
+
+        conexion = obtener_conexion()
+        try:
+            movimiento = conexion.execute(
+                "SELECT fecha, importe, concepto FROM movimientos_gomeros WHERE id_movimiento = ?",
+                (id_movimiento,),
+            ).fetchone()
+        finally:
+            conexion.close()
+        self.assertEqual(movimiento["fecha"], nueva_fecha)
+        self.assertEqual(movimiento["importe"], 50000)
+        self.assertEqual(movimiento["concepto"], "Corrección")
+
+    def test_corregir_movimiento_no_permite_superar_sueldo(self):
+        fecha = date.today().isoformat()
+        registrar_movimiento("ADELANTO", fecha, "200000", self.id_gomero, "SUELDO")
+        registrar_movimiento("ADELANTO", fecha, "30000", self.id_gomero, "SUELDO")
+        conexion = obtener_conexion()
+        try:
+            id_movimiento = conexion.execute(
+                "SELECT id_movimiento FROM movimientos_gomeros WHERE importe = 30000"
+            ).fetchone()["id_movimiento"]
+        finally:
+            conexion.close()
+        from services.gomeros_service import actualizar_movimiento
+        with self.assertRaises(ErrorGomeros):
+            actualizar_movimiento(id_movimiento, fecha, "70000", "No debe exceder")
+
+    def test_ruta_editar_movimiento(self):
+        fecha = date.today().isoformat()
+        registrar_movimiento("ADELANTO", fecha, "10000", self.id_gomero, "SUELDO")
+        conexion = obtener_conexion()
+        try:
+            id_movimiento = conexion.execute(
+                "SELECT id_movimiento FROM movimientos_gomeros WHERE id_gomero = ?",
+                (self.id_gomero,),
+            ).fetchone()["id_movimiento"]
+        finally:
+            conexion.close()
+        respuesta = self.client.post(
+            f"/gomeros/movimiento/editar/{id_movimiento}",
+            data={"fecha": fecha, "importe": "15000", "concepto": "Ajustado",
+                  "semana": fecha},
+        )
+        self.assertEqual(respuesta.status_code, 302)
+        conexion = obtener_conexion()
+        try:
+            importe = conexion.execute(
+                "SELECT importe FROM movimientos_gomeros WHERE id_movimiento = ?",
+                (id_movimiento,),
+            ).fetchone()["importe"]
+        finally:
+            conexion.close()
+        self.assertEqual(importe, 15000)
+
     def test_admin_puede_ver_control(self):
         respuesta = self.client.get("/gomeros")
         self.assertEqual(respuesta.status_code, 200)
