@@ -48,6 +48,13 @@
                 Lunes a viernes: {{ empresa.horarios.lunes_viernes or "Sin configurar" }}<br>
                 Sábados: {{ empresa.horarios.sabados or "Sin configurar" }}
             </dd>
+            <dt class="col-sm-3 text-secondary">Banco</dt>
+            <dd class="col-sm-9">
+                CUENTA: {{ empresa.bbva.cuenta or "Sin configurar" }}<br>
+                ALIAS: {{ empresa.bbva.alias or "Sin configurar" }}<br>                
+                CBU: {{ empresa.bbva.cbu or "Sin configurar" }}<br>                
+                CUIL: {{ empresa.bbva.cuil or "Sin configurar" }}
+            </dd>              
         </dl>
         <p class="small text-secondary border-top pt-3 mt-4 mb-0">
             Para modificar esta información, editá el archivo privado <code>config/empresa.py</code>.
