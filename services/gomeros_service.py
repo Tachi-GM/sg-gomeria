@@ -476,6 +476,29 @@ def guardar_aguinaldo(id_gomero, periodo_aguinaldo, importe):
         if gomero is None:
             raise ErrorGomeros("El gomero no existe o está inactivo.")
 
+        comprometido = conexion.execute(
+            """
+            SELECT
+                COALESCE((
+                    SELECT SUM(importe) FROM movimientos_gomeros
+                    WHERE id_gomero = ? AND destino = 'AGUINALDO'
+                      AND periodo_aguinaldo = ? AND tipo = 'ADELANTO'
+                ), 0)
+                +
+                COALESCE((
+                    SELECT SUM(p.importe)
+                    FROM pagos_aguinaldo p
+                    JOIN aguinaldos a ON a.id_aguinaldo = p.id_aguinaldo
+                    WHERE a.id_gomero = ? AND a.periodo_aguinaldo = ?
+                ), 0) AS total
+            """,
+            (id_gomero, periodo, id_gomero, periodo),
+        ).fetchone()["total"]
+        if valor < comprometido:
+            raise ErrorGomeros(
+                "El importe no puede ser menor que los adelantos y pagos ya registrados."
+            )
+
         conexion.execute(
             """
             INSERT INTO aguinaldos (id_gomero, periodo_aguinaldo, importe)
