@@ -7,7 +7,8 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from services.gomeros_service import (
     ErrorGomeros, guardar_gomero, desactivar_gomero, registrar_movimiento, actualizar_movimiento,
     obtener_resumen, listar_gomeros, obtener_saldos_aguinaldo,
-    registrar_ausencia, eliminar_ausencia,
+    registrar_ausencia, eliminar_ausencia, guardar_aguinaldo,
+    registrar_pago_aguinaldo, obtener_resumen_aguinaldos, obtener_pagos_aguinaldo,
 )
 from utils.seguridad import login_requerido, registrar_auditoria
 
@@ -35,9 +36,61 @@ def control_gomeros():
         resumen = obtener_resumen(date.today().isoformat())
     return render_template(
         "gomeros.html", resumen=resumen, gomeros=listar_gomeros(),
-        saldos_aguinaldo=obtener_saldos_aguinaldo(), hoy=date.today().isoformat(),
+        saldos_aguinaldo=obtener_saldos_aguinaldo(),
+        aguinaldos=obtener_resumen_aguinaldos(),
+        pagos_aguinaldo=obtener_pagos_aguinaldo(),
+        hoy=date.today().isoformat(),
     )
 
+
+
+@gomeros_bp.route("/gomeros/aguinaldo/guardar", methods=["POST"])
+@login_requerido
+def guardar_aguinaldo_ruta():
+    try:
+        guardar_aguinaldo(
+            request.form.get("id_gomero"),
+            request.form.get("periodo_aguinaldo"),
+            request.form.get("importe"),
+        )
+        registrar_auditoria(
+            "AGUINALDO_CONFIGURADO",
+            f"Gomero {request.form.get('id_gomero')}; "
+            f"período {request.form.get('periodo_aguinaldo')}; "
+            f"importe {request.form.get('importe')}",
+        )
+        flash("Aguinaldo guardado correctamente.", "success")
+    except ErrorGomeros as exc:
+        flash(str(exc), "danger")
+    except Exception:
+        logger.exception("Error al guardar aguinaldo")
+        flash("No se pudo guardar el aguinaldo.", "danger")
+    return _volver_a_semana()
+
+
+@gomeros_bp.route("/gomeros/aguinaldo/pagar", methods=["POST"])
+@login_requerido
+def pagar_aguinaldo_ruta():
+    try:
+        registrar_pago_aguinaldo(
+            request.form.get("id_aguinaldo"),
+            request.form.get("fecha"),
+            request.form.get("importe"),
+            request.form.get("concepto"),
+            session.get("usuario", ""),
+        )
+        registrar_auditoria(
+            "PAGO_AGUINALDO",
+            f"Aguinaldo ID {request.form.get('id_aguinaldo')}; "
+            f"importe {request.form.get('importe')}",
+        )
+        flash("Pago de aguinaldo registrado correctamente.", "success")
+    except ErrorGomeros as exc:
+        flash(str(exc), "danger")
+    except Exception:
+        logger.exception("Error al registrar pago de aguinaldo")
+        flash("No se pudo registrar el pago de aguinaldo.", "danger")
+    return _volver_a_semana()
 
 @gomeros_bp.route("/gomeros/crear", methods=["POST"])
 @login_requerido
