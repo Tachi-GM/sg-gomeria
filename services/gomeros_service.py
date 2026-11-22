@@ -452,7 +452,7 @@ def obtener_saldos_aguinaldo():
 
 def _validar_periodo_aguinaldo(periodo):
     periodo = str(periodo or "").strip()
-    if not re.fullmatch(r"\\d{4}-[12]", periodo):
+    if not re.fullmatch(r"\d{4}-[12]", periodo):
         raise ErrorGomeros("Elegí un período válido de aguinaldo (por ejemplo, 2026-2).")
     return periodo
 
