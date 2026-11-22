@@ -5,7 +5,7 @@ import logging
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from services.gomeros_service import (
-    ErrorGomeros, guardar_gomero, desactivar_gomero, registrar_movimiento,
+    ErrorGomeros, guardar_gomero, desactivar_gomero, registrar_movimiento, actualizar_movimiento,
     obtener_resumen, listar_gomeros, obtener_saldos_aguinaldo,
     registrar_ausencia, eliminar_ausencia,
 )
@@ -107,6 +107,29 @@ def nuevo_movimiento():
     except Exception:
         logger.exception("Error al registrar movimiento de gomeros")
         flash("No se pudo registrar el movimiento.", "danger")
+    return _volver_a_semana()
+
+
+@gomeros_bp.route("/gomeros/movimiento/editar/<int:id_movimiento>", methods=["POST"])
+@login_requerido
+def editar_movimiento(id_movimiento):
+    try:
+        actualizar_movimiento(
+            id_movimiento,
+            fecha=request.form.get("fecha"),
+            importe=request.form.get("importe"),
+            concepto=request.form.get("concepto"),
+        )
+        registrar_auditoria(
+            "CORRECCION_MOVIMIENTO_GOMEROS",
+            f"ID {id_movimiento}; importe corregido a {request.form.get('importe')}",
+        )
+        flash("Movimiento corregido. Los saldos fueron recalculados.", "success")
+    except ErrorGomeros as exc:
+        flash(str(exc), "danger")
+    except Exception:
+        logger.exception("Error al corregir movimiento %s", id_movimiento)
+        flash("No se pudo corregir el movimiento.", "danger")
     return _volver_a_semana()
 
 
