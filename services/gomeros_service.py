@@ -274,6 +274,83 @@ def registrar_movimiento(tipo, fecha, importe, id_gomero=None, destino="NO_APLIC
         conexion.close()
 
 
+
+def actualizar_movimiento(id_movimiento, fecha, importe, concepto=""):
+    """Corrige fecha, importe y concepto sin cambiar el tipo ni el destinatario."""
+    fecha_obj = _fecha_valida(fecha)
+    valor = _importe(importe)
+    concepto = (concepto or "").strip()[:200]
+
+    conexion = obtener_conexion()
+    try:
+        conexion.execute("BEGIN IMMEDIATE")
+        movimiento = conexion.execute(
+            """SELECT id_movimiento, id_gomero, tipo, destino, periodo_aguinaldo
+               FROM movimientos_gomeros WHERE id_movimiento = ?""",
+            (id_movimiento,),
+        ).fetchone()
+        if movimiento is None:
+            raise ErrorGomeros("El movimiento ya no existe.")
+
+        if movimiento["tipo"] == "PAGO_SEMANAL" and fecha_obj.weekday() != 5:
+            raise ErrorGomeros("El pago semanal se registra el sábado.")
+
+        if movimiento["tipo"] in {"ADELANTO", "PAGO_SEMANAL"} and movimiento["destino"] == "SUELDO":
+            lunes = inicio_semana(fecha_obj)
+            sabado = lunes + timedelta(days=5)
+            usado = conexion.execute(
+                """SELECT COALESCE(SUM(importe), 0) AS total
+                   FROM movimientos_gomeros
+                   WHERE id_gomero = ? AND id_movimiento != ?
+                     AND fecha BETWEEN ? AND ? AND destino = 'SUELDO'
+                     AND tipo IN ('ADELANTO', 'PAGO_SEMANAL')""",
+                (movimiento["id_gomero"], id_movimiento,
+                 lunes.isoformat(), sabado.isoformat()),
+            ).fetchone()["total"]
+            gomero = conexion.execute(
+                "SELECT sueldo_semanal FROM gomeros WHERE id_gomero = ?",
+                (movimiento["id_gomero"],),
+            ).fetchone()
+            if gomero is None:
+                raise ErrorGomeros("No se encontró el gomero asociado.")
+            ausencias = _obtener_ausencias(conexion, movimiento["id_gomero"], lunes, sabado)
+            descuento = _calcular_descuento_ausencias(gomero["sueldo_semanal"], len(ausencias))
+            disponible = max(gomero["sueldo_semanal"] - descuento - usado, 0)
+            if valor > disponible:
+                raise ErrorGomeros(
+                    "El importe corregido supera el saldo semanal disponible: $"
+                    + format(disponible, ",.0f").replace(",", ".") + "."
+                )
+
+        if movimiento["tipo"] == "DESCUENTO_AGUINALDO":
+            pendiente = conexion.execute(
+                """SELECT COALESCE(SUM(
+                       CASE WHEN tipo = 'ADELANTO' THEN importe
+                            WHEN tipo = 'DESCUENTO_AGUINALDO' THEN -importe
+                            ELSE 0 END
+                   ), 0) AS total
+                   FROM movimientos_gomeros
+                   WHERE id_gomero = ? AND destino = 'AGUINALDO'
+                     AND periodo_aguinaldo = ? AND id_movimiento != ?""",
+                (movimiento["id_gomero"], movimiento["periodo_aguinaldo"], id_movimiento),
+            ).fetchone()["total"]
+            if valor > pendiente:
+                raise ErrorGomeros("El importe corregido supera los adelantos pendientes de ese aguinaldo.")
+
+        conexion.execute(
+            """UPDATE movimientos_gomeros
+               SET fecha = ?, importe = ?, concepto = ?
+               WHERE id_movimiento = ?""",
+            (fecha_obj.isoformat(), valor, concepto or None, id_movimiento),
+        )
+        conexion.commit()
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        conexion.close()
+
+
 def obtener_resumen(fecha_referencia=None):
     """Calcula los totales de la semana que contiene la fecha indicada."""
     try:
