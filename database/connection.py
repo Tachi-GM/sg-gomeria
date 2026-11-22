@@ -41,6 +41,46 @@ def obtener_conexion() -> sqlite3.Connection:
     conexion.row_factory = sqlite3.Row
     conexion.execute("PRAGMA foreign_keys = ON;")
 
+    # Tablas nuevas para gestionar aguinaldos sin reconstruir movimientos_gomeros.
+    # Esto funciona como migración compatible con bases existentes.
+    conexion.execute(
+        """
+        CREATE TABLE IF NOT EXISTS aguinaldos (
+            id_aguinaldo INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_gomero INTEGER NOT NULL,
+            periodo_aguinaldo TEXT NOT NULL
+                CHECK (periodo_aguinaldo GLOB '[0-9][0-9][0-9][0-9]-[12]'),
+            importe INTEGER NOT NULL CHECK (importe > 0),
+            creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            actualizado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_gomero) REFERENCES gomeros(id_gomero) ON DELETE RESTRICT,
+            UNIQUE (id_gomero, periodo_aguinaldo)
+        )
+        """
+    )
+    conexion.execute(
+        """
+        CREATE TABLE IF NOT EXISTS pagos_aguinaldo (
+            id_pago_aguinaldo INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_aguinaldo INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            importe INTEGER NOT NULL CHECK (importe > 0),
+            concepto TEXT,
+            usuario TEXT,
+            creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_aguinaldo)
+                REFERENCES aguinaldos(id_aguinaldo) ON DELETE RESTRICT
+        )
+        """
+    )
+    conexion.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_pagos_aguinaldo_id_fecha
+        ON pagos_aguinaldo(id_aguinaldo, fecha)
+        """
+    )
+    conexion.commit()
+
     # Migración transparente para clientes.activo si no existe en la base actual
     try:
         columnas = [
