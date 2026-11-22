@@ -34,6 +34,144 @@
 <div class="col-12"><label for="concepto" class="form-label">Concepto (opcional)</label><input id="concepto" name="concepto" maxlength="200" class="form-control" placeholder="Adelanto, reparación, ropa, etc."></div><div class="col-12"><div id="ayuda-movimiento" class="alert alert-info py-2 small mb-0">El adelanto al sueldo reduce el saldo semanal.</div></div><div class="col-12"><button class="btn btn-primary rounded-pill px-4">Guardar movimiento</button></div></form></div></section></div>
 <div class="col-lg-5"><section class="card border-0 shadow-sm h-100"><div class="card-header bg-white py-3"><h2 class="h5 mb-0">Gastos generales</h2><small class="text-muted">Comida, arreglos, máquinas, ropa y consumos.</small></div><div class="list-group list-group-flush">{% for gasto in resumen.gastos %}<div class="list-group-item d-flex justify-content-between gap-3"><div><div class="fw-semibold">{{ gasto.concepto or 'Gasto general' }}</div><small class="text-muted">{{ gasto.fecha }} · {{ gasto.usuario or 'Usuario' }}</small></div><div class="text-nowrap fw-bold">{{ '$' ~ '{:,.0f}'.format(gasto.importe).replace(',', '.') }}<form method="post" action="{{ url_for('gomeros_bp.eliminar_movimiento', id_movimiento=gasto.id_movimiento) }}" class="text-end mt-1" onsubmit="return confirm('¿Eliminar este gasto?')"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><button class="btn btn-link btn-sm text-danger p-0">Eliminar</button></form></div></div>{% else %}<div class="p-4 text-center text-muted">No hay gastos generales esta semana.</div>{% endfor %}</div></section></div></div>
 <section class="card border-0 shadow-sm mb-4"><div class="card-header bg-white py-3"><h2 class="h5 mb-0">Movimientos de la semana</h2><small class="text-muted">Editar o eliminar movimientos de este período.</small></div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Fecha</th><th>Gomero / concepto</th><th>Tipo</th><th class="text-end">Importe</th><th class="text-end">Acciones</th></tr></thead><tbody>{% for m in resumen.movimientos %}<tr><td>{{ m.fecha }}</td><td>{{ m.nombre_gomero or 'Gasto general' }}{% if m.concepto %}<small class="d-block text-muted">{{ m.concepto }}</small>{% endif %}</td><td>{{ m.tipo.replace('_', ' ') }}</td><td class="text-end">{{ '$' ~ '{:,.0f}'.format(m.importe).replace(',', '.') }}</td><td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary js-editar-movimiento" data-id="{{ m.id_movimiento }}" data-tipo="{{ m.tipo }}" data-fecha="{{ m.fecha }}" data-importe="{{ m.importe }}" data-gomero-id="{{ m.id_gomero or '' }}" data-destino="{{ m.destino }}" data-periodo="{{ m.periodo_aguinaldo or '' }}" data-concepto="{{ m.concepto or '' }}">Editar</button> <form method="post" action="{{ url_for('gomeros_bp.eliminar_movimiento', id_movimiento=m.id_movimiento) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este movimiento?')"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>{% else %}<tr><td colspan="5" class="text-center text-muted py-3">No hay movimientos esta semana.</td></tr>{% endfor %}</tbody></table></div></section><section class="card border-0 shadow-sm mb-4"><div class="card-header bg-white py-3"><h2 class="h5 mb-0">Adelantos pendientes para aguinaldo</h2><small class="text-muted">No afectan el sueldo semanal; se descuentan al registrar el descuento aplicado.</small></div><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Gomero</th><th>Período</th><th class="text-end">Pendiente</th></tr></thead><tbody>{% for s in saldos_aguinaldo %}<tr><td>{{ s.nombre }}</td><td>{{ s.periodo_aguinaldo }}</td><td class="text-end fw-bold">{{ '$' ~ '{:,.0f}'.format(s.pendiente).replace(',', '.') }}</td></tr>{% else %}<tr><td colspan="3" class="text-center text-muted py-3">No hay adelantos pendientes para aguinaldo.</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white py-3">
+    <h2 class="h5 mb-0">Gestión de aguinaldos</h2>
+    <small class="text-muted">Cargá el importe correspondiente a cada gomero y registrá los pagos realizados.</small>
+  </div>
+  <div class="card-body border-bottom">
+    <h3 class="h6">Registrar o actualizar aguinaldo</h3>
+    <form method="post" action="{{ url_for('gomeros_bp.guardar_aguinaldo_ruta') }}" class="row g-2 align-items-end">
+      <input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}">
+      <div class="col-md-4"><label for="aguinaldo-gomero" class="form-label">Gomero</label>
+        <select id="aguinaldo-gomero" name="id_gomero" class="form-select" required>
+          {% for g in gomeros %}<option value="{{ g.id_gomero }}">{{ g.nombre }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3"><label for="aguinaldo-periodo" class="form-label">Período</label>
+        <input id="aguinaldo-periodo" name="periodo_aguinaldo" class="form-control" type="text" inputmode="numeric" pattern="[0-9]{4}-[12]" maxlength="6" placeholder="2026-2" value="{{ hoy[:4] }}-2" required>
+        <small class="text-muted">Formato: año-semestre (2026-1 o 2026-2).</small>
+      </div>
+      <div class="col-md-3"><label for="aguinaldo-importe" class="form-label">Importe correspondiente ($)</label>
+        <input id="aguinaldo-importe" name="importe" class="form-control" type="number" min="1" step="1" required>
+      </div>
+      <div class="col-md-2"><button class="btn btn-primary w-100">Guardar</button></div>
+    </form>
+  </div>
+  <div class="card-body border-bottom">
+    <h3 class="h6">Registrar pago de aguinaldo</h3>
+    <form method="post" action="{{ url_for('gomeros_bp.pagar_aguinaldo_ruta') }}" class="row g-2 align-items-end">
+      <input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}">
+      <div class="col-md-4"><label for="pago-aguinaldo-id" class="form-label">Gomero / período</label>
+        <select id="pago-aguinaldo-id" name="id_aguinaldo" class="form-select" required>
+          {% for a in aguinaldos %}
+            <option value="{{ a.id_aguinaldo }}">{{ a.nombre }} · {{ a.periodo_aguinaldo }} · Saldo {{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(a.saldo).replace(',', '.') }}</option>
+          {% else %}
+            <option value="" disabled selected>No hay aguinaldos cargados</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><label for="pago-aguinaldo-fecha" class="form-label">Fecha</label>
+        <input id="pago-aguinaldo-fecha" name="fecha" type="date" class="form-control" value="{{ hoy }}" required>
+      </div>
+      <div class="col-md-2"><label for="pago-aguinaldo-importe" class="form-label">Pago ($)</label>
+        <input id="pago-aguinaldo-importe" name="importe" type="number" min="1" step="1" class="form-control" required>
+      </div>
+      <div class="col-md-2"><label for="pago-aguinaldo-concepto" class="form-label">Concepto</label>
+        <input id="pago-aguinaldo-concepto" name="concepto" maxlength="200" class="form-control" placeholder="Pago parcial/final">
+      </div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100" {% if not aguinaldos %}disabled{% endif %}>Registrar pago</button></div>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Gomero</th><th>Período</th><th class="text-end">Aguinaldo</th><th class="text-end">Adelantos</th><th class="text-end">Adelantos aplicados</th><th class="text-end">Pagos</th><th class="text-end">Saldo a pagar</th></tr></thead>
+      <tbody>
+        {% for a in aguinaldos %}
+        <tr><td>{{ a.nombre }}</td><td>{{ a.periodo_aguinaldo }}</td>
+          <td class="text-end">{{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(a.importe).replace(',', '.') }}</td>
+          <td class="text-end">{{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(a.adelantos).replace(',', '.') }}</td>
+          <td class="text-end">{{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(a.descuentos_aplicados).replace(',', '.') }}</td>
+          <td class="text-end">{{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(a.pagos).replace(',', '.') }}</td>
+          <td class="text-end fw-bold">{{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(a.saldo).replace(',', '.') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-3">Todavía no cargaste aguinaldos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top">
+    <h3 class="h6">Historial de pagos de aguinaldo</h3>
+    <div class="table-responsive"><table class="table table-sm mb-0">
+      <thead><tr><th>Fecha</th><th>Gomero</th><th>Período</th><th>Concepto</th><th class="text-end">Importe</th></tr></thead>
+      <tbody>
+        {% for p in pagos_aguinaldo %}
+        <tr><td>{{ p.fecha }}</td><td>{{ p.nombre }}</td><td>{{ p.periodo_aguinaldo }}</td><td>{{ p.concepto or 'Pago de aguinaldo' }}</td><td class="text-end">{{ '</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
+{% endblock %} ~ '{:,.0f}'.format(p.importe).replace(',', '.') }}</td></tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-3">Todavía no hay pagos registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
 <section class="card border-0 shadow-sm"><div class="card-header bg-white py-3"><h2 class="h5 mb-0">Administrar gomeros</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
 <div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
 <p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
