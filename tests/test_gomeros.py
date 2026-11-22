@@ -6,8 +6,15 @@ from tests.support import app, obtener_conexion
 from services.gomeros_service import (
     ErrorGomeros, guardar_gomero, registrar_movimiento, obtener_resumen,
     registrar_ausencia, eliminar_ausencia, guardar_aguinaldo,
-    registrar_pago_aguinaldo, obtener_resumen_aguinaldos,
+    registrar_pago_aguinaldo, obtener_resumen_aguinaldos, inicio_semana,
 )
+
+
+def _hoy():
+    """Miércoles de la semana actual: un día hábil fijo, así los tests no
+    dependen del día en que se ejecutan (sábado y domingo no admiten
+    adelantos al sueldo)."""
+    return inicio_semana(date.today()) + timedelta(days=2)
 
 
 class TestControlGomeros(unittest.TestCase):
@@ -48,7 +55,7 @@ class TestControlGomeros(unittest.TestCase):
             conexion.close()
 
     def test_corregir_movimiento_actualiza_fecha_importe_y_concepto(self):
-        fecha = date.today().isoformat()
+        fecha = _hoy().isoformat()
         registrar_movimiento("ADELANTO", fecha, "40000", self.id_gomero, "SUELDO", concepto="Adelanto")
         conexion = obtener_conexion()
         try:
@@ -59,7 +66,7 @@ class TestControlGomeros(unittest.TestCase):
         finally:
             conexion.close()
 
-        nueva_fecha = (date.today() - timedelta(days=1)).isoformat()
+        nueva_fecha = (_hoy() - timedelta(days=1)).isoformat()
         from services.gomeros_service import actualizar_movimiento
         actualizar_movimiento(id_movimiento, nueva_fecha, "50000", "Corrección")
 
@@ -76,7 +83,7 @@ class TestControlGomeros(unittest.TestCase):
         self.assertEqual(movimiento["concepto"], "Corrección")
 
     def test_corregir_movimiento_no_permite_superar_sueldo(self):
-        fecha = date.today().isoformat()
+        fecha = _hoy().isoformat()
         registrar_movimiento("ADELANTO", fecha, "200000", self.id_gomero, "SUELDO")
         registrar_movimiento("ADELANTO", fecha, "30000", self.id_gomero, "SUELDO")
         conexion = obtener_conexion()
@@ -91,7 +98,7 @@ class TestControlGomeros(unittest.TestCase):
             actualizar_movimiento(id_movimiento, fecha, "70000", "No debe exceder")
 
     def test_ruta_editar_movimiento(self):
-        fecha = date.today().isoformat()
+        fecha = _hoy().isoformat()
         registrar_movimiento("ADELANTO", fecha, "10000", self.id_gomero, "SUELDO")
         conexion = obtener_conexion()
         try:
@@ -137,7 +144,7 @@ class TestControlGomeros(unittest.TestCase):
         self.assertEqual(respuesta.status_code, 302)
 
     def test_adelanto_reduce_saldo_semanal(self):
-        hoy = date.today().isoformat()
+        hoy = _hoy().isoformat()
         registrar_movimiento("ADELANTO", hoy, "40000", self.id_gomero, "SUELDO")
         resumen = obtener_resumen(hoy)
         fila = next(g for g in resumen["gomeros"] if g["id_gomero"] == self.id_gomero)
@@ -145,36 +152,36 @@ class TestControlGomeros(unittest.TestCase):
         self.assertEqual(fila["saldo"], 220000)
 
     def test_adelanto_para_aguinaldo_no_reduce_sueldo(self):
-        hoy = date.today().isoformat()
-        registrar_movimiento("ADELANTO", hoy, "30000", self.id_gomero, "AGUINALDO", f"{date.today().year}-1")
+        hoy = _hoy().isoformat()
+        registrar_movimiento("ADELANTO", hoy, "30000", self.id_gomero, "AGUINALDO", f"{_hoy().year}-1")
         resumen = obtener_resumen(hoy)
         fila = next(g for g in resumen["gomeros"] if g["id_gomero"] == self.id_gomero)
         self.assertEqual(fila["saldo"], 260000)
 
     def test_no_permite_superar_sueldo_semanal(self):
-        hoy = date.today().isoformat()
+        hoy = _hoy().isoformat()
         registrar_movimiento("ADELANTO", hoy, "200000", self.id_gomero, "SUELDO")
         with self.assertRaises(ErrorGomeros):
             registrar_movimiento("ADELANTO", hoy, "70000", self.id_gomero, "SUELDO")
 
     def test_gasto_general_no_afecta_sueldo(self):
-        registrar_movimiento("GASTO_GENERAL", date.today().isoformat(), "15000", concepto="Comida")
-        resumen = obtener_resumen(date.today().isoformat())
+        registrar_movimiento("GASTO_GENERAL", _hoy().isoformat(), "15000", concepto="Comida")
+        resumen = obtener_resumen(_hoy().isoformat())
         self.assertEqual(resumen["total_gastos"], 15000)
         self.assertEqual(resumen["gomeros"][0]["saldo"], 260000)
 
     def test_no_permite_descontar_mas_aguinaldo_pendiente(self):
         with self.assertRaises(ErrorGomeros):
-            registrar_movimiento("DESCUENTO_AGUINALDO", date.today().isoformat(), "10000",
-                                 self.id_gomero, "AGUINALDO", f"{date.today().year}-1")
+            registrar_movimiento("DESCUENTO_AGUINALDO", _hoy().isoformat(), "10000",
+                                 self.id_gomero, "AGUINALDO", f"{_hoy().year}-1")
 
     def test_sin_ausencias_conserva_sueldo_completo(self):
-        fila = obtener_resumen(date.today().isoformat())["gomeros"][0]
+        fila = obtener_resumen(_hoy().isoformat())["gomeros"][0]
         self.assertEqual(fila["descuento_ausencias"], 0)
         self.assertEqual(fila["saldo"], 260000)
 
     def test_una_dos_y_seis_ausencias_descuentan_sin_error_acumulado(self):
-        lunes = date.fromisoformat(date.today().isoformat())
+        lunes = date.fromisoformat(_hoy().isoformat())
         lunes = lunes - timedelta(days=lunes.weekday())
         for cantidad in (1, 2, 6):
             for numero in range(cantidad):
@@ -191,7 +198,7 @@ class TestControlGomeros(unittest.TestCase):
             conexion.close()
 
     def test_ausencia_es_idempotente_y_se_puede_eliminar(self):
-        fecha = date.today().isoformat()
+        fecha = _hoy().isoformat()
         registrar_ausencia(self.id_gomero, fecha)
         registrar_ausencia(self.id_gomero, fecha)
         conexion = obtener_conexion()
@@ -207,7 +214,7 @@ class TestControlGomeros(unittest.TestCase):
         )
 
     def test_ausencia_de_otra_semana_no_afecta(self):
-        fecha = date.today()
+        fecha = _hoy()
         semana_anterior = fecha - timedelta(days=7)
         registrar_ausencia(self.id_gomero, semana_anterior.isoformat())
         fila = obtener_resumen(fecha.isoformat())["gomeros"][0]
@@ -220,27 +227,27 @@ class TestControlGomeros(unittest.TestCase):
             "SELECT id_gomero FROM gomeros WHERE nombre = ?", ("Otro Gomero Test",)
         ).fetchone()["id_gomero"]
         conexion.close()
-        registrar_ausencia(otro_id, date.today().isoformat())
+        registrar_ausencia(otro_id, _hoy().isoformat())
         fila = next(
             gomero
-            for gomero in obtener_resumen(date.today().isoformat())["gomeros"]
+            for gomero in obtener_resumen(_hoy().isoformat())["gomeros"]
             if gomero["id_gomero"] == self.id_gomero
         )
         self.assertEqual(fila["descuento_ausencias"], 0)
 
     def test_ausencia_reduce_limite_de_movimientos(self):
-        registrar_ausencia(self.id_gomero, date.today().isoformat())
+        registrar_ausencia(self.id_gomero, _hoy().isoformat())
         with self.assertRaises(ErrorGomeros):
-            registrar_movimiento("ADELANTO", date.today().isoformat(), "220000", self.id_gomero, "SUELDO")
+            registrar_movimiento("ADELANTO", _hoy().isoformat(), "220000", self.id_gomero, "SUELDO")
 
     def test_ausencia_invalida_o_gomero_inexistente_falla(self):
         with self.assertRaises(ErrorGomeros):
-            registrar_ausencia(999999, date.today().isoformat())
+            registrar_ausencia(999999, _hoy().isoformat())
         with self.assertRaises(ErrorGomeros):
             registrar_ausencia(self.id_gomero, "31/10/2026")
 
     def test_ruta_ausencia_actualiza_saldo(self):
-        fecha = date.today().isoformat()
+        fecha = _hoy().isoformat()
         respuesta = self.client.post(
             "/gomeros/ausencia",
             data={
@@ -275,11 +282,11 @@ class TestControlGomeros(unittest.TestCase):
     def test_aguinaldo_calcula_adelantos_descuentos_y_pagos(self):
         guardar_aguinaldo(self.id_gomero, "2026-2", "200000")
         registrar_movimiento(
-            "ADELANTO", date.today().isoformat(), "50000",
+            "ADELANTO", _hoy().isoformat(), "50000",
             self.id_gomero, "AGUINALDO", "2026-2",
         )
         registrar_movimiento(
-            "DESCUENTO_AGUINALDO", date.today().isoformat(), "20000",
+            "DESCUENTO_AGUINALDO", _hoy().isoformat(), "20000",
             self.id_gomero, "AGUINALDO", "2026-2",
         )
         resumen = obtener_resumen_aguinaldos()[0]
@@ -296,7 +303,7 @@ class TestControlGomeros(unittest.TestCase):
             ).fetchone()["id_aguinaldo"]
         finally:
             conexion.close()
-        registrar_pago_aguinaldo(id_aguinaldo, date.today().isoformat(), "30000")
+        registrar_pago_aguinaldo(id_aguinaldo, _hoy().isoformat(), "30000")
         resumen = obtener_resumen_aguinaldos()[0]
         self.assertEqual(resumen["pagos"], 30000)
         self.assertEqual(resumen["saldo"], 120000)
@@ -304,7 +311,7 @@ class TestControlGomeros(unittest.TestCase):
     def test_pago_aguinaldo_no_permite_superar_saldo(self):
         guardar_aguinaldo(self.id_gomero, "2026-2", "100000")
         registrar_movimiento(
-            "ADELANTO", date.today().isoformat(), "40000",
+            "ADELANTO", _hoy().isoformat(), "40000",
             self.id_gomero, "AGUINALDO", "2026-2",
         )
         conexion = obtener_conexion()
@@ -316,12 +323,12 @@ class TestControlGomeros(unittest.TestCase):
         finally:
             conexion.close()
         with self.assertRaises(ErrorGomeros):
-            registrar_pago_aguinaldo(id_aguinaldo, date.today().isoformat(), "61000")
+            registrar_pago_aguinaldo(id_aguinaldo, _hoy().isoformat(), "61000")
 
     def test_no_permite_reducir_aguinaldo_por_debajo_de_lo_comprometido(self):
         guardar_aguinaldo(self.id_gomero, "2026-2", "100000")
         registrar_movimiento(
-            "ADELANTO", date.today().isoformat(), "40000",
+            "ADELANTO", _hoy().isoformat(), "40000",
             self.id_gomero, "AGUINALDO", "2026-2",
         )
         with self.assertRaises(ErrorGomeros):
@@ -335,7 +342,7 @@ class TestControlGomeros(unittest.TestCase):
         respuesta = self.client.post(
             "/gomeros/aguinaldo/guardar",
             data={"id_gomero": self.id_gomero, "periodo_aguinaldo": "2026-2",
-                  "importe": "100000", "semana": date.today().isoformat()},
+                  "importe": "100000", "semana": _hoy().isoformat()},
         )
         self.assertEqual(respuesta.status_code, 302)
         conexion = obtener_conexion()
@@ -348,9 +355,9 @@ class TestControlGomeros(unittest.TestCase):
             conexion.close()
         respuesta = self.client.post(
             "/gomeros/aguinaldo/pagar",
-            data={"id_aguinaldo": id_aguinaldo, "fecha": date.today().isoformat(),
+            data={"id_aguinaldo": id_aguinaldo, "fecha": _hoy().isoformat(),
                   "importe": "25000", "concepto": "Pago parcial",
-                  "semana": date.today().isoformat()},
+                  "semana": _hoy().isoformat()},
         )
         self.assertEqual(respuesta.status_code, 302)
         self.assertEqual(obtener_resumen_aguinaldos()[0]["saldo"], 75000)
