@@ -448,3 +448,185 @@ def obtener_saldos_aguinaldo():
         ).fetchall()
     finally:
         conexion.close()
+
+
+def _validar_periodo_aguinaldo(periodo):
+    periodo = str(periodo or "").strip()
+    if not re.fullmatch(r"\\d{4}-[12]", periodo):
+        raise ErrorGomeros("Elegí un período válido de aguinaldo (por ejemplo, 2026-2).")
+    return periodo
+
+
+def guardar_aguinaldo(id_gomero, periodo_aguinaldo, importe):
+    """Crea o actualiza el importe correspondiente a un gomero y semestre."""
+    periodo = _validar_periodo_aguinaldo(periodo_aguinaldo)
+    valor = _importe(importe)
+    try:
+        id_gomero = int(id_gomero)
+    except (TypeError, ValueError) as exc:
+        raise ErrorGomeros("Seleccioná un gomero válido.") from exc
+
+    conexion = obtener_conexion()
+    try:
+        conexion.execute("BEGIN IMMEDIATE")
+        gomero = conexion.execute(
+            "SELECT id_gomero FROM gomeros WHERE id_gomero = ? AND activo = 1",
+            (id_gomero,),
+        ).fetchone()
+        if gomero is None:
+            raise ErrorGomeros("El gomero no existe o está inactivo.")
+
+        conexion.execute(
+            """
+            INSERT INTO aguinaldos (id_gomero, periodo_aguinaldo, importe)
+            VALUES (?, ?, ?)
+            ON CONFLICT(id_gomero, periodo_aguinaldo) DO UPDATE SET
+                importe = excluded.importe,
+                actualizado_en = CURRENT_TIMESTAMP
+            """,
+            (id_gomero, periodo, valor),
+        )
+        conexion.commit()
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        conexion.close()
+
+
+def registrar_pago_aguinaldo(id_aguinaldo, fecha, importe, concepto="", usuario=""):
+    """Registra un pago real y evita superar el saldo todavía adeudado."""
+    fecha_obj = _fecha_valida(fecha)
+    valor = _importe(importe)
+    concepto = (concepto or "").strip()[:200]
+    usuario = (usuario or "").strip()[:50]
+
+    try:
+        id_aguinaldo = int(id_aguinaldo)
+    except (TypeError, ValueError) as exc:
+        raise ErrorGomeros("Seleccioná un aguinaldo válido.") from exc
+
+    conexion = obtener_conexion()
+    try:
+        conexion.execute("BEGIN IMMEDIATE")
+        aguinaldo = conexion.execute(
+            """
+            SELECT id_aguinaldo, id_gomero, periodo_aguinaldo, importe
+            FROM aguinaldos
+            WHERE id_aguinaldo = ?
+            """,
+            (id_aguinaldo,),
+        ).fetchone()
+        if aguinaldo is None:
+            raise ErrorGomeros("El aguinaldo no existe.")
+
+        adelantos = conexion.execute(
+            """
+            SELECT COALESCE(SUM(importe), 0) AS total
+            FROM movimientos_gomeros
+            WHERE id_gomero = ? AND destino = 'AGUINALDO'
+              AND periodo_aguinaldo = ? AND tipo = 'ADELANTO'
+            """,
+            (aguinaldo["id_gomero"], aguinaldo["periodo_aguinaldo"]),
+        ).fetchone()["total"]
+        pagos = conexion.execute(
+            """
+            SELECT COALESCE(SUM(importe), 0) AS total
+            FROM pagos_aguinaldo
+            WHERE id_aguinaldo = ?
+            """,
+            (id_aguinaldo,),
+        ).fetchone()["total"]
+        saldo = max(aguinaldo["importe"] - adelantos - pagos, 0)
+        if valor > saldo:
+            raise ErrorGomeros(
+                "El pago supera el saldo de aguinaldo disponible: $"
+                + format(saldo, ",.0f").replace(",", ".") + "."
+            )
+
+        conexion.execute(
+            """
+            INSERT INTO pagos_aguinaldo
+                (id_aguinaldo, fecha, importe, concepto, usuario)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (id_aguinaldo, fecha_obj.isoformat(), valor, concepto or None, usuario or None),
+        )
+        conexion.commit()
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        conexion.close()
+
+
+def obtener_resumen_aguinaldos():
+    """Devuelve el aguinaldo, adelantos, aplicaciones, pagos y saldo por gomero/período."""
+    conexion = obtener_conexion()
+    try:
+        filas = conexion.execute(
+            """
+            SELECT
+                a.id_aguinaldo,
+                a.id_gomero,
+                g.nombre,
+                a.periodo_aguinaldo,
+                a.importe,
+                COALESCE((
+                    SELECT SUM(m.importe)
+                    FROM movimientos_gomeros m
+                    WHERE m.id_gomero = a.id_gomero
+                      AND m.destino = 'AGUINALDO'
+                      AND m.periodo_aguinaldo = a.periodo_aguinaldo
+                      AND m.tipo = 'ADELANTO'
+                ), 0) AS adelantos,
+                COALESCE((
+                    SELECT SUM(m.importe)
+                    FROM movimientos_gomeros m
+                    WHERE m.id_gomero = a.id_gomero
+                      AND m.destino = 'AGUINALDO'
+                      AND m.periodo_aguinaldo = a.periodo_aguinaldo
+                      AND m.tipo = 'DESCUENTO_AGUINALDO'
+                ), 0) AS descuentos_aplicados,
+                COALESCE((
+                    SELECT SUM(p.importe)
+                    FROM pagos_aguinaldo p
+                    WHERE p.id_aguinaldo = a.id_aguinaldo
+                ), 0) AS pagos
+            FROM aguinaldos a
+            JOIN gomeros g ON g.id_gomero = a.id_gomero
+            ORDER BY a.periodo_aguinaldo DESC, g.nombre COLLATE NOCASE
+            """
+        ).fetchall()
+
+        resumen = []
+        for fila in filas:
+            item = dict(fila)
+            item["adelantos_pendientes"] = max(
+                item["adelantos"] - item["descuentos_aplicados"], 0
+            )
+            comprometido = item["adelantos"] + item["pagos"]
+            item["saldo"] = max(item["importe"] - comprometido, 0)
+            item["excedente"] = max(comprometido - item["importe"], 0)
+            resumen.append(item)
+        return resumen
+    finally:
+        conexion.close()
+
+
+def obtener_pagos_aguinaldo():
+    """Lista los pagos reales de aguinaldo para su consulta histórica."""
+    conexion = obtener_conexion()
+    try:
+        return conexion.execute(
+            """
+            SELECT p.id_pago_aguinaldo, p.fecha, p.importe, p.concepto, p.usuario,
+                   a.periodo_aguinaldo, g.nombre
+            FROM pagos_aguinaldo p
+            JOIN aguinaldos a ON a.id_aguinaldo = p.id_aguinaldo
+            JOIN gomeros g ON g.id_gomero = a.id_gomero
+            ORDER BY p.fecha DESC, p.id_pago_aguinaldo DESC
+            """
+        ).fetchall()
+    finally:
+        conexion.close()
