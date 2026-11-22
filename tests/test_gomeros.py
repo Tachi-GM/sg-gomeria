@@ -38,6 +38,8 @@ class TestControlGomeros(unittest.TestCase):
     def tearDown(self):
         conexion = obtener_conexion()
         try:
+            conexion.execute("DELETE FROM pagos_aguinaldo")
+            conexion.execute("DELETE FROM aguinaldos")
             conexion.execute("DELETE FROM ausencias_gomeros")
             conexion.execute("DELETE FROM movimientos_gomeros")
             conexion.execute("DELETE FROM gomeros")
