@@ -501,7 +501,7 @@ body.modo-milagritos .card {
 
 body.modo-milagritos .btn-primary,
 body.modo-milagritos .btn-capsula {
-    background-color: var(--rosa-acento) !important;
+    background-color: var(--rosa-suave) !important;
     border-color: var(--rosa-acento) !important;
 }
 
