@@ -775,3 +775,23 @@ body.modo-milagritos .dia-ausente .selector-asistencia {
     .control-gomeros h1 { font-size: 1.55rem; }
     .control-gomeros .h3 { font-size: 1.15rem; }
 }
+
+/* ===== OJO PARA VER LA CONTRASEÑA ===== */
+.btn-ojo-clave {
+    background-color: var(--blanco);
+    border: 1.5px solid var(--arena);
+    border-left: 0;
+    color: var(--azul);
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+}
+.btn-ojo-clave:hover,
+.btn-ojo-clave:focus-visible {
+    background-color: var(--azul-suave);
+    color: var(--azul-hover);
+}
+.btn-ojo-clave .ojo-cerrado { display: none; }
+.btn-ojo-clave.activo .ojo-abierto { display: none; }
+.btn-ojo-clave.activo .ojo-cerrado { display: inline; }
+body.modo-milagritos .btn-ojo-clave { color: #c9184a; border-color: #ffb3c6; }
