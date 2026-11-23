@@ -583,6 +583,16 @@ class TestControlGomeros(unittest.TestCase):
             conexion.close()
         self.assertEqual(n, 0)
 
+    def test_hoja_de_aguinaldo_no_muestra_fechas_del_semestre(self):
+        guardar_aguinaldo(self.id_gomero, "2026-2", "100000")
+        pagina = self.client.get(f"/gomeros/{self.id_gomero}/imprimir/aguinaldo?periodo=2026-2")
+        html = pagina.get_data(as_text=True)
+        self.assertEqual(pagina.status_code, 200)
+        self.assertIn("CONTROL DE ADELANTOS DE AGUINALDO".lower(), html.lower())
+        self.assertNotIn("SEMESTRE", html)
+        self.assertNotIn("01/07/26", html)
+        self.assertNotIn("31/12/26", html)
+
 
 if __name__ == "__main__":
     unittest.main()
