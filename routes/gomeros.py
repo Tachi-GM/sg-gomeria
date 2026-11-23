@@ -1,14 +1,21 @@
 """Rutas del control semanal de gomeros para usuarios autenticados."""
 from datetime import date
 import logging
+import re
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint, abort, flash, jsonify, redirect, render_template, request, session, url_for,
+)
 
 from services.gomeros_service import (
     ErrorGomeros, guardar_gomero, desactivar_gomero, registrar_movimiento, actualizar_movimiento,
     obtener_resumen, listar_gomeros, obtener_saldos_aguinaldo,
     registrar_ausencia, eliminar_ausencia, guardar_aguinaldo,
     registrar_pago_aguinaldo, obtener_resumen_aguinaldos, obtener_pagos_aguinaldo,
+    eliminar_movimiento as eliminar_movimiento_servicio,
+    actualizar_aguinaldo, eliminar_aguinaldo,
+    actualizar_pago_aguinaldo, eliminar_pago_aguinaldo,
+    obtener_ficha_gomero, obtener_planilla_semanal, obtener_planilla_aguinaldo,
 )
 from utils.seguridad import login_requerido, registrar_auditoria
 
@@ -20,9 +27,23 @@ def _booleano_formulario(valor):
     return str(valor).strip().lower() in {"1", "true", "si", "sí", "on"}
 
 
-def _volver_a_semana():
-    semana = request.form.get("semana", "")
-    return redirect(url_for("gomeros_bp.control_gomeros", semana=semana or None))
+def _volver_a_semana(ancla_defecto=""):
+    """Redirige al lugar de origen: la ficha de un gomero o la semana general.
+
+    `volver_a` y `ancla` vienen de campos ocultos del formulario, por eso se
+    validan: solo se aceptan destinos propios (nunca una URL cualquiera) y un
+    ancla con letras, números y guiones. Así evitamos un "open redirect".
+    """
+    volver_a = request.form.get("volver_a", "")
+    if re.fullmatch(r"ficha:\d+", volver_a):
+        destino = url_for("gomeros_bp.ficha_gomero", id_gomero=int(volver_a[6:]))
+    else:
+        semana = request.form.get("semana", "")
+        destino = url_for("gomeros_bp.control_gomeros", semana=semana or None)
+    ancla = request.form.get("ancla") or ancla_defecto
+    if re.fullmatch(r"[A-Za-z0-9_-]{1,40}", ancla or ""):
+        destino += "#" + ancla
+    return redirect(destino)
 
 
 @gomeros_bp.route("/gomeros")
@@ -65,7 +86,7 @@ def guardar_aguinaldo_ruta():
     except Exception:
         logger.exception("Error al guardar aguinaldo")
         flash("No se pudo guardar el aguinaldo.", "danger")
-    return _volver_a_semana()
+    return _volver_a_semana("gestion-aguinaldos")
 
 
 @gomeros_bp.route("/gomeros/aguinaldo/pagar", methods=["POST"])
@@ -90,7 +111,7 @@ def pagar_aguinaldo_ruta():
     except Exception:
         logger.exception("Error al registrar pago de aguinaldo")
         flash("No se pudo registrar el pago de aguinaldo.", "danger")
-    return _volver_a_semana()
+    return _volver_a_semana("gestion-aguinaldos")
 
 @gomeros_bp.route("/gomeros/crear", methods=["POST"])
 @login_requerido
@@ -227,29 +248,126 @@ def cambiar_ausencia():
 @gomeros_bp.route("/gomeros/movimiento/eliminar/<int:id_movimiento>", methods=["POST"])
 @login_requerido
 def eliminar_movimiento(id_movimiento):
-    from database.connection import obtener_conexion
-    conexion = obtener_conexion()
     try:
-        conexion.execute("BEGIN IMMEDIATE")
-        fila = conexion.execute(
-            "SELECT id_movimiento, tipo, importe FROM movimientos_gomeros WHERE id_movimiento = ?",
-            (id_movimiento,),
-        ).fetchone()
-        if fila is None:
-            flash("El movimiento ya no existe.", "warning")
-        else:
-            conexion.execute("DELETE FROM movimientos_gomeros WHERE id_movimiento = ?", (id_movimiento,))
-            conexion.commit()
-            registrar_auditoria(
-                "ELIMINACION_MOVIMIENTO_GOMEROS",
-                f"ID {id_movimiento}; tipo {fila['tipo']}; "
-                f"importe {fila['importe']}",
-            )
-            flash("Movimiento eliminado.", "success")
+        fila = eliminar_movimiento_servicio(id_movimiento)
+        registrar_auditoria(
+            "ELIMINACION_MOVIMIENTO_GOMEROS",
+            f"ID {id_movimiento}; tipo {fila['tipo']}; importe {fila['importe']}",
+        )
+        flash("Movimiento eliminado.", "success")
+    except ErrorGomeros as exc:
+        flash(str(exc), "danger")
     except Exception:
-        conexion.rollback()
         logger.exception("Error al eliminar movimiento %s", id_movimiento)
         flash("No se pudo eliminar el movimiento.", "danger")
-    finally:
-        conexion.close()
     return _volver_a_semana()
+
+
+# ---------------------------------------------------------------------------
+# Corrección y baja de aguinaldos y pagos
+# ---------------------------------------------------------------------------
+def _ejecutar_aguinaldo(accion, auditoria, detalle, mensaje_ok, mensaje_error):
+    """Ejecuta una acción de aguinaldo, avisa con flash y vuelve a la sección."""
+    try:
+        resultado = accion()
+        registrar_auditoria(auditoria, detalle(resultado))
+        flash(mensaje_ok, "success")
+    except ErrorGomeros as exc:
+        flash(str(exc), "danger")
+    except Exception:
+        logger.exception(mensaje_error)
+        flash(mensaje_error, "danger")
+    return _volver_a_semana("gestion-aguinaldos")
+
+
+@gomeros_bp.route("/gomeros/aguinaldo/editar/<int:id_aguinaldo>", methods=["POST"])
+@login_requerido
+def editar_aguinaldo(id_aguinaldo):
+    importe = request.form.get("importe")
+    return _ejecutar_aguinaldo(
+        lambda: actualizar_aguinaldo(id_aguinaldo, importe),
+        "CORRECCION_AGUINALDO",
+        lambda fila: f"Aguinaldo ID {id_aguinaldo} ({fila['periodo_aguinaldo']}): "
+                     f"importe {fila['importe']} -> {importe}",
+        "Aguinaldo corregido.",
+        "No se pudo corregir el aguinaldo.",
+    )
+
+
+@gomeros_bp.route("/gomeros/aguinaldo/eliminar/<int:id_aguinaldo>", methods=["POST"])
+@login_requerido
+def borrar_aguinaldo(id_aguinaldo):
+    return _ejecutar_aguinaldo(
+        lambda: eliminar_aguinaldo(id_aguinaldo),
+        "ELIMINACION_AGUINALDO",
+        lambda fila: f"Aguinaldo ID {id_aguinaldo} ({fila['periodo_aguinaldo']}) "
+                     f"por ${fila['importe']} eliminado",
+        "Aguinaldo eliminado.",
+        "No se pudo eliminar el aguinaldo.",
+    )
+
+
+@gomeros_bp.route("/gomeros/aguinaldo/pago/editar/<int:id_pago>", methods=["POST"])
+@login_requerido
+def editar_pago_aguinaldo(id_pago):
+    importe = request.form.get("importe")
+    return _ejecutar_aguinaldo(
+        lambda: actualizar_pago_aguinaldo(
+            id_pago, request.form.get("fecha"), importe, request.form.get("concepto")
+        ),
+        "CORRECCION_PAGO_AGUINALDO",
+        lambda fila: f"Pago ID {id_pago}; importe corregido a {importe}",
+        "Pago de aguinaldo corregido.",
+        "No se pudo corregir el pago de aguinaldo.",
+    )
+
+
+@gomeros_bp.route("/gomeros/aguinaldo/pago/eliminar/<int:id_pago>", methods=["POST"])
+@login_requerido
+def borrar_pago_aguinaldo(id_pago):
+    return _ejecutar_aguinaldo(
+        lambda: eliminar_pago_aguinaldo(id_pago),
+        "ELIMINACION_PAGO_AGUINALDO",
+        lambda fila: f"Pago ID {id_pago} por ${fila['importe']} eliminado",
+        "Pago de aguinaldo eliminado.",
+        "No se pudo eliminar el pago de aguinaldo.",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Pestaña por gomero y hojas imprimibles
+# ---------------------------------------------------------------------------
+@gomeros_bp.route("/gomeros/<int:id_gomero>")
+@login_requerido
+def ficha_gomero(id_gomero):
+    try:
+        ficha = obtener_ficha_gomero(id_gomero)
+    except ErrorGomeros:
+        abort(404)
+    return render_template("gomero_ficha.html", ficha=ficha, hoy=date.today().isoformat())
+
+
+@gomeros_bp.route("/gomeros/<int:id_gomero>/imprimir/semana")
+@login_requerido
+def imprimir_semana(id_gomero):
+    try:
+        planilla = obtener_planilla_semanal(id_gomero, request.args.get("semana"))
+    except ErrorGomeros as exc:
+        if "no existe" in str(exc):
+            abort(404)
+        flash(str(exc), "danger")
+        return redirect(url_for("gomeros_bp.ficha_gomero", id_gomero=id_gomero))
+    return render_template("gomero_planilla_semana.html", p=planilla)
+
+
+@gomeros_bp.route("/gomeros/<int:id_gomero>/imprimir/aguinaldo")
+@login_requerido
+def imprimir_aguinaldo(id_gomero):
+    try:
+        planilla = obtener_planilla_aguinaldo(id_gomero, request.args.get("periodo"))
+    except ErrorGomeros as exc:
+        if "no existe" in str(exc):
+            abort(404)
+        flash(str(exc), "danger")
+        return redirect(url_for("gomeros_bp.ficha_gomero", id_gomero=id_gomero))
+    return render_template("gomero_planilla_aguinaldo.html", p=planilla)
