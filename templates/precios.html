@@ -23,6 +23,10 @@
                     <p class="text-muted mb-0">Precios actualizados de nuestros productos y servicios</p>
                 </div>
 
+                <button type="button" class="btn btn-success rounded-pill px-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalImportarPrecios">
+                    📥 Actualizar precios desde Excel
+                </button>
+
                 <!-- FILTRO DE ESTADO: ACTIVAS / OCULTAS / TODAS -->
                 <div class="btn-group shadow-sm rounded-pill overflow-hidden" role="group">
                     <a href="{{ url_for('trabajos_bp.precios', estado='activas') }}"
@@ -133,9 +137,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL: ACTUALIZAR PRECIOS DESDE UN EXCEL -->
+        <div class="modal fade" id="modalImportarPrecios" tabindex="-1" aria-labelledby="tituloImportarPrecios" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('trabajos_bp.importar_precios') }}" method="POST" enctype="multipart/form-data" id="form-importar-precios">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="tituloImportarPrecios">Actualizar precios desde Excel</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label for="archivo-precios" class="form-label small fw-bold text-secondary">Archivo de Excel (.xlsx)</label>
+                            <input id="archivo-precios" name="archivo" type="file" class="form-control mb-3"
+                                   accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                            <div class="alert alert-info small mb-2">
+                                <strong>Qué hace:</strong> actualiza los precios de las tareas que ya existen, y agrega las tareas nuevas que no estén en el sistema.
+                                Antes de cambiar nada se guarda una copia de seguridad automática.
+                            </div>
+                            <p class="small text-muted mb-0">
+                                El Excel debe tener las hojas <strong>Lista 1</strong>, <strong>Lista 2</strong> y <strong>Lista 3</strong>, cada una con las columnas
+                                <em>Descripción</em>, <em>Precio sin IVA</em> y <em>Precio final</em>. Se toma el <em>Precio final</em>.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold" id="btn-importar-precios">Actualizar precios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
 
 {% block extra_js %}
     <script src="{{ url_for('static', filename='js/precios.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/importar-precios.js') }}"></script>
 {% endblock %}

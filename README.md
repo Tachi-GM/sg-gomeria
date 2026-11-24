@@ -76,7 +76,7 @@ Proyecto desarrollado para la materia **Programación 4** de la **Tecnicatura Su
   - Resguardo (`/backup`) exclusivo para administradores con timestamp en `backups/`, en formato ZIP restaurable: `sg_gomeria.db` y `fotos_remitos/...`.
   - Páginas de error personalizadas (`401`, `403`, `404` y `500`) con registro de eventos de auditoría en `sistema.log`.
   - Modo Milagritos 🧚 accesible vía sesión HTTP.
-  - Scripts de importación masiva: clientes desde Excel (`scripts/importar_clientes.py`), precios desde Excel (`scripts/importar_precios.py`) y remitos (`scripts/importar_remitos.py`), todos con backup previo automático.
+  - Scripts de importación masiva: clientes desde Excel (`scripts/importar_clientes.py`), precios desde Excel (`scripts/importar_precios.py`) y remitos (`scripts/importar_remitos.py`), todos con backup previo automático. Los precios también se pueden actualizar desde la pantalla **Precios** con el botón «Actualizar precios desde Excel» (cualquier usuario con sesión; pide confirmación y hace backup automático antes de cambiar nada).
 
 ---
 

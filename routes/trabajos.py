@@ -16,9 +16,13 @@ from flask import (
     send_from_directory,
 )
 from uuid import uuid4
-from database.connection import obtener_conexion
+from database.connection import obtener_conexion, get_db_path
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
 from utils.formateadores import parse_int_seguro, parse_float_seguro
+from services.precios_service import (
+    ErrorImportacionPrecios,
+    importar_precios_desde_archivo,
+)
 from services.trabajos_service import (
     crear_trabajo_completo,
     editar_cabecera_remito,
@@ -230,6 +234,66 @@ def precios():
         conteo_inactivas=conteo_inactivas,
         milagritos=modo_activo(),
     )
+
+
+# Importar precios desde un Excel (cualquier usuario con sesión iniciada)
+@trabajos_bp.route("/precios/importar", methods=["POST"])
+@login_requerido
+def importar_precios():
+    try:
+        datos = importar_precios_desde_archivo(
+            request.files.get("archivo"),
+            get_db_path(),
+            current_app.config.get("BACKUP_DIR", "backups"),
+        )
+    except ErrorImportacionPrecios as error:
+        flash(str(error), "danger")
+        return redirect(url_for("trabajos_bp.precios"))
+    except Exception:
+        logger.exception("Error inesperado al importar precios")
+        flash("Ocurrió un error inesperado al importar los precios. No se guardó nada.", "danger")
+        return redirect(url_for("trabajos_bp.precios"))
+
+    actualizados = datos["precios_actualizados"]
+    creadas = datos["tareas_creadas"]
+    sin_cambios = datos["resumen"]["igual"]
+    registrar_auditoria(
+        "IMPORTACION_PRECIOS",
+        f"{actualizados} precios actualizados, {len(creadas)} tareas nuevas, "
+        f"backup: {datos['backup'].name if datos['backup'] else 'no hizo falta'}",
+    )
+
+    if not actualizados and not creadas:
+        flash("No hubo cambios: todos los precios del Excel ya estaban al día.", "info")
+    else:
+        mensaje = f"Importación lista: {actualizados} precios actualizados, {len(creadas)} tareas nuevas y {sin_cambios} sin cambios."
+        if creadas:
+            nombres = ", ".join(creadas[:10]) + (f" y {len(creadas) - 10} más" if len(creadas) > 10 else "")
+            mensaje += f" Tareas nuevas: {nombres}."
+        flash(mensaje, "success")
+        flash(f"Se guardó una copia de seguridad antes de cambiar nada: {datos['backup'].name}", "info")
+
+    avisos = []
+    if datos["duplicadas"]:
+        avisos.append(
+            "Tareas con nombre repetido en la base (no se modificaron): "
+            + ", ".join(datos["duplicadas"][:5])
+        )
+    if datos["advertencias"]:
+        avisos.append(
+            f"{len(datos['advertencias'])} filas del Excel se ignoraron: "
+            + " | ".join(datos["advertencias"][:3])
+            + (" | ..." if len(datos["advertencias"]) > 3 else "")
+        )
+    if datos["iva_distinto"]:
+        avisos.append(
+            f"En {len(datos['iva_distinto'])} filas el «Precio sin IVA» no coincide con "
+            "«Precio final» ÷ 1,21. Se usó el «Precio final»."
+        )
+    if avisos:
+        flash(" — ".join(avisos), "warning")
+
+    return redirect(url_for("trabajos_bp.precios"))
 
 
 # Funciones de Agregar y Modificar Tareas
