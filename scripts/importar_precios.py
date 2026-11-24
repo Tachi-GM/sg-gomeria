@@ -119,6 +119,12 @@ def leer_lista(hoja, numero_lista):
             )
             continue
 
+        if precio_sin_iva < 0 or precio_final < 0:
+            advertencias.append(
+                f"Hoja {numero_lista}, fila {numero_fila}: precio negativo"
+            )
+            continue
+
         filas.append(
             {
                 "fila_excel": numero_fila,
@@ -215,16 +221,33 @@ def preparar_tareas_nuevas(resultados):
     return list(nuevas.values())
 
 
-def ejecutar(ruta_excel, ruta_db, actualizar=False):
+def importar(ruta_excel, ruta_db, actualizar=False, funcion_backup=None):
+    """Núcleo de la importación: no imprime nada y devuelve un diccionario.
+
+    Lo usan tanto la consola (`ejecutar`) como la pantalla web de Precios.
+    - actualizar=False: solo compara (no toca la base).
+    - actualizar=True: hace backup (solo si hay algo para guardar), crea las
+      tareas nuevas y actualiza los precios distintos, todo en una transacción.
+    - funcion_backup: función que recibe la ruta de la base y devuelve la ruta
+      de la copia; por defecto se usa `crear_backup`.
+    Las tareas con nombre repetido en la base (ambiguas) nunca se modifican.
+    """
     listas, advertencias = leer_excel(ruta_excel)
     conexion = sqlite3.connect(ruta_db)
     conexion.row_factory = sqlite3.Row
     try:
         resultados = comparar_con_base(listas, conexion)
-        if actualizar:
-            backup = crear_backup(ruta_db)
-            nuevas = preparar_tareas_nuevas(resultados)
-            actualizados = 0
+        nuevas = preparar_tareas_nuevas(resultados)
+        a_actualizar = [
+            r
+            for r in resultados
+            if r["tarea"] is not None
+            and r["estado"] == "diferente"
+        ]
+
+        backup = None
+        if actualizar and (nuevas or a_actualizar):
+            backup = (funcion_backup or crear_backup)(ruta_db)
             try:
                 for nueva in nuevas:
                     conexion.execute(
@@ -239,25 +262,18 @@ def ejecutar(ruta_excel, ruta_db, actualizar=False):
                             float(nueva["precio3"]),
                         ),
                     )
-                for resultado in resultados:
-                    if resultado["tarea"] is None:
-                        continue
-                    if resultado["precio_distinto"]:
-                        conexion.execute(
-                            f"UPDATE tareas SET {resultado['campo']} = ? WHERE id_tarea = ?",
-                            (
-                                float(resultado["precio_final"]),
-                                resultado["tarea"]["id_tarea"],
-                            ),
-                        )
-                        actualizados += 1
+                for resultado in a_actualizar:
+                    conexion.execute(
+                        f"UPDATE tareas SET {resultado['campo']} = ? WHERE id_tarea = ?",
+                        (
+                            float(resultado["precio_final"]),
+                            resultado["tarea"]["id_tarea"],
+                        ),
+                    )
                 conexion.commit()
             except Exception:
                 conexion.rollback()
                 raise
-            print(f"Backup creado: {backup}")
-            print(f"Tareas creadas: {len(nuevas)}")
-            print(f"Precios actualizados: {actualizados}")
 
         resumen = {
             "igual": sum(r["estado"] == "igual" for r in resultados),
@@ -266,23 +282,52 @@ def ejecutar(ruta_excel, ruta_db, actualizar=False):
             "duplicada": sum(r["estado"] == "duplicada" for r in resultados),
             "iva_distinto": sum(not r["calculo_iva_ok"] for r in resultados),
         }
-        print(
-            "Resumen: "
-            + " | ".join(f"{clave}={valor}" for clave, valor in resumen.items())
-        )
-        for advertencia in advertencias:
-            print(f"Advertencia: {advertencia}")
-        for resultado in resultados:
-            if resultado["estado"] == "duplicada" or (
-                resultado["estado"] == "faltante" and not actualizar
-            ):
-                print(
-                    f"{resultado['estado'].capitalize()}: "
-                    f"lista {resultado['lista']} - {resultado['descripcion']}"
-                )
-        return resultados, advertencias
+        return {
+            "resultados": resultados,
+            "advertencias": advertencias,
+            "resumen": resumen,
+            "backup": backup,
+            "tareas_creadas": [n["nom_tar"] for n in nuevas] if actualizar else [],
+            "precios_actualizados": len(a_actualizar) if actualizar else 0,
+            "duplicadas": sorted(
+                {r["descripcion"] for r in resultados if r["estado"] == "duplicada"}
+            ),
+            "iva_distinto": [
+                f"lista {r['lista']} - {r['descripcion']}"
+                for r in resultados
+                if not r["calculo_iva_ok"]
+            ],
+        }
     finally:
         conexion.close()
+
+
+def ejecutar(ruta_excel, ruta_db, actualizar=False):
+    """Versión de consola: corre `importar` e imprime el resultado."""
+    datos = importar(ruta_excel, ruta_db, actualizar=actualizar)
+    resultados = datos["resultados"]
+
+    if actualizar:
+        if datos["backup"]:
+            print(f"Backup creado: {datos['backup']}")
+        print(f"Tareas creadas: {len(datos['tareas_creadas'])}")
+        print(f"Precios actualizados: {datos['precios_actualizados']}")
+
+    print(
+        "Resumen: "
+        + " | ".join(f"{clave}={valor}" for clave, valor in datos["resumen"].items())
+    )
+    for advertencia in datos["advertencias"]:
+        print(f"Advertencia: {advertencia}")
+    for resultado in resultados:
+        if resultado["estado"] == "duplicada" or (
+            resultado["estado"] == "faltante" and not actualizar
+        ):
+            print(
+                f"{resultado['estado'].capitalize()}: "
+                f"lista {resultado['lista']} - {resultado['descripcion']}"
+            )
+    return resultados, datos["advertencias"]
 
 
 def main():
