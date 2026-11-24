@@ -21,13 +21,6 @@
                 💾
             </a>
             {% endif %}
-            {% if session.get('usuario') %}
-            <a href="{{ url_for('general_bp.manual_usuario') }}"
-               class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold"
-               target="_blank" rel="noopener" title="Abrir manual de usuario">
-                📘 MANUAL
-            </a>
-            {% endif %}
             <h1 class="h4 mb-0 text-uppercase fw-bold letter-spacing-1">
                 {% block subtitle %}{% endblock %}
             </h1>
