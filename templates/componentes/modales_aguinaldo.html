@@ -1,0 +1,68 @@
+{# Modales para corregir un aguinaldo o un pago de aguinaldo.
+   Los usan gomeros.html y gomero_ficha.html. El JS (gomeros.js) completa el
+   formulario y la URL de cada modal según el botón "Editar" que se tocó.
+   `volver_a` y `ancla` (opcionales) indican a dónde volver después de guardar. #}
+{% set volver_a = volver_a | default('') %}
+{% set ancla = ancla | default('gestion-aguinaldos') %}
+
+<div class="modal fade" id="modalEditarAguinaldo" tabindex="-1" aria-labelledby="tituloEditarAguinaldo" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="form-editar-aguinaldo" action="" data-confirmar-importe="¿Corregir el aguinaldo a" data-url-base="/gomeros/aguinaldo/editar/">
+        <input type="hidden" name="volver_a" value="{{ volver_a }}">
+        <input type="hidden" name="ancla" value="{{ ancla }}">
+        {% if resumen is defined %}<input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}">{% endif %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="tituloEditarAguinaldo">Corregir aguinaldo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3" data-detalle-modal></p>
+          <label for="editar-aguinaldo-importe" class="form-label small fw-bold text-secondary">Importe correspondiente ($)</label>
+          <input id="editar-aguinaldo-importe" name="importe" type="number" min="1" step="1" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar corrección</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEditarPagoAguinaldo" tabindex="-1" aria-labelledby="tituloEditarPago" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="form-editar-pago-aguinaldo" action="" data-confirmar-importe="¿Corregir el pago a" data-url-base="/gomeros/aguinaldo/pago/editar/">
+        <input type="hidden" name="volver_a" value="{{ volver_a }}">
+        <input type="hidden" name="ancla" value="{{ ancla }}">
+        {% if resumen is defined %}<input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}">{% endif %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="tituloEditarPago">Corregir pago de aguinaldo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3" data-detalle-modal></p>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="editar-pago-fecha" class="form-label small fw-bold text-secondary">Fecha</label>
+              <input id="editar-pago-fecha" name="fecha" type="date" class="form-control" required>
+            </div>
+            <div class="col-sm-6">
+              <label for="editar-pago-importe" class="form-label small fw-bold text-secondary">Pago ($)</label>
+              <input id="editar-pago-importe" name="importe" type="number" min="1" step="1" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label for="editar-pago-concepto" class="form-label small fw-bold text-secondary">Concepto</label>
+              <input id="editar-pago-concepto" name="concepto" maxlength="200" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar corrección</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

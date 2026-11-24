@@ -1,0 +1,208 @@
+{% extends "base/base.html" %}
+{% from "componentes/macros_gomeros.html" import peso, semestre, fecha_ar %}
+
+{% block title %}{{ ficha.gomero.nombre }} - Gomeros - Gomería El Puente{% endblock %}
+{% block subtitle %}{{ ficha.gomero.nombre }}{% endblock %}
+
+{% block atras %}
+<a href="{{ url_for('gomeros_bp.control_gomeros') }}" class="btn btn-sm btn-outline-light px-3 fw-bold rounded-pill">
+    &larr; GOMEROS
+</a>
+{% endblock %}
+
+{% block extra_css %}<style>
+.control-gomeros > .alert { position:sticky; top:8px; z-index:1030; box-shadow:0 4px 12px rgba(0,0,0,.12); }
+.cabecera-semana { background:var(--azul-suave); border-bottom:1px solid var(--gris-borde); }
+.cabecera-aguinaldo { background:var(--durazno); border-bottom:1px solid var(--arena); }
+.fila-ausencia > td { background:var(--alerta-amarillo-bg); color:var(--alerta-amarillo-texto); font-weight:600; }
+.nav-tabs .nav-link.active { color:var(--azul); }
+body.modo-milagritos .cabecera-semana,
+body.modo-milagritos .cabecera-aguinaldo { background:#ffe4ec; border-bottom-color:#ffccd5; }
+</style>{% endblock %}
+
+{% block content %}
+{% set g = ficha.gomero %}
+{% set aguinaldo_actual = ficha.aguinaldos | selectattr('periodo', 'equalto', ficha.periodo_actual) | first %}
+<div class="container-fluid container-xl py-4 control-gomeros">
+
+{% with mensajes = get_flashed_messages(with_categories=true) %}{% for categoria, msg in mensajes %}<div class="alert alert-{{ categoria }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}{% endwith %}
+
+<section class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+  <div>
+    <h2 class="h4 fw-bold mb-0">{{ g.nombre }}{% if not g.activo %} <span class="badge text-bg-secondary">Inactivo</span>{% endif %}</h2>
+    <small class="text-muted">Sueldo semanal {{ peso(g.sueldo_semanal) }}</small>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary rounded-pill px-3" target="_blank" rel="noopener"
+       href="{{ url_for('gomeros_bp.imprimir_semana', id_gomero=g.id_gomero, semana=ficha.semana_actual_iso) }}">🖨️ Imprimir semana actual</a>
+    <a class="btn btn-outline-primary rounded-pill px-3" target="_blank" rel="noopener"
+       href="{{ url_for('gomeros_bp.imprimir_aguinaldo', id_gomero=g.id_gomero, periodo=ficha.periodo_actual) }}">🖨️ Imprimir aguinaldo {{ ficha.periodo_actual }}</a>
+  </div>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="card tarjeta-resumen-gomero h-100"><div class="card-body"><div class="small text-muted">Adelantado esta semana</div><div class="h3 mb-0">{{ peso(ficha.adelantado_actual) }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card tarjeta-resumen-gomero h-100"><div class="card-body"><div class="small text-muted">Resta cobrar el sábado</div><div class="h3 mb-0">{{ peso(ficha.resto_actual) }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card tarjeta-resumen-gomero h-100"><div class="card-body"><div class="small text-muted">Aguinaldo {{ ficha.periodo_actual }}</div><div class="h3 mb-0">{% if aguinaldo_actual and aguinaldo_actual.importe %}{{ peso(aguinaldo_actual.importe) }}{% else %}<span class="text-muted">Sin cargar</span>{% endif %}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card tarjeta-resumen-gomero h-100"><div class="card-body"><div class="small text-muted">Saldo de aguinaldo</div><div class="h3 mb-0">{% if aguinaldo_actual and aguinaldo_actual.importe %}{{ peso(aguinaldo_actual.saldo) }}{% else %}<span class="text-muted">—</span>{% endif %}</div></div></div></div>
+</section>
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+  <li class="nav-item" role="presentation"><button class="nav-link active fw-bold" id="pestana-sueldo" data-bs-toggle="tab" data-bs-target="#sueldo" type="button" role="tab">Adelantos de sueldo</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link fw-bold" id="pestana-aguinaldo" data-bs-toggle="tab" data-bs-target="#aguinaldo" type="button" role="tab">Aguinaldo</button></li>
+</ul>
+
+<div class="tab-content">
+
+  {# ================= ADELANTOS DE SUELDO, POR SEMANA ================= #}
+  <div class="tab-pane fade show active" id="sueldo" role="tabpanel">
+    {% for s in ficha.semanas %}
+    <section class="card border-0 shadow-sm mb-3 overflow-hidden">
+      <div class="card-header cabecera-semana d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+        <div>
+          <div class="fw-bold">Semana {{ s.lunes.strftime('%d/%m') }} – {{ s.sabado.strftime('%d/%m/%Y') }}</div>
+          <small class="text-muted">Adelantado {{ peso(s.total_adelantos) }}
+            {% if s.cantidad_ausencias %}· Descuento por ausencias {{ peso(s.descuento_ausencias) }}{% endif %}
+            · Resta cobrar {{ peso(s.resto) }}</small>
+        </div>
+        <a class="btn btn-sm btn-outline-primary rounded-pill" target="_blank" rel="noopener"
+           href="{{ url_for('gomeros_bp.imprimir_semana', id_gomero=g.id_gomero, semana=s.iso) }}">🖨️ Imprimir</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Fecha</th><th>Detalle</th><th class="text-end">Importe</th><th class="text-end">Acciones</th></tr></thead>
+          <tbody>
+          {% for e in s.eventos %}
+            {% if e.clase == 'ausencia' %}
+            <tr class="fila-ausencia"><td>{{ e.fecha[8:10] }}/{{ e.fecha[5:7] }}</td><td colspan="3">Faltó el {{ e.dia | lower }}</td></tr>
+            {% else %}
+            <tr>
+              <td>{{ e.dia[:3] }} {{ e.fecha[8:10] }}/{{ e.fecha[5:7] }}</td>
+              <td>{{ e.concepto or 'Adelanto' }}{% if e.usuario %}<small class="d-block text-muted">{{ e.usuario }}</small>{% endif %}</td>
+              <td class="text-end fw-bold">{{ peso(e.importe) }}</td>
+              <td class="text-end text-nowrap">
+                <button type="button" class="btn btn-sm btn-outline-primary js-editar-mov-modal"
+                        data-id="{{ e.id_movimiento }}" data-fecha="{{ e.fecha }}" data-importe="{{ e.importe }}"
+                        data-concepto="{{ e.concepto or '' }}" data-ancla="sueldo"
+                        data-detalle="Adelanto del {{ e.fecha[8:10] }}/{{ e.fecha[5:7] }}/{{ e.fecha[:4] }}"
+                        data-bs-toggle="modal" data-bs-target="#modalEditarMovimiento">Editar</button>
+                <form method="post" action="{{ url_for('gomeros_bp.eliminar_movimiento', id_movimiento=e.id_movimiento) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este adelanto de {{ peso(e.importe) }}?')">
+                  <input type="hidden" name="volver_a" value="ficha:{{ g.id_gomero }}"><input type="hidden" name="ancla" value="sueldo">
+                  <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% else %}
+    <div class="card border-0 shadow-sm"><div class="card-body text-center text-muted py-5">Todavía no hay adelantos de sueldo ni ausencias registradas para {{ g.nombre }}.</div></div>
+    {% endfor %}
+  </div>
+
+  {# ================= AGUINALDO, POR SEMESTRE ================= #}
+  <div class="tab-pane fade" id="aguinaldo" role="tabpanel">
+    {% for a in ficha.aguinaldos %}
+    <section class="card border-0 shadow-sm mb-3 overflow-hidden">
+      <div class="card-header cabecera-aguinaldo d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+        <div>
+          <div class="fw-bold">Aguinaldo {{ a.periodo }} · {{ semestre(a.periodo) }}</div>
+          {% if a.importe %}
+          <small class="text-muted">Aguinaldo {{ peso(a.importe) }} · Adelantos {{ peso(a.adelantos) }} · Pagos {{ peso(a.pagos) }} · <strong>Saldo {{ peso(a.saldo) }}</strong></small>
+          {% else %}
+          <small class="text-danger">Todavía no tiene importe cargado. Cargalo en <a href="{{ url_for('gomeros_bp.control_gomeros') }}#gestion-aguinaldos">Gestión de aguinaldos</a>.</small>
+          {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-sm btn-outline-primary rounded-pill" target="_blank" rel="noopener"
+             href="{{ url_for('gomeros_bp.imprimir_aguinaldo', id_gomero=g.id_gomero, periodo=a.periodo) }}">🖨️ Imprimir</a>
+          {% if a.id_aguinaldo %}
+          <button type="button" class="btn btn-sm btn-outline-primary rounded-pill js-editar-aguinaldo"
+                  data-id="{{ a.id_aguinaldo }}" data-importe="{{ a.importe }}" data-detalle="{{ g.nombre }} · {{ a.periodo }}"
+                  data-bs-toggle="modal" data-bs-target="#modalEditarAguinaldo">Editar importe</button>
+          <form method="post" action="{{ url_for('gomeros_bp.borrar_aguinaldo', id_aguinaldo=a.id_aguinaldo) }}" class="d-inline" onsubmit="return confirm('¿Eliminar el aguinaldo {{ a.periodo }} de {{ g.nombre }}?')">
+            <input type="hidden" name="volver_a" value="ficha:{{ g.id_gomero }}"><input type="hidden" name="ancla" value="aguinaldo">
+            <button class="btn btn-sm btn-outline-danger rounded-pill">Eliminar</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th class="text-end">Importe</th><th class="text-end">Acciones</th></tr></thead>
+          <tbody>
+          {% for l in a.lineas %}
+            <tr>
+              <td>{{ fecha_ar(l.fecha) }}</td>
+              <td>{% if l.clase == 'adelanto' %}<span class="badge text-bg-warning">Adelanto</span>{% elif l.clase == 'descuento' %}<span class="badge text-bg-secondary">Descuento aplicado</span>{% else %}<span class="badge text-bg-success">Pago</span>{% endif %}</td>
+              <td>{{ l.concepto or '' }}</td>
+              <td class="text-end fw-bold">{{ peso(l.importe) }}</td>
+              <td class="text-end text-nowrap">
+                {% if l.clase == 'pago' %}
+                <button type="button" class="btn btn-sm btn-outline-primary js-editar-pago-aguinaldo"
+                        data-id="{{ l.id }}" data-fecha="{{ l.fecha }}" data-importe="{{ l.importe }}"
+                        data-concepto="{{ l.concepto or '' }}" data-detalle="{{ g.nombre }} · {{ a.periodo }}"
+                        data-bs-toggle="modal" data-bs-target="#modalEditarPagoAguinaldo">Editar</button>
+                <form method="post" action="{{ url_for('gomeros_bp.borrar_pago_aguinaldo', id_pago=l.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este pago de {{ peso(l.importe) }}?')">
+                  <input type="hidden" name="volver_a" value="ficha:{{ g.id_gomero }}"><input type="hidden" name="ancla" value="aguinaldo">
+                  <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+                {% else %}
+                <button type="button" class="btn btn-sm btn-outline-primary js-editar-mov-modal"
+                        data-id="{{ l.id }}" data-fecha="{{ l.fecha }}" data-importe="{{ l.importe }}"
+                        data-concepto="{{ l.concepto or '' }}" data-ancla="aguinaldo"
+                        data-detalle="{{ 'Adelanto' if l.clase == 'adelanto' else 'Descuento' }} de aguinaldo del {{ fecha_ar(l.fecha) }}"
+                        data-bs-toggle="modal" data-bs-target="#modalEditarMovimiento">Editar</button>
+                <form method="post" action="{{ url_for('gomeros_bp.eliminar_movimiento', id_movimiento=l.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este movimiento de {{ peso(l.importe) }}?')">
+                  <input type="hidden" name="volver_a" value="ficha:{{ g.id_gomero }}"><input type="hidden" name="ancla" value="aguinaldo">
+                  <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-3">Todavía no hay adelantos ni pagos en este aguinaldo.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% else %}
+    <div class="card border-0 shadow-sm"><div class="card-body text-center text-muted py-5">Todavía no hay aguinaldos ni adelantos de aguinaldo para {{ g.nombre }}.</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+</div>
+
+{# Modal para corregir un adelanto (sueldo o aguinaldo) desde la ficha #}
+<div class="modal fade" id="modalEditarMovimiento" tabindex="-1" aria-labelledby="tituloEditarMovimiento" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" id="form-editar-movimiento" action="" data-confirmar-importe="¿Corregir el importe a" data-url-base="/gomeros/movimiento/editar/">
+      <input type="hidden" name="volver_a" value="ficha:{{ g.id_gomero }}">
+      <input type="hidden" name="ancla" value="sueldo">
+      <div class="modal-header"><h5 class="modal-title" id="tituloEditarMovimiento">Corregir adelanto</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3" data-detalle-modal></p>
+        <div class="row g-3">
+          <div class="col-sm-6"><label for="editar-mov-fecha" class="form-label small fw-bold text-secondary">Fecha</label><input id="editar-mov-fecha" name="fecha" type="date" class="form-control" required></div>
+          <div class="col-sm-6"><label for="editar-mov-importe" class="form-label small fw-bold text-secondary">Importe ($)</label><input id="editar-mov-importe" name="importe" type="number" min="1" step="1" class="form-control" required></div>
+          <div class="col-12"><label for="editar-mov-concepto" class="form-label small fw-bold text-secondary">Concepto</label><input id="editar-mov-concepto" name="concepto" maxlength="200" class="form-control"></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary rounded-pill px-4">Guardar corrección</button></div>
+    </form>
+  </div></div>
+</div>
+
+{% with volver_a='ficha:' ~ g.id_gomero, ancla='aguinaldo' %}
+{% include "componentes/modales_aguinaldo.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gomeros-comun.js') }}"></script>
+{% endblock %}

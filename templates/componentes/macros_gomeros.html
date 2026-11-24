@@ -1,0 +1,8 @@
+{# Macros compartidas por las pantallas del módulo gomeros #}
+{% macro peso(valor) %}{{ '$' ~ '{:,.0f}'.format(valor or 0).replace(',', '.') }}{% endmacro %}
+
+{# '2026-2' -> 'julio – diciembre 2026' #}
+{% macro semestre(periodo) %}{{ 'enero – junio' if periodo[-1] == '1' else 'julio – diciembre' }} {{ periodo[:4] }}{% endmacro %}
+
+{# '2026-11-18' -> '18/11/2026' #}
+{% macro fecha_ar(iso) %}{{ iso[8:10] }}/{{ iso[5:7] }}/{{ iso[:4] }}{% endmacro %}

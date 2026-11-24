@@ -24,6 +24,13 @@ document.addEventListener("DOMContentLoaded", () => {
     botonGuardar.parentElement.appendChild(botonCancelar);
   }
 
+  // Sábados y domingos no se piden adelantos del sueldo: solo del aguinaldo.
+  function esFinDeSemana() {
+    if (!fecha.value) return false;
+    const dia = new Date(fecha.value + "T00:00:00").getDay();  // 0 = domingo, 6 = sábado
+    return dia === 0 || dia === 6;
+  }
+
   function actualizarFormulario() {
     const esGasto = tipo.value === "GASTO_GENERAL";
     const esDescuento = tipo.value === "DESCUENTO_AGUINALDO";
@@ -31,6 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (destino.value === "NO_APLICA" || !destino.value) destino.value = "SUELDO";
     if (esDescuento) destino.value = "AGUINALDO";
     if (tipo.value === "PAGO_SEMANAL") destino.value = "SUELDO";
+    // Al corregir un movimiento (hiddenId con valor) no se toca el destino.
+    const sinSueldo = hiddenId.value === "" && tipo.value === "ADELANTO" && esFinDeSemana();
+    destino.querySelector('option[value="SUELDO"]').disabled = sinSueldo;
+    if (sinSueldo) destino.value = "AGUINALDO";
     campoGomero.classList.toggle("d-none", esGasto);
     campoDestino.classList.toggle("d-none", esGasto || esDescuento);
     campoAguinaldo.classList.toggle("d-none", esGasto || (destino.value !== "AGUINALDO" && !esDescuento));
@@ -40,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     periodo.required = !esGasto && (destino.value === "AGUINALDO" || esDescuento);
     if (esGasto) ayuda.textContent = "El gasto queda en la cuenta general y no modifica ningún sueldo.";
     else if (esDescuento) ayuda.textContent = "Registrá un descuento efectivamente aplicado al aguinaldo. No puede superar el saldo pendiente.";
+    else if (sinSueldo) ayuda.textContent = "Los sábados y domingos solo se pide del aguinaldo: el sueldo se cobra completo el sábado.";
     else if (destino.value === "AGUINALDO") ayuda.textContent = "El adelanto queda pendiente para el aguinaldo y no reduce el saldo semanal.";
     else if (tipo.value === "PAGO_SEMANAL") ayuda.textContent = "Registrá el pago del sábado. Se resta del saldo pendiente de esta semana.";
     else ayuda.textContent = "El adelanto se descuenta del sueldo de la semana correspondiente a la fecha del movimiento.";
@@ -149,6 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
   botonCancelar.addEventListener("click", cancelarEdicion);
 
   tipo.addEventListener("change", actualizarFormulario);
+  fecha.addEventListener("change", actualizarFormulario);
   destino.addEventListener("change", actualizarFormulario);
   form.addEventListener("submit", (evento) => {
     if (!fecha.value || !Number.isInteger(Number(importe.value)) || Number(importe.value) <= 0) {
