@@ -58,7 +58,6 @@
                             <th>N° Cheque</th>
                             <th>Cliente</th>
                             <th>Banco</th>
-                            <th>Emisión</th>
                             <th>Fecha de Pago</th>
                             <th class="text-end">Importe</th>
                             <th>Endosado A</th>
@@ -109,25 +108,15 @@
                         </select>
                     </label>
                 </div>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label>
-                            Emisión
-                            <input name="fecha_emision" type="date" class="input-personalizado" required>
-                        </label>
-                    </div>
-                    <div class="col-6">
-                        <label>
-                            Fecha de Pago
-                            <input name="fecha_pago" type="date" class="input-personalizado" required>
-                        </label>
-                    </div>
-                </div>
+                <label>
+                    Fecha de Pago
+                    <input name="fecha_pago" type="date" class="input-personalizado" required>
+                </label>
                 <div class="row g-2">
                     <div class="col-6">
                         <label>
                             Importe ($)
-                            <input name="importe" type="number" min="0.01" step="0.01" class="input-personalizado" required placeholder="0.00">
+                            <input name="importe" type="text" inputmode="decimal" autocomplete="off" class="input-personalizado" required placeholder="Ej: 125.000,50" data-importe-ar>
                         </label>
                     </div>
                     <div class="col-6">
@@ -164,6 +153,7 @@
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
     <script id="cheques-data" type="application/json">{{ cheques | tojson }}</script>
+    <script src="{{ url_for('static', filename='js/formato-importes.js') }}"></script>
     <script src="/static/js/cheques.js"></script>
 {% endblock %}
     

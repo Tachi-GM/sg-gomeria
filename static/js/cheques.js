@@ -33,7 +33,6 @@ function render() {
             <td class="fw-bold text-primary">#${esc(c.numero)}</td>
             <td class="fw-bold">${esc(c.cliente)}</td>
             <td>${esc(c.banco)}</td>
-            <td>${esc(c.fecha_emision)}</td>
             <td class="fw-medium">${esc(c.fecha_pago)}</td>
             <td class="text-end fw-bold text-dark">${money(Number(c.importe))}</td>
             <td class="text-secondary">${esc(c.endosado) || '<span class="text-muted small">&mdash;</span>'}</td>

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from database.connection import obtener_conexion
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
-from utils.formateadores import parse_int_seguro, parse_float_seguro
+from utils.formateadores import parse_int_seguro, parse_importe_ar
 
 cheques_bp = Blueprint("cheques_bp", __name__)
 
@@ -12,7 +12,7 @@ def cheques():
     conexion = obtener_conexion()
     cursor = conexion.cursor()
     filas = cursor.execute("""
-        SELECT ch.id_cheque, ch.numero, ch.banco, ch.fecha_emision, ch.fecha_pago,
+        SELECT ch.id_cheque, ch.numero, ch.banco, ch.fecha_pago,
                ch.importe, ch.estado, ch.endosado, ch.id_cliente,
                COALESCE(c.nom_cli, ch.cliente) AS cliente,
                c.cuit AS cliente_cuit
@@ -57,9 +57,9 @@ def agregar_cheque():
     id_cliente_raw = request.form.get("id_cliente")
     cliente_texto = request.form.get("cliente", "").strip()
     banco = request.form.get("banco", "").strip()
-    fecha_emision = request.form.get("fecha_emision", "")
     fecha_pago = request.form.get("fecha_pago", "")
-    importe = parse_float_seguro(request.form.get("importe"), 0.0)
+    # El importe viene como lo escribe el usuario: "125.000,50" (puntos de miles, coma decimal).
+    importe = parse_importe_ar(request.form.get("importe"), 0.0)
     estado = request.form.get("estado", "Pendiente")
     endosado = request.form.get("endosado", "").strip()
 
@@ -103,15 +103,14 @@ def agregar_cheque():
     cursor.execute(
         """
         INSERT INTO cheques (
-            numero, cliente, banco, fecha_emision, fecha_pago, importe, estado, endosado, id_cliente
+            numero, cliente, banco, fecha_pago, importe, estado, endosado, id_cliente
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """,
         (
             numero,
             cliente_nom,
             banco,
-            fecha_emision,
             fecha_pago,
             importe,
             estado,
@@ -134,7 +133,6 @@ def agregar_cheque():
             "numero": numero,
             "cliente": cliente_nom,
             "banco": banco,
-            "fecha_emision": fecha_emision,
             "fecha_pago": fecha_pago,
             "importe": importe,
             "estado": estado,
