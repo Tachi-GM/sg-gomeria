@@ -11,7 +11,7 @@
                    style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
                    data-id="{{ r['id_trabajo'] }}" data-estado="{{ r['estado'] }}"
                    {% if r['estado'] == 'PAGADO' %}checked{% endif %}
-                   title="{{ r['estado'] }}">
+                   title="{{ r['estado'] | estado_remito }}">
         </div>
     </td>
     <td class="py-3 text-center" onclick="event.stopPropagation()">

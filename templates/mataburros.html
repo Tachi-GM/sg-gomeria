@@ -168,6 +168,18 @@
                     </div>
                 </div>
 
+                <!-- 4b. Total final directo (alternativa a elegir tareas) -->
+                <div class="mb-4" id="bloque-total-directo">
+                    <label for="total-directo" class="form-label small fw-bold text-secondary text-uppercase mb-1">O cargar solo el total final</label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">$</span>
+                        <input type="text" name="total_directo" id="total-directo" class="form-control input-personalizado"
+                               inputmode="decimal" autocomplete="off" placeholder="Ej: 1.250.000,50" data-importe-ar>
+                    </div>
+                    <div class="form-text small text-muted">Para cuando no hace falta el detalle de tareas. Se guarda tal cual lo escribas. Los centavos van con coma. Si lo completás, no se eligen tareas.</div>
+                    <div id="aviso-total-directo" class="alert alert-warning py-2 small fw-bold d-none mt-2" role="alert"></div>
+                </div>
+
                 <!-- 5. Botón Guardar / Enviar -->
                 <div class="mt-5">
                     <div class="mt-3 p-3 rounded-3" style="background-color:#eef2ff;">
@@ -201,5 +213,6 @@
     <script id="tareas-data" type="application/json">{{ tareas_json | tojson }}</script>
     <script id="tareas-temporales-data" type="application/json">{{ tareas_temporales | tojson }}</script>
     <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
+    <script src="{{ url_for('static', filename='js/formato-importes.js') }}"></script>
     <script src="/static/js/mataburros.js"></script>
 {% endblock %}

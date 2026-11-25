@@ -14,6 +14,7 @@ from routes.usuarios import usuarios_bp
 from routes.gomeros import gomeros_bp
 from routes.exportaciones import exportaciones_bp
 from utils.seguridad import login_requerido, solo_admin
+from utils.formateadores import etiqueta_estado_remito
 
 # 1. Configuración de variables de entorno
 load_dotenv()
@@ -43,6 +44,10 @@ app.config["UPLOAD_DIR"] = os.getenv("UPLOAD_DIR", "uploads")
 
 def modo_activo():
     return session.get("modo_milagritos", False)
+
+
+# Filtro de plantillas: {{ remito.estado | estado_remito }} -> "Aceptado" / "En proceso" / "Pagado".
+app.add_template_filter(etiqueta_estado_remito, "estado_remito")
 
 
 @app.context_processor

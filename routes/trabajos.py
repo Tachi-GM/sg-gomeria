@@ -118,6 +118,7 @@ def enviar_trabajo():
         fecha=fecha,
         tareas_temporales=tareas_temporales,
         foto_remito=ruta_foto,
+        total_directo=request.form.get("total_directo"),
     )
     if not exito and ruta_foto:
         eliminar_foto_remito(ruta_foto, current_app.config.get("UPLOAD_DIR", "uploads"))

@@ -46,6 +46,9 @@ function aplicarEstiloCheckPago(chk) {
     }
 }
 
+// Cómo se nombran los estados en pantalla (en la base siguen siendo PENDIENTE / PAGADO).
+const ETIQUETAS_ESTADO = { 'PENDIENTE': 'Aceptado', 'EN PROCESO': 'En proceso', 'PAGADO': 'Pagado' };
+
 function inicializarCheckboxesPago() {
     document.querySelectorAll('.check-pago').forEach(aplicarEstiloCheckPago);
     document.addEventListener('change', function (event) {
@@ -66,7 +69,7 @@ function inicializarCheckboxesPago() {
         .then(data => {
             if (data.exito) {
                 chk.dataset.estado = nuevoEstado;
-                chk.title = nuevoEstado;
+                chk.title = ETIQUETAS_ESTADO[nuevoEstado] || nuevoEstado;
                 aplicarEstiloCheckPago(chk);
             } else {
                 chk.checked = !chk.checked;
