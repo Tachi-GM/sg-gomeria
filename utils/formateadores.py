@@ -1,3 +1,4 @@
+import math
 import re
 
 
@@ -16,10 +17,36 @@ def parse_float_seguro(valor, por_defecto=0.0):
     try:
         if valor is None or str(valor).strip() == "":
             return por_defecto
-        limpio = str(valor).strip().replace(",", ".")
-        return float(limpio)
+        limpio = str(valor).strip()
+        # Si vienen punto y coma juntos (1.234,56), el punto es de miles y la coma decimal.
+        if "," in limpio and "." in limpio:
+            limpio = limpio.replace(".", "")
+        return float(limpio.replace(",", "."))
     except (ValueError, TypeError):
         return por_defecto
+
+
+def parse_importe_ar(valor, por_defecto=0.0):
+    """Lee un importe escrito a la argentina: puntos de miles y coma decimal.
+
+    Ejemplos: "1.234.567,89" -> 1234567.89 · "1234,5" -> 1234.5 · "1.250" -> 1250
+    · "$ 500" -> 500. También acepta el decimal con punto ("1234.5") por
+    compatibilidad con campos numéricos. Si no se entiende devuelve `por_defecto`.
+    """
+    if valor is None:
+        return por_defecto
+    texto = str(valor).strip().replace("$", "").replace(" ", "")
+    if not texto:
+        return por_defecto
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")  # 1.234,56 -> 1234.56
+    elif texto.count(".") > 1 or re.fullmatch(r"-?\d{1,3}\.\d{3}", texto):
+        texto = texto.replace(".", "")  # 1.234.567 o 1.250 -> miles
+    try:
+        numero = float(texto)
+    except ValueError:
+        return por_defecto
+    return numero if math.isfinite(numero) else por_defecto
 
 
 def validar_y_formatear_cuit(cuit_raw):
@@ -106,6 +133,19 @@ def validar_y_formatear_remito(tipo, remito_raw):
                     "El remito OIB debe tener formato 00XXXX (máximo 4 dígitos precedidos por 00)",
                 )
             return True, f"00{remito_limpio.zfill(4)}"
+
+
+# Cómo se nombran los estados de un remito en pantalla (en la base se guardan sin cambios).
+ETIQUETAS_ESTADO_REMITO = {
+    "PENDIENTE": "Aceptado",
+    "EN PROCESO": "En proceso",
+    "PAGADO": "Pagado",
+}
+
+
+def etiqueta_estado_remito(estado):
+    """'PENDIENTE' -> 'Aceptado': así lo ven los clientes; la base conserva el valor original."""
+    return ETIQUETAS_ESTADO_REMITO.get(str(estado or "").upper(), estado or "")
 
 
 MESES_ABREVIADOS = {
