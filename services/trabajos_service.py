@@ -6,10 +6,14 @@ from utils.seguridad import registrar_auditoria
 from utils.formateadores import (
     parse_int_seguro,
     parse_float_seguro,
+    parse_importe_ar,
     validar_y_formatear_remito,
 )
 
 logger = logging.getLogger("SG_Gomeria")
+
+# Texto del renglón único de un remito cargado solo con el total final.
+ETIQUETA_TOTAL_DIRECTO = "Total cargado directamente"
 
 
 def crear_trabajo_completo(
@@ -23,11 +27,16 @@ def crear_trabajo_completo(
     fecha=None,
     tareas_temporales=None,
     foto_remito=None,
+    total_directo=None,
 ):
     """
     Procesa y registra un remito y sus renglones en la base de datos.
     Aplica validación de formato (OI: 5 dígitos, OIB: 00XXXX), fecha manual y
     descuento de IVA por cada tarea si el cliente no lleva IVA.
+
+    Alternativa a las tareas: `total_directo` (texto como "1.250.000,50"). Se
+    guarda tal cual, sin tocar el IVA, en un único renglón «Total cargado
+    directamente». Es una cosa u otra: con total directo no se pueden elegir tareas.
     Retorna una tupla: (exito: bool, mensaje: str)
     """
     if tipo not in ("OI", "OIB"):
@@ -84,8 +93,16 @@ def crear_trabajo_completo(
                     )
                 )
 
-    if not tareas_seleccionadas:
-        return False, "Error: Debes seleccionar al menos una tarea válida"
+    total_directo_valor = None
+    if total_directo is not None and str(total_directo).strip():
+        total_directo_valor = parse_importe_ar(total_directo, None)
+        if total_directo_valor is None or total_directo_valor <= 0:
+            return False, "Error: El total ingresado no es válido (tiene que ser mayor a cero)"
+        total_directo_valor = round(total_directo_valor, 2)
+        if tareas_seleccionadas:
+            return False, "Error: Elegí tareas o cargá el total final, pero no las dos cosas"
+    elif not tareas_seleccionadas:
+        return False, "Error: Debes seleccionar al menos una tarea válida o cargar el total final"
 
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -138,6 +155,13 @@ def crear_trabajo_completo(
                     detalles_a_guardar.append(
                         (id_t, cantidad, precio_unitario, subtotal)
                     )
+
+        # Total directo: se guarda tal cual (sin dividir por 1,21) en un único renglón.
+        if total_directo_valor is not None:
+            total_trabajo = total_directo_valor
+            detalles_temporales_a_guardar.append(
+                (ETIQUETA_TOTAL_DIRECTO, 1, total_directo_valor, total_directo_valor)
+            )
 
         # El total es la suma exacta de los renglones
         total_trabajo = round(total_trabajo, 2)

@@ -149,7 +149,47 @@ function modificarCantidad(boton, cambio) {
     calcularTotal();
 }
 
+// Total final escrito a mano (alternativa a elegir tareas). 0 si el campo está vacío.
+function leerTotalDirecto() {
+    const campo = document.getElementById('total-directo');
+    return campo ? window.ImporteAR.parse(campo.value) : 0;
+}
+
+function hayTareasElegidas() {
+    return Array.from(document.querySelectorAll('#contenedor-tareas .fila-tarea select'))
+        .some(select => select.value);
+}
+
+// Con total directo, las tareas se atenúan; si además hay tareas elegidas, se avisa.
+function actualizarEstadoTotalDirecto() {
+    const usaTotalDirecto = leerTotalDirecto() > 0;
+    document.getElementById('contenedor-tareas').classList.toggle('opacity-50', usaTotalDirecto);
+    const aviso = document.getElementById('aviso-total-directo');
+    const conflicto = usaTotalDirecto && hayTareasElegidas();
+    aviso.textContent = conflicto
+        ? 'Elegiste tareas y también un total final. Usá una sola opción: quitá las tareas o vaciá el total.'
+        : '';
+    aviso.classList.toggle('d-none', !conflicto);
+}
+
 function calcularTotal() {
+    actualizarEstadoTotalDirecto();
+
+    // Total final escrito a mano: se guarda tal cual (sin dividir por 1,21).
+    const totalDirecto = leerTotalDirecto();
+    if (totalDirecto > 0) {
+        if (clienteSinIva) {
+            document.getElementById('subtotal-parcial').textContent = formatearPesos(totalDirecto);
+            document.getElementById('iva-parcial').textContent = formatearPesos(0);
+        } else {
+            const neto = totalDirecto / TASA_IVA;
+            document.getElementById('subtotal-parcial').textContent = formatearPesos(neto);
+            document.getElementById('iva-parcial').textContent = formatearPesos(totalDirecto - neto);
+        }
+        document.getElementById('total-parcial').textContent = formatearPesos(totalDirecto);
+        return;
+    }
+
     const filas = document.querySelectorAll('#contenedor-tareas .fila-tarea');
     const listaActual = document.getElementById('tipo_lista').value;
     const columna = COLUMNA_PRECIO[listaActual];
@@ -200,11 +240,22 @@ function validarFormularioRemito(e) {
     if (!document.getElementById('select-empresa').value) {
         errores.push('Elegí un cliente.');
     }
-    document.querySelectorAll('#contenedor-tareas .fila-tarea').forEach((fila, i) => {
-        if (!fila.querySelector('select').value) {
-            errores.push(`Elegí la tarea de la fila ${i + 1}.`);
+    const textoTotalDirecto = document.getElementById('total-directo').value.trim();
+    const totalDirecto = leerTotalDirecto();
+    if (textoTotalDirecto && totalDirecto <= 0) {
+        errores.push('El total final no es válido: tiene que ser mayor a cero.');
+    } else if (totalDirecto > 0) {
+        // Total final: las tareas son opcionales, pero no se mezclan con él.
+        if (hayTareasElegidas()) {
+            errores.push('Elegí tareas o cargá el total final, pero no las dos cosas.');
         }
-    });
+    } else {
+        document.querySelectorAll('#contenedor-tareas .fila-tarea').forEach((fila, i) => {
+            if (!fila.querySelector('select').value) {
+                errores.push(`Elegí la tarea de la fila ${i + 1}.`);
+            }
+        });
+    }
 
     const caja = document.getElementById('errores-form');
     if (errores.length > 0) {
@@ -232,5 +283,6 @@ document.addEventListener('DOMContentLoaded', function () {
             calcularTotal();
         }
     });
+    document.getElementById('total-directo').addEventListener('input', calcularTotal);
     document.getElementById('form-remito').addEventListener('submit', validarFormularioRemito);
 });
