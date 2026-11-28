@@ -326,6 +326,12 @@
             <button onclick="window.print()" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm">
                 🖨️ Imprimir / Guardar como PDF
             </button>
+            <!-- Botón WhatsApp: envía texto pre‑llenado con datos del remito -->
+            <a href="https://wa.me/?text={{ ('Remito ' ~ trabajo.tipo ~ ' #' ~ trabajo.remito ~ ' - $' ~ '{:,.2f}'.format(trabajo.total) ~ ' - Cliente: ' ~ cliente.nom_cli) | url_encode }}" target="_blank" class="btn btn-sm btn-success rounded-pill px-4 fw-bold shadow-sm">
+                📲 Enviar por WhatsApp
+            </a>
+                🖨️ Imprimir / Guardar como PDF
+            </button>
         </div>
     </div>
 
