@@ -6,12 +6,15 @@
     <td class="py-3 text-secondary">{{ r['detalle'] | default('', true) }}</td>
     <td class="py-3 text-end fw-bold text-dark fs-6">&#36;{{ "{:,.2f}".format(r['total']) }}</td>
     <td class="py-3 text-center" onclick="event.stopPropagation()">
-        <div class="form-check d-flex justify-content-center mb-0">
-            <input class="form-check-input check-pago" type="checkbox"
+        <div class="d-inline-flex align-items-center justify-content-center gap-2">
+            <input class="form-check-input check-pago m-0" type="checkbox"
                    style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
                    data-id="{{ r['id_trabajo'] }}" data-estado="{{ r['estado'] }}"
                    {% if r['estado'] == 'PAGADO' %}checked{% endif %}
                    title="{{ r['estado'] | estado_remito }}">
+            <span class="badge rounded-pill badge-estado-remito {% if r['estado'] == 'PAGADO' %}text-bg-success{% elif r['estado'] == 'EN PROCESO' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                {% if r['estado'] == 'PAGADO' %}✅ Pagado{% elif r['estado'] == 'EN PROCESO' %}⏳ En proceso{% else %}📋 Aceptado{% endif %}
+            </span>
         </div>
     </td>
     <td class="py-3 text-center" onclick="event.stopPropagation()">
@@ -47,6 +50,12 @@
                class="btn btn-sm btn-outline-primary rounded-pill fw-bold"
                target="_blank" rel="noopener" onclick="event.stopPropagation()">
                 🖨️ Ver / Imprimir Comprobante
+            </a>
+            {% set msg_wa = "Hola! Te compartimos el comprobante de Gomería El Puente: Remito " ~ r['tipo'] ~ " #" ~ r['remito'] ~ " · Fecha: " ~ r['fecha'] ~ " · Total: $" ~ "{:,.2f}".format(r['total']) %}
+            <a href="https://wa.me/?text={{ msg_wa | urlencode }}"
+               class="btn btn-sm btn-outline-success rounded-pill fw-bold"
+               target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                💬 Enviar por WhatsApp
             </a>
         </div>
         {% if r['foto_remito'] %}

@@ -323,6 +323,11 @@
             &larr; Volver
         </a>
         <div class="d-flex gap-2">
+            {% set msg_wa_imp = "Hola! Te compartimos el comprobante de Gomería El Puente: Remito " ~ trabajo.tipo ~ " #" ~ trabajo.remito ~ " · Fecha: " ~ trabajo.fecha ~ " · Total: $" ~ "{:,.2f}".format(trabajo.total) %}
+            <a href="https://wa.me/?text={{ msg_wa_imp | urlencode }}" target="_blank" rel="noopener"
+               class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm">
+                💬 Enviar por WhatsApp
+            </a>
             <button onclick="window.print()" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm">
                 🖨️ Imprimir / Guardar como PDF
             </button>

@@ -38,11 +38,19 @@ function cambiarEstado(select, idTrabajo) {
 function aplicarEstiloCheckPago(chk) {
     const fila = chk.closest('tr.fila-remito');
     if (!fila) return;
+    const badge = fila.querySelector('.badge-estado-remito');
+    const estado = chk.dataset.estado || (chk.checked ? 'PAGADO' : 'PENDIENTE');
     if (chk.checked) {
         fila.classList.add('table-success');
         fila.classList.remove('table-warning');
     } else {
         fila.classList.remove('table-success');
+    }
+    if (badge) {
+        badge.className = 'badge rounded-pill badge-estado-remito ' + (
+            estado === 'PAGADO' ? 'text-bg-success' : (estado === 'EN PROCESO' ? 'text-bg-warning' : 'text-bg-secondary')
+        );
+        badge.textContent = estado === 'PAGADO' ? '✅ Pagado' : (estado === 'EN PROCESO' ? '⏳ En proceso' : '📋 Aceptado');
     }
 }
 
@@ -71,15 +79,20 @@ function inicializarCheckboxesPago() {
                 chk.dataset.estado = nuevoEstado;
                 chk.title = ETIQUETAS_ESTADO[nuevoEstado] || nuevoEstado;
                 aplicarEstiloCheckPago(chk);
+                if (window.mostrarToast) {
+                    window.mostrarToast(`Remito marcado como ${ETIQUETAS_ESTADO[nuevoEstado] || nuevoEstado}.`, 'success');
+                }
             } else {
                 chk.checked = !chk.checked;
-                alert('No se pudo actualizar el estado. Intentá de nuevo.');
+                if (window.mostrarToast) window.mostrarToast('No se pudo actualizar el estado.', 'danger');
+                else alert('No se pudo actualizar el estado. Intentá de nuevo.');
             }
         })
         .catch(err => {
             console.error(err);
             chk.checked = !chk.checked;
-            alert('Error de comunicación. Intentá de nuevo.');
+            if (window.mostrarToast) window.mostrarToast('Error de comunicación al actualizar.', 'danger');
+            else alert('Error de comunicación. Intentá de nuevo.');
         });
     });
 }

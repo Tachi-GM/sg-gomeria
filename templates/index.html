@@ -74,6 +74,13 @@
                             <small>Gestionar sueldos, adelantos y gastos</small>
                         </span>
                     </a>
+                    <a href="{{ url_for('general_bp.caja_diaria') }}" class="btn btn-capsula px-4 shadow-sm col-11 col-sm-8 text-decoration-none text-center">
+                        <span class="accion-icono">💵</span>
+                        <span class="accion-contenido">
+                            <strong>Cierre de caja</strong>
+                            <small>Resumen diario de remitos y gastos</small>
+                        </span>
+                    </a>
                     {% if session.get('rol') == 'admin' %}
                     <a href="{{ url_for('usuarios_bp.listar_usuarios') }}" class="btn btn-capsula px-4 shadow-sm col-11 col-sm-8 text-decoration-none text-center">
                         <span class="accion-icono">🔐</span>
@@ -130,6 +137,25 @@
                             </div>
                         </div>
                     </div>
+                    {% if resumen.cheques_urgentes %}
+                    <div class="alert alert-warning border-0 shadow-sm rounded-4 mt-3 mb-0 text-start p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="small">⚠️ Cheques vencidos o por vencer (7 días): {{ resumen.cheques_por_vencer_7d }}</strong>
+                            <a href="{{ url_for('cheques_bp.cheques') }}" class="small fw-bold text-decoration-none">Ver todos →</a>
+                        </div>
+                        <ul class="list-unstyled mb-0 small">
+                            {% for ch in resumen.cheques_urgentes %}
+                            <li class="d-flex justify-content-between border-top pt-1 mt-1">
+                                <span>
+                                    {% if ch.vencido %}<span class="badge text-bg-danger">Vencido</span>{% endif %}
+                                    <strong>#{{ ch.numero }}</strong> · {{ ch.cliente }} ({{ ch.fecha_pago }})
+                                </span>
+                                <span class="fw-bold">${{ "{:,.0f}".format(ch.importe).replace(",", ".") }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -1,0 +1,134 @@
+{% extends "base/base.html" %}
+{% block title %}Cierre de Caja Diario - Gomería El Puente{% endblock %}
+{% block subtitle %}💵 Cierre de Caja Diario{% endblock %}
+
+{% block content %}
+<div class="container pb-5">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h2 class="h5 fw-bold mb-1">Resumen del día {{ caja.fecha }}</h2>
+                <p class="text-muted small mb-0">Remitos emitidos, cheques con vencimiento hoy y movimientos de gomeros.</p>
+            </div>
+            <form method="GET" action="{{ url_for('general_bp.caja_diaria') }}" class="d-flex align-items-center gap-2">
+                <input type="date" name="fecha" value="{{ caja.fecha }}" class="form-control form-control-sm">
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">Ver fecha</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-secondary small fw-bold text-uppercase">Facturado hoy</div>
+                    <div class="fs-4 fw-bold text-primary mt-1">${{ "{:,.2f}".format(caja.total_facturado) }}</div>
+                    <div class="small text-muted">{{ caja.cantidad_remitos }} remito(s)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-secondary small fw-bold text-uppercase">Cobrado (Pagado)</div>
+                    <div class="fs-4 fw-bold text-success mt-1">${{ "{:,.2f}".format(caja.total_pagado) }}</div>
+                    <div class="small text-muted">Remitos marcados pagados</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-secondary small fw-bold text-uppercase">Pendiente de cobro</div>
+                    <div class="fs-4 fw-bold text-warning mt-1">${{ "{:,.2f}".format(caja.total_pendiente) }}</div>
+                    <div class="small text-muted">Cuenta corriente del día</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-secondary small fw-bold text-uppercase">Gastos / Gomeros</div>
+                    <div class="fs-4 fw-bold text-danger mt-1">${{ "{:,.0f}".format(caja.total_gastos_gomeros) }}</div>
+                    <div class="small text-muted">{{ caja.movimientos_gomeros|length }} movimiento(s)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 pt-3 px-4">
+            <h3 class="h6 fw-bold mb-0">🧾 Remitos del día</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="small text-secondary text-uppercase">
+                        <th class="px-4">Remito</th>
+                        <th>Cliente</th>
+                        <th>Detalle</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-end px-4">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in caja.remitos %}
+                    <tr>
+                        <td class="px-4 fw-bold text-primary">{{ r.tipo }} #{{ r.remito }}</td>
+                        <td class="fw-semibold">{{ r.nom_cli }}</td>
+                        <td class="text-secondary small">{{ r.detalle or '—' }}</td>
+                        <td class="text-center">
+                            <span class="badge rounded-pill {% if r.estado == 'PAGADO' %}text-bg-success{% elif r.estado == 'EN PROCESO' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                                {% if r.estado == 'PAGADO' %}✅ Pagado{% elif r.estado == 'EN PROCESO' %}⏳ En proceso{% else %}📋 Aceptado{% endif %}
+                            </span>
+                        </td>
+                        <td class="text-end px-4 fw-bold">${{ "{:,.2f}".format(r.total) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No se registraron remitos en esta fecha.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-3 px-4">
+                    <h3 class="h6 fw-bold mb-0">💳 Cheques con fecha de cobro hoy</h3>
+                </div>
+                <div class="card-body pt-2">
+                    {% for ch in caja.cheques_dia %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 small">
+                        <div><strong>#{{ ch.numero }}</strong> · {{ ch.cliente }} ({{ ch.banco }})</div>
+                        <div class="fw-bold">${{ "{:,.2f}".format(ch.importe) }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">No hay cheques con fecha de cobro para este día.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-3 px-4">
+                    <h3 class="h6 fw-bold mb-0">🛠️ Movimientos de gomeros / gastos</h3>
+                </div>
+                <div class="card-body pt-2">
+                    {% for m in caja.movimientos_gomeros %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 small">
+                        <div><strong>{{ m.gomero }}</strong> · {{ m.tipo }} {% if m.concepto %}({{ m.concepto }}){% endif %}</div>
+                        <div class="fw-bold text-danger">-${{ "{:,.0f}".format(m.importe) }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">No se registraron gastos o adelantos en esta fecha.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

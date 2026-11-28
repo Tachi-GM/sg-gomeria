@@ -40,9 +40,9 @@ function render() {
                 <select class="form-select form-select-sm select-estado ${claseSegunEstado(c.estado)}"
                         data-id="${c.id_cheque}"
                         onchange="cambiarEstadoCheque(this, ${c.id_cheque})">
-                    <option value="Pendiente" ${c.estado === 'Pendiente' ? 'selected' : ''}>Aceptado</option>
-                    <option value="Cobrado" ${c.estado === 'Cobrado' ? 'selected' : ''}>Cobrado</option>
-                    <option value="Rechazado" ${c.estado === 'Rechazado' ? 'selected' : ''}>Rechazado</option>
+                    <option value="Pendiente" ${c.estado === 'Pendiente' ? 'selected' : ''}>⏳ Aceptado</option>
+                    <option value="Cobrado" ${c.estado === 'Cobrado' ? 'selected' : ''}>✅ Cobrado</option>
+                    <option value="Rechazado" ${c.estado === 'Rechazado' ? 'selected' : ''}>❌ Rechazado</option>
                 </select>
             </td>
             <td class="text-center">
@@ -78,9 +78,14 @@ function cambiarEstadoCheque(select, idCheque) {
         // Repintar clase del select
         select.className = `form-select form-select-sm select-estado ${claseSegunEstado(nuevoEstado)}`;
         render();
+        if (window.mostrarToast) {
+            const etiqueta = nuevoEstado === 'Pendiente' ? 'Aceptado' : nuevoEstado;
+            window.mostrarToast(`Cheque actualizado a ${etiqueta}.`, 'success');
+        }
     })
     .catch(err => {
-        alert('No se pudo actualizar el estado del cheque.');
+        if (window.mostrarToast) window.mostrarToast('No se pudo actualizar el estado del cheque.', 'danger');
+        else alert('No se pudo actualizar el estado del cheque.');
         console.error(err);
     });
 }

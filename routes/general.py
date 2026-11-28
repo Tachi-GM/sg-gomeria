@@ -8,11 +8,15 @@ from flask import (
     Blueprint,
     current_app,
     render_template,
+    request,
     send_file,
     send_from_directory,
 )
 from database.connection import get_db_path
-from services.dashboard_service import obtener_resumen_inicio
+from services.dashboard_service import (
+    obtener_resumen_caja_diaria,
+    obtener_resumen_inicio,
+)
 from config.empresa_loader import obtener_datos_empresa
 from utils.seguridad import (
     login_requerido,
@@ -32,6 +36,18 @@ def home():
         "index.html",
         milagritos=modo_activo(),
         resumen=obtener_resumen_inicio(),
+    )
+
+
+@general_bp.route("/caja-diaria")
+@login_requerido
+def caja_diaria():
+    """Muestra el cierre de caja / resumen diario para la fecha seleccionada."""
+    fecha = request.args.get("fecha", "").strip() or None
+    return render_template(
+        "caja_diaria.html",
+        milagritos=modo_activo(),
+        caja=obtener_resumen_caja_diaria(fecha),
     )
 
 
