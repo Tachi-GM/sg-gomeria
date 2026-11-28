@@ -16,7 +16,17 @@ from routes.exportaciones import exportaciones_bp
 from utils.seguridad import login_requerido, solo_admin
 from utils.formateadores import etiqueta_estado_remito
 
-# 1. Configuración de variables de entorno
+import os
+import logging
+import urllib.parse
+from flask import Flask, render_template, request, redirect, url_for, session
+from dotenv import load_dotenv
+
+# Filtro para codificar URLs en plantillas
+def url_encode(s):
+    return urllib.parse.quote_plus(str(s))
+
+# Registro del filtro en la aplicación (se hará después de crear app)
 load_dotenv()
 
 # 2. Configuración centralizada de Logging
@@ -37,6 +47,9 @@ logger = logging.getLogger("SG_Gomeria")
 
 # 3. Creación y configuración de la app Flask
 app = Flask(__name__)
+# Registro del filtro URL‑encode para usar en plantillas Jinja
+app.add_template_filter(url_encode, "url_encode")
+app.jinja_env.filters["url_encode"] = url_encode
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-gomeria-2026-cambiar-en-prod")
 app.config["UPLOAD_DIR"] = os.getenv("UPLOAD_DIR", "uploads")

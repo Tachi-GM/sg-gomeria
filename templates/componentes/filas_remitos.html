@@ -22,11 +22,10 @@
             <a href="{{ url_for('trabajos_bp.imprimir_remito', id_trabajo=r['id_trabajo']) }}"
                class="btn btn-sm btn-outline-primary rounded-pill px-2"
                target="_blank" rel="noopener" title="Imprimir o guardar remito en PDF">🖨️</a>
-            <button type="button"
-                    class="btn btn-sm btn-outline-secondary btn-editar-remito rounded-pill px-2"
-                    data-id="{{ r['id_trabajo'] }}" data-tipo="{{ r['tipo'] }}"
-                    data-remito="{{ r['remito'] }}" data-fecha="{{ r['fecha'] }}"
-                    title="Editar remito y fecha">✏️</button>
+            <!-- Botón WhatsApp: envía texto pre‑llenado con datos del remito -->
+            <a href="https://wa.me/?text={{ ('Remito ' ~ r['tipo'] ~ ' #' ~ r['remito'] ~ ' - $' ~ '{:,.2f}'.format(r['total']) ~ ' - Cliente: ' ~ r['nom_cli']) | url_encode }}" target="_blank" class="btn btn-sm btn-success rounded-pill px-2 fw-bold" title="Enviar por WhatsApp">
+                📲
+            </a>
         </div>
     </td>
 </tr>
