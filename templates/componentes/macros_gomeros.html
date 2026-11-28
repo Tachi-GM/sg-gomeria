@@ -1,6 +1,9 @@
 {# Macros compartidas por las pantallas del módulo gomeros #}
 {% macro peso(valor) %}{{ '$' ~ '{:,.0f}'.format(valor or 0).replace(',', '.') }}{% endmacro %}
 
+{# 1250000.5 -> $1.250.000,50 (con centavos, al estilo argentino) #}
+{% macro monto(valor) %}{{ '$' ~ '{:,.2f}'.format(valor or 0).replace(',', '#').replace('.', ',').replace('#', '.') }}{% endmacro %}
+
 {# '2026-2' -> 'julio – diciembre 2026' #}
 {% macro semestre(periodo) %}{{ 'enero – junio' if periodo[-1] == '1' else 'julio – diciembre' }} {{ periodo[:4] }}{% endmacro %}
 

@@ -12,14 +12,27 @@
 
 {% block content %}
     <div class="page">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="alert alert-{{ categoria }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
         <header class="heading">
             <div>
                 <h1 class="fw-bold text-dark">Cartera de Cheques</h1>
                 <p class="subtitle">Control y seguimiento de pagos, estados y endosos.</p>
             </div>
-            <button class="btn btn-success px-4 fw-bold rounded-pill shadow-sm" id="new-check" style="background-color: var(--azul); border-color: var(--azul);">
-                ＋ Nuevo Cheque
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-success px-4 fw-bold rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalImportarCheques">
+                    📥 Importar desde Excel
+                </button>
+                <button class="btn btn-success px-4 fw-bold rounded-pill shadow-sm" id="new-check" style="background-color: var(--azul); border-color: var(--azul);">
+                    ＋ Nuevo Cheque
+                </button>
+            </div>
         </header>
 
         <!-- TARJETAS DE RESUMEN -->
@@ -29,11 +42,11 @@
                 <span class="value" id="total">0</span>
             </div>
             <div class="card-custom stat">
-                <span class="label">Pendientes</span>
+                <span class="label">Aceptados</span>
                 <span class="value text-warning" id="pending">0</span>
             </div>
             <div class="card-custom stat">
-                <span class="label">Importe pendiente</span>
+                <span class="label">Importe aceptado</span>
                 <span class="value" id="amount" style="color: var(--azul);">$ 0,00</span>
             </div>
         </section>
@@ -44,7 +57,7 @@
                 <input id="search" class="search input-personalizado" type="search" placeholder="Buscar por cliente, banco, número o endosado…" aria-label="Buscar">
                 <select id="status-filter" class="filter" aria-label="Filtrar por estado">
                     <option value="">Todos los estados</option>
-                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pendiente">Aceptado</option>
                     <option value="Cobrado">Cobrado</option>
                     <option value="Rechazado">Rechazado</option>
                 </select>
@@ -123,7 +136,7 @@
                         <label>
                             Estado
                             <select name="estado" class="input-personalizado">
-                                <option value="Pendiente" selected>Pendiente</option>
+                                <option value="Pendiente" selected>Aceptado</option>
                                 <option value="Cobrado">Cobrado</option>
                                 <option value="Rechazado">Rechazado</option>
                             </select>
@@ -148,12 +161,46 @@
             </div>
         </form>
     </dialog>
+
+    <!-- MODAL: IMPORTAR CHEQUES DESDE UN EXCEL -->
+    <div class="modal fade" id="modalImportarCheques" tabindex="-1" aria-labelledby="tituloImportarCheques" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('cheques_bp.importar_cheques') }}" method="POST" enctype="multipart/form-data"
+                      data-importar-excel data-confirmar-importar="¿Importar los cheques del archivo">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="tituloImportarCheques">Importar cheques desde Excel</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="archivo-cheques" class="form-label small fw-bold text-secondary">Archivo de Excel (.xlsx)</label>
+                        <input id="archivo-cheques" name="archivo" type="file" class="form-control mb-3"
+                               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        <div class="alert alert-info small mb-2">
+                            <strong>Qué hace:</strong> carga los cheques nuevos del Excel. Los que ya estaban no se duplican.
+                            Si el cliente no existe se crea (antes se buscan sus alias). Al terminar se muestra un informe con
+                            lo que conviene revisar. Antes se guarda una copia de seguridad automática.
+                        </div>
+                        <p class="small text-muted mb-0">
+                            Columnas: <em>Numero, Banco, Librador, Destino, Importe y Fecha</em>. La fecha del Excel se toma como
+                            fecha de pago y el <em>Destino</em> como endosado.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold" data-boton-importar>Importar cheques</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
     <script id="cheques-data" type="application/json">{{ cheques | tojson }}</script>
     <script src="{{ url_for('static', filename='js/formato-importes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/importar-excel.js') }}"></script>
     <script src="/static/js/cheques.js"></script>
 {% endblock %}
     
