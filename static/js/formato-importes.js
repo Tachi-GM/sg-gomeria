@@ -31,12 +31,19 @@
     return Number.isFinite(numero) ? numero : 0;
   }
 
+  // data-importe-ar="entero": sin centavos (la coma se descarta). Útil para sueldos e importes de gomeros.
+  const esEntero = (campo) => campo.dataset.importeAr === "entero";
+  const darFormato = (campo, texto) => {
+    const limpio = limpiar(texto);
+    return formatear(esEntero(campo) ? limpio.replace(",", "") : limpio);
+  };
+
   function alEscribir(campo) {
     // Para no mover el cursor: se cuenta cuántos dígitos/comas había antes de él
     // y, tras darle formato, se lo coloca después de la misma cantidad.
     const cursor = campo.selectionStart ?? campo.value.length;
     const antes = (campo.value.slice(0, cursor).match(/[\d,]/g) || []).length;
-    campo.value = formatear(limpiar(campo.value));
+    campo.value = darFormato(campo, campo.value);
 
     let posicion = 0;
     let vistos = 0;
@@ -50,7 +57,7 @@
   function iniciar() {
     document.querySelectorAll("input[data-importe-ar]").forEach((campo) => {
       campo.addEventListener("input", () => alEscribir(campo));
-      if (campo.value) campo.value = formatear(limpiar(campo.value));
+      if (campo.value) campo.value = darFormato(campo, campo.value);
     });
   }
 

@@ -31,7 +31,7 @@
 <div class="col-sm-6"><label for="tipo" class="form-label">Tipo</label><select id="tipo" name="tipo" class="form-select"><option value="ADELANTO">Adelanto de dinero</option><option value="PAGO_SEMANAL">Pago de sueldo (sábado)</option><option value="GASTO_GENERAL">Gasto general</option><option value="DESCUENTO_AGUINALDO">Descuento aplicado al aguinaldo</option></select></div>
 <div class="col-sm-6"><label for="fecha" class="form-label">Fecha</label><input id="fecha" name="fecha" type="date" class="form-control" value="{{ hoy }}" required></div>
 <div class="col-sm-6 campo-gomero"><label for="id_gomero" class="form-label">Gomero</label><select id="id_gomero" name="id_gomero" class="form-select">{% for g in gomeros %}<option value="{{ g.id_gomero }}">{{ g.nombre }}</option>{% endfor %}</select></div>
-<div class="col-sm-6"><label for="importe" class="form-label">Importe ($)</label><input id="importe" name="importe" type="number" min="1" step="1" class="form-control" required></div>
+<div class="col-sm-6"><label for="importe" class="form-label">Importe ($)</label><input id="importe" name="importe" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" class="form-control" required></div>
 <div class="col-sm-6 campo-destino"><label for="destino" class="form-label">Descontar de</label><select id="destino" name="destino" class="form-select"><option value="SUELDO">Sueldo semanal</option><option value="AGUINALDO">Aguinaldo</option></select></div>
 <div class="col-sm-6 campo-aguinaldo d-none"><label for="periodo_aguinaldo" class="form-label">Período de aguinaldo</label><select id="periodo_aguinaldo" name="periodo_aguinaldo" class="form-select"><option value="{{ hoy[:4] }}-1"{% if hoy[5:7]|int <= 6 %} selected{% endif %}>{{ hoy[:4] }} · Primer aguinaldo</option><option value="{{ hoy[:4] }}-2"{% if hoy[5:7]|int > 6 %} selected{% endif %}>{{ hoy[:4] }} · Segundo aguinaldo</option><option value="{{ hoy[:4]|int - 1 }}-2">{{ hoy[:4]|int - 1 }} · Segundo aguinaldo</option></select></div>
 <div class="col-12"><label for="concepto" class="form-label">Concepto (opcional)</label><input id="concepto" name="concepto" maxlength="200" class="form-control" placeholder="Adelanto, reparación, ropa, etc."></div><div class="col-12"><div id="ayuda-movimiento" class="alert alert-info py-2 small mb-0">El adelanto al sueldo reduce el saldo semanal.</div></div><div class="col-12"><button class="btn btn-primary rounded-pill px-4">Guardar movimiento</button></div></form></div></section></div>
@@ -60,7 +60,7 @@
       </div>
       <div class="col-md-3">
         <label for="aguinaldo-importe" class="form-label">Importe correspondiente ($)</label>
-        <input id="aguinaldo-importe" name="importe" class="form-control" type="number" min="1" step="1" required>
+        <input id="aguinaldo-importe" name="importe" class="form-control" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" required>
       </div>
       <div class="col-md-2"><button class="btn btn-primary w-100">Guardar</button></div>
     </form>
@@ -83,7 +83,7 @@
         <input id="pago-aguinaldo-fecha" name="fecha" type="date" class="form-control" value="{{ hoy }}" required>
       </div>
       <div class="col-md-2"><label for="pago-aguinaldo-importe" class="form-label">Pago ($)</label>
-        <input id="pago-aguinaldo-importe" name="importe" type="number" min="1" step="1" class="form-control" required>
+        <input id="pago-aguinaldo-importe" name="importe" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" class="form-control" required>
       </div>
       <div class="col-md-2"><label for="pago-aguinaldo-concepto" class="form-label">Concepto</label>
         <input id="pago-aguinaldo-concepto" name="concepto" maxlength="200" class="form-control" placeholder="Pago parcial/final">
@@ -145,8 +145,8 @@
   </div>
 </section>
 
-<section class="card border-0 shadow-sm"><div class="card-header bg-white py-3"><h2 class="h5 mb-0">Administrar gomeros</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="number" min="1" value="260000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
-<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="number" min="1" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
+<section class="card border-0 shadow-sm"><div class="card-header bg-white py-3"><h2 class="h5 mb-0">Administrar gomeros</h2><small class="text-muted">Desactivar conserva el historial.</small></div><div class="card-body border-bottom"><form method="post" action="{{ url_for('gomeros_bp.crear_gomero') }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-6"><label for="nuevo-nombre" class="form-label">Nombre</label><input id="nuevo-nombre" name="nombre" class="form-control" maxlength="80" required></div><div class="col-md-4"><label for="nuevo-sueldo" class="form-label">Sueldo semanal ($)</label><input id="nuevo-sueldo" name="sueldo_semanal" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" value="260.000" class="form-control" required></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Agregar</button></div></form></div>
+<div class="list-group list-group-flush">{% for g in gomeros %}<div class="list-group-item py-3"><form method="post" action="{{ url_for('gomeros_bp.editar_gomero', id_gomero=g.id_gomero) }}" class="row g-2 align-items-end"><input type="hidden" name="semana" value="{{ resumen.lunes.isoformat() }}"><div class="col-md-5"><label for="nombre-{{ g.id_gomero }}" class="form-label small">Nombre</label><input id="nombre-{{ g.id_gomero }}" name="nombre" class="form-control" value="{{ g.nombre }}" maxlength="80" required></div><div class="col-md-4"><label for="sueldo-{{ g.id_gomero }}" class="form-label small">Sueldo semanal ($)</label><input id="sueldo-{{ g.id_gomero }}" name="sueldo_semanal" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" value="{{ g.sueldo_semanal }}" class="form-control" required></div><div class="col-md-3 d-flex gap-2"><button class="btn btn-outline-primary flex-fill">Guardar</button><button class="btn btn-outline-danger" formaction="{{ url_for('gomeros_bp.desactivar', id_gomero=g.id_gomero) }}" onclick="return confirm('¿Desactivar a {{ g.nombre }}?')" aria-label="Desactivar {{ g.nombre }}">×</button></div></form></div>{% else %}<div class="p-3 text-muted">No hay gomeros activos.</div>{% endfor %}</div></section>
 <p class="small text-muted mt-4">Los importes se guardan con fecha y usuario. No se permite que los adelantos y pagos imputados al sueldo superen el sueldo semanal configurado.</p>
 </div>
 
@@ -154,6 +154,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/formato-importes.js') }}"></script>
 <script src="{{ url_for('static', filename='js/gomeros-comun.js') }}"></script>
 <script src="{{ url_for('static', filename='js/gomeros.js') }}"></script>
 {% endblock %}

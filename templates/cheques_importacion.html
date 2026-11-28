@@ -1,0 +1,105 @@
+{% extends "base/base.html" %}
+{% from "componentes/macros_gomeros.html" import monto, fecha_ar %}
+
+{% block title %}Informe de importación de cheques - Gomería El Puente{% endblock %}
+{% block subtitle %}Importación de cheques{% endblock %}
+
+{% block atras %}
+<a href="{{ url_for('cheques_bp.cheques') }}" class="btn btn-sm btn-outline-light px-3 fw-bold rounded-pill">&larr; CHEQUES</a>
+{% endblock %}
+
+{% block content %}
+{% set r = informe.resumen %}
+<div class="container py-4" style="max-width: 1000px;">
+
+  <div class="alert alert-{{ 'success' if informe.aplicado else 'info' }} shadow-sm">
+    {% if informe.aplicado %}
+      <strong>Listo.</strong> Se importaron {{ r.importados }} cheques.
+      {% if informe.backup %}Copia de seguridad guardada: <code>{{ informe.backup.name }}</code>.{% endif %}
+    {% else %}
+      <strong>No hubo cheques nuevos para cargar.</strong> No se modificó nada.
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    {% for titulo, valor, color in [
+      ('Filas leídas', r.filas_leidas, 'secondary'), ('Importados', r.importados, 'success'),
+      ('Ya existían', r.ya_existian, 'secondary'), ('Repetidos en el Excel', r.duplicados_en_excel, 'secondary'),
+      ('Clientes creados', r.clientes_creados, 'primary'), ('Sin número', r.sin_numero, 'warning'),
+      ('Fechas a revisar', r.fechas_a_revisar, 'warning'), ('No importadas', r.invalidas, 'danger') ] %}
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body py-3">
+        <div class="small text-muted">{{ titulo }}</div>
+        <div class="h3 mb-0 text-{{ color }}">{{ valor }}</div>
+      </div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% macro seccion(titulo, ayuda, items, color='secondary', abierta=False) %}
+  {% if items %}
+  <section class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white py-3">
+      <h2 class="h6 mb-0"><span class="badge text-bg-{{ color }} me-2">{{ items|length }}</span>{{ titulo }}</h2>
+      <small class="text-muted">{{ ayuda }}</small>
+    </div>
+    <div class="table-responsive">{{ caller() }}</div>
+  </section>
+  {% endif %}
+  {% endmacro %}
+
+  {% call seccion('No importadas', 'Estas filas no se cargaron. Corregilas en el Excel y volvé a importar (lo ya cargado no se duplica).', informe.invalidas, 'danger') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Número</th><th>Librador</th><th>Motivo</th></tr></thead><tbody>
+  {% for x in informe.invalidas %}<tr><td>{{ x.fila }}</td><td>{{ x.numero or '—' }}</td><td>{{ x.librador }}</td><td>{{ x.motivo }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Fechas para revisar', 'El día de la semana escrito no coincide con la fecha. Se importó la fecha con el día y mes escritos; revisá que sea la correcta.', informe.fechas_a_revisar, 'warning') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Número</th><th>Librador</th><th>Decía</th><th>Se cargó</th><th class="text-end">Importe</th></tr></thead><tbody>
+  {% for x in informe.fechas_a_revisar %}<tr><td>{{ x.fila }}</td><td>{{ x.numero or '—' }}</td><td>{{ x.librador }}</td><td>{{ x.original }}</td><td>{{ x.fecha.strftime('%d/%m/%Y') }} ({{ x.dia_real }})</td><td class="text-end">{{ monto(x.importe) }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Importes corregidos', 'Venían escritos con formato roto; se interpretaron así.', informe.importes_corregidos, 'warning') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Decía</th><th class="text-end">Se cargó</th></tr></thead><tbody>
+  {% for x in informe.importes_corregidos %}<tr><td>{{ x.fila }}</td><td>{{ x.original }}</td><td class="text-end">{{ monto(x.importe) }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Sin número de cheque', 'Se cargaron con un número provisorio. Reemplazalo cuando lo tengas.', informe.sin_numero, 'warning') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Número provisorio</th><th>Librador</th><th>Banco</th><th class="text-end">Importe</th></tr></thead><tbody>
+  {% for x in informe.sin_numero %}<tr><td>{{ x.fila }}</td><td>{{ x.numero }}</td><td>{{ x.librador }}</td><td>{{ x.banco }}</td><td class="text-end">{{ monto(x.importe) }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Clientes creados', 'No se encontraron entre los clientes ni sus alias. Si alguno es en realidad otro cliente ya existente, conviene unificarlos.', informe.clientes_creados, 'primary') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Cliente nuevo</th><th>Figuraba en el Excel como</th></tr></thead><tbody>
+  {% for x in informe.clientes_creados %}<tr><td>{{ x.fila }}</td><td>{{ x.nombre }}</td><td>{{ x.librador }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Asociados a un cliente existente', 'Se encontraron por nombre parecido o por alias. Verificá que sean los correctos.', informe.clientes_asociados, 'primary') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Figuraba como</th><th>Se asoció a</th></tr></thead><tbody>
+  {% for x in informe.clientes_asociados %}<tr><td>{{ x.fila }}</td><td>{{ x.librador }}</td><td>{{ x.cliente }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Marcados como Rechazado', 'El destino decía «Anulado» o «No aceptado».', informe.rechazados, 'danger') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Número</th><th>Cliente</th><th class="text-end">Importe</th></tr></thead><tbody>
+  {% for x in informe.rechazados %}<tr><td>{{ x.fila }}</td><td>{{ x.numero }}</td><td>{{ x.cliente }}</td><td class="text-end">{{ monto(x.importe) }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% call seccion('Repetidos dentro del Excel', 'Misma combinación de número, banco, importe y fecha: se cargó una sola vez.', informe.duplicados_en_excel, 'secondary') %}
+  <table class="table table-sm mb-0"><thead><tr><th>Fila</th><th>Número</th><th>Banco</th><th>Cliente</th><th class="text-end">Importe</th></tr></thead><tbody>
+  {% for x in informe.duplicados_en_excel %}<tr><td>{{ x.fila }}</td><td>{{ x.numero }}</td><td>{{ x.banco }}</td><td>{{ x.cliente }}</td><td class="text-end">{{ monto(x.importe) }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endcall %}
+
+  {% if informe.bancos_unificados %}
+  <p class="small text-muted">Bancos unificados: {{ informe.bancos_unificados | join(' · ') }}</p>
+  {% endif %}
+
+  <div class="text-end mt-4"><a href="{{ url_for('cheques_bp.cheques') }}" class="btn btn-primary rounded-pill px-4 fw-bold">Ver cartera de cheques</a></div>
+</div>
+{% endblock %}

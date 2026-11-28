@@ -189,7 +189,7 @@ body.modo-milagritos .cabecera-aguinaldo { background:#ffe4ec; border-bottom-col
         <p class="text-muted small mb-3" data-detalle-modal></p>
         <div class="row g-3">
           <div class="col-sm-6"><label for="editar-mov-fecha" class="form-label small fw-bold text-secondary">Fecha</label><input id="editar-mov-fecha" name="fecha" type="date" class="form-control" required></div>
-          <div class="col-sm-6"><label for="editar-mov-importe" class="form-label small fw-bold text-secondary">Importe ($)</label><input id="editar-mov-importe" name="importe" type="number" min="1" step="1" class="form-control" required></div>
+          <div class="col-sm-6"><label for="editar-mov-importe" class="form-label small fw-bold text-secondary">Importe ($)</label><input id="editar-mov-importe" name="importe" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" class="form-control" required></div>
           <div class="col-12"><label for="editar-mov-concepto" class="form-label small fw-bold text-secondary">Concepto</label><input id="editar-mov-concepto" name="concepto" maxlength="200" class="form-control"></div>
         </div>
       </div>
@@ -204,5 +204,6 @@ body.modo-milagritos .cabecera-aguinaldo { background:#ffe4ec; border-bottom-col
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/formato-importes.js') }}"></script>
 <script src="{{ url_for('static', filename='js/gomeros-comun.js') }}"></script>
 {% endblock %}

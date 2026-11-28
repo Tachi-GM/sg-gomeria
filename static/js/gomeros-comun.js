@@ -34,7 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!formulario.dataset || formulario.dataset.confirmarImporte === undefined) return;
     const campo = formulario.querySelector('input[name="importe"]');
     if (!campo || !campo.value) return;
-    const pregunta = `${formulario.dataset.confirmarImporte} ${aPesos(campo.value)}?`;
+    const monto = window.ImporteAR ? window.ImporteAR.parse(campo.value) : Number(campo.value);
+    const pregunta = `${formulario.dataset.confirmarImporte} ${aPesos(monto)}?`;
     if (!window.confirm(pregunta)) evento.preventDefault();
   });
 

@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
       form.action = `/gomeros/movimiento/editar/${id}`;
       tipo.value = boton.dataset.tipo;
       fecha.value = boton.dataset.fecha;
-      importe.value = boton.dataset.importe;
+      importe.value = window.ImporteAR.formatear(boton.dataset.importe);
       concepto.value = boton.dataset.concepto;
       if (boton.dataset.gomeroId) selectorGomero.value = boton.dataset.gomeroId;
       destino.value = boton.dataset.destino;
@@ -164,7 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
   fecha.addEventListener("change", actualizarFormulario);
   destino.addEventListener("change", actualizarFormulario);
   form.addEventListener("submit", (evento) => {
-    if (!fecha.value || !Number.isInteger(Number(importe.value)) || Number(importe.value) <= 0) {
+    const monto = window.ImporteAR.parse(importe.value);
+    if (!fecha.value || !Number.isInteger(monto) || monto <= 0) {
       evento.preventDefault();
       window.alert("Completá una fecha válida y un importe entero mayor que cero.");
     }

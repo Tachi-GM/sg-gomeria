@@ -40,7 +40,7 @@ function render() {
                 <select class="form-select form-select-sm select-estado ${claseSegunEstado(c.estado)}"
                         data-id="${c.id_cheque}"
                         onchange="cambiarEstadoCheque(this, ${c.id_cheque})">
-                    <option value="Pendiente" ${c.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                    <option value="Pendiente" ${c.estado === 'Pendiente' ? 'selected' : ''}>Aceptado</option>
                     <option value="Cobrado" ${c.estado === 'Cobrado' ? 'selected' : ''}>Cobrado</option>
                     <option value="Rechazado" ${c.estado === 'Rechazado' ? 'selected' : ''}>Rechazado</option>
                 </select>

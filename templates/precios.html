@@ -118,15 +118,15 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-secondary">Precio 1 (Mostrador Base)</label>
-                                <input type="number" step="any" name="precio1" id="edit-precio1" class="form-control" required>
+                                <input type="text" inputmode="decimal" autocomplete="off" data-importe-ar name="precio1" id="edit-precio1" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-secondary">Precio 2 (Flotas Amigas)</label>
-                                <input type="number" step="any" name="precio2" id="edit-precio2" class="form-control">
+                                <input type="text" inputmode="decimal" autocomplete="off" data-importe-ar name="precio2" id="edit-precio2" class="form-control">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-secondary">Precio 3 (Cuenta Corriente)</label>
-                                <input type="number" step="any" name="precio3" id="edit-precio3" class="form-control">
+                                <input type="text" inputmode="decimal" autocomplete="off" data-importe-ar name="precio3" id="edit-precio3" class="form-control">
                             </div>
                         </div>
                         <div class="modal-footer border-0 pt-0">
@@ -172,6 +172,7 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{{ url_for('static', filename='js/formato-importes.js') }}"></script>
     <script src="{{ url_for('static', filename='js/precios.js') }}"></script>
     <script src="{{ url_for('static', filename='js/importar-precios.js') }}"></script>
 {% endblock %}

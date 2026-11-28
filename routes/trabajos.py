@@ -18,7 +18,7 @@ from flask import (
 from uuid import uuid4
 from database.connection import obtener_conexion, get_db_path
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
-from utils.formateadores import parse_int_seguro, parse_float_seguro
+from utils.formateadores import parse_int_seguro, parse_float_seguro, parse_importe_ar
 from services.precios_service import (
     ErrorImportacionPrecios,
     importar_precios_desde_archivo,
@@ -305,9 +305,9 @@ def agregar_tarea():
     cursor = conexion.cursor()
 
     nom_tar = request.form.get("nombre", "").strip()
-    precio1 = parse_float_seguro(request.form.get("precio1-form"), 0.0)
-    precio2 = parse_float_seguro(request.form.get("precio2-form"), 0.0)
-    precio3 = parse_float_seguro(request.form.get("precio3-form"), 0.0)
+    precio1 = parse_importe_ar(request.form.get("precio1-form"), 0.0)
+    precio2 = parse_importe_ar(request.form.get("precio2-form"), 0.0)
+    precio3 = parse_importe_ar(request.form.get("precio3-form"), 0.0)
     es_temporal = request.form.get("temporal") == "1"
 
     if not nom_tar:
@@ -374,9 +374,9 @@ def modificar_tarea():
 
     id_tarea = parse_int_seguro(request.form.get("id_tarea"))
     nom_tar = request.form.get("nombre", "").strip()
-    precio1 = parse_float_seguro(request.form.get("precio1"), 0.0)
-    precio2 = parse_float_seguro(request.form.get("precio2"), 0.0)
-    precio3 = parse_float_seguro(request.form.get("precio3"), 0.0)
+    precio1 = parse_importe_ar(request.form.get("precio1"), 0.0)
+    precio2 = parse_importe_ar(request.form.get("precio2"), 0.0)
+    precio3 = parse_importe_ar(request.form.get("precio3"), 0.0)
 
     try:
         cursor.execute(

@@ -1,5 +1,8 @@
-from flask import Blueprint, render_template, request, jsonify
-from database.connection import obtener_conexion
+import logging
+from flask import Blueprint, current_app, flash, redirect, render_template, request, jsonify, url_for
+from database.connection import obtener_conexion, get_db_path
+from services.archivos_excel import ErrorArchivoExcel
+from services.cheques_importacion_service import importar_cheques_desde_archivo
 from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
 from utils.formateadores import parse_int_seguro, parse_importe_ar
 
@@ -177,3 +180,31 @@ def eliminar_cheque():
 
     registrar_auditoria("BAJA_CHEQUE", f"Cheque ID {id_cheque} eliminado")
     return "OK", 200
+
+
+@cheques_bp.route("/cheques/importar", methods=["POST"])
+@login_requerido
+def importar_cheques():
+    """Importa los cheques de un Excel y muestra el informe de lo que se hizo."""
+    try:
+        informe = importar_cheques_desde_archivo(
+            request.files.get("archivo"),
+            get_db_path(),
+            current_app.config.get("BACKUP_DIR", "backups"),
+        )
+    except ErrorArchivoExcel as error:
+        flash(str(error), "danger")
+        return redirect(url_for("cheques_bp.cheques"))
+    except Exception:
+        logging.getLogger("SG_Gomeria").exception("Error inesperado al importar cheques")
+        flash("Ocurrió un error inesperado al importar los cheques. No se guardó nada.", "danger")
+        return redirect(url_for("cheques_bp.cheques"))
+
+    resumen = informe["resumen"]
+    registrar_auditoria(
+        "IMPORTACION_CHEQUES",
+        f"{resumen['importados']} cheques importados, {resumen['clientes_creados']} clientes creados, "
+        f"{resumen['ya_existian'] + resumen['duplicados_en_excel']} repetidos omitidos, "
+        f"backup: {informe['backup'].name if informe['backup'] else 'no hizo falta'}",
+    )
+    return render_template("cheques_importacion.html", informe=informe, milagritos=modo_activo())

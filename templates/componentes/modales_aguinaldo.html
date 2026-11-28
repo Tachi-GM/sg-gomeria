@@ -19,7 +19,7 @@
         <div class="modal-body">
           <p class="text-muted small mb-3" data-detalle-modal></p>
           <label for="editar-aguinaldo-importe" class="form-label small fw-bold text-secondary">Importe correspondiente ($)</label>
-          <input id="editar-aguinaldo-importe" name="importe" type="number" min="1" step="1" class="form-control" required>
+          <input id="editar-aguinaldo-importe" name="importe" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" class="form-control" required>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
@@ -50,7 +50,7 @@
             </div>
             <div class="col-sm-6">
               <label for="editar-pago-importe" class="form-label small fw-bold text-secondary">Pago ($)</label>
-              <input id="editar-pago-importe" name="importe" type="number" min="1" step="1" class="form-control" required>
+              <input id="editar-pago-importe" name="importe" type="text" inputmode="numeric" autocomplete="off" data-importe-ar="entero" class="form-control" required>
             </div>
             <div class="col-12">
               <label for="editar-pago-concepto" class="form-label small fw-bold text-secondary">Concepto</label>
