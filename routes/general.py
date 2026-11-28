@@ -74,52 +74,15 @@ def manual_usuario():
 @login_requerido
 @solo_admin
 def hacer_backup():
-    # 1. Armamos un nombre único con fecha y hora
-    fecha_hora = datetime.now().strftime("%Y-%m-%d_%H-%M")
-    nombre_archivo = f"backup_gomeria_{fecha_hora}.zip"
+    from services.backup_service import generar_backup, obtener_carpeta_backups
 
-    # 2. Usamos la carpeta configurada (en tests, dentro del directorio temporal).
-    carpeta_backups = current_app.config.get("BACKUP_DIR", "backups")
-    os.makedirs(carpeta_backups, exist_ok=True)
-    ruta_copia = os.path.join(carpeta_backups, nombre_archivo)
-    ruta_db_temporal = None
-
-    # 3. SQLite Backup API: copia consistente incluso si la base está en uso.
-    origen = sqlite3.connect(str(get_db_path()))
-    try:
-        with tempfile.NamedTemporaryFile(
-            prefix="backup_db_", suffix=".db", dir=carpeta_backups, delete=False
-        ) as archivo_temporal:
-            ruta_db_temporal = archivo_temporal.name
-        destino = sqlite3.connect(ruta_db_temporal)
-        try:
-            origen.backup(destino)
-        finally:
-            destino.close()
-
-        carpeta_uploads = Path(
-            current_app.config.get("UPLOAD_DIR", "uploads")
-        ).resolve()
-        with zipfile.ZipFile(
-            ruta_copia, "w", compression=zipfile.ZIP_DEFLATED
-        ) as paquete:
-            paquete.write(ruta_db_temporal, arcname="sg_gomeria.db")
-            carpeta_fotos = carpeta_uploads / "fotos_remitos"
-            if carpeta_fotos.is_dir():
-                for ruta_foto in carpeta_fotos.rglob("*"):
-                    if ruta_foto.is_file():
-                        paquete.write(
-                            ruta_foto,
-                            arcname=str(ruta_foto.relative_to(carpeta_uploads)),
-                        )
-    finally:
-        origen.close()
-        if ruta_db_temporal:
-            Path(ruta_db_temporal).unlink(missing_ok=True)
+    carpeta_backups = obtener_carpeta_backups(current_app.config)
+    carpeta_uploads = current_app.config.get("UPLOAD_DIR", "uploads")
+    ruta_copia = generar_backup(carpeta_backups, carpeta_uploads)
 
     registrar_auditoria(
-        "BACKUP_BD", f"Generado resguardo de base de datos: {nombre_archivo}"
+        "BACKUP_BD", f"Generado resguardo de base de datos: {ruta_copia.name}"
     )
 
-    # 4. Le mandamos el archivo al navegador para que lo descargue
-    return send_file(ruta_copia, as_attachment=True, download_name=nombre_archivo)
+    # Le mandamos el archivo al navegador para que lo descargue
+    return send_file(ruta_copia, as_attachment=True, download_name=ruta_copia.name)

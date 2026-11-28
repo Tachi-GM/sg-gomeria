@@ -166,6 +166,14 @@
                             <a href="/historial-cliente?id_cliente={{ emp['id_cliente'] }}" class="btn btn-outline-primary w-100 fw-bold rounded-pill">
                                 Ver Historial &rarr;
                             </a>
+                            {% if session.get('rol') == 'admin' %}
+                            <button type="button" class="btn btn-sm btn-link text-danger w-100 mt-1 text-decoration-none js-unificar-cliente"
+                                    data-id="{{ emp['id_cliente'] }}" data-nombre="{{ emp['nom_cli'] }}"
+                                    data-bs-toggle="modal" data-bs-target="#modalUnificarCliente"
+                                    title="Este cliente es un duplicado: pasar todo a otro cliente">
+                                🔗 Unificar con otro cliente…
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -266,8 +274,43 @@
             {% include "componentes/paginacion_remitos.html" %}
         </div>
     </div>
+
+{% if session.get('rol') == 'admin' %}
+<!-- MODAL ÚNICO PARA UNIFICAR CLIENTES (solo administradores) -->
+<div class="modal fade" id="modalUnificarCliente" tabindex="-1" aria-labelledby="tituloUnificarCliente" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form action="{{ url_for('clientes_bp.unificar_cliente') }}" method="POST" id="form-unificar-cliente">
+                <input type="hidden" name="id_duplicado" id="unificar-id-duplicado">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger" id="tituloUnificarCliente">Unificar clientes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3">El cliente <strong id="unificar-nombre-duplicado"></strong> es un duplicado. Elegí el cliente <strong>principal</strong>:</p>
+                    <input type="search" id="unificar-filtro" class="form-control mb-2" placeholder="Buscar cliente principal…" autocomplete="off">
+                    <select name="id_principal" id="unificar-principal" class="form-select mb-3" size="7" required>
+                        {% for c in todos_clientes %}
+                        <option value="{{ c['id_cliente'] }}" data-nombre="{{ c['nom_cli'] }}">{{ c['nom_cli'] }}{% if c['cuit'] %} · {{ c['cuit'] }}{% endif %}{% if not c['activo'] %} (inactivo){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="alert alert-warning small mb-0">
+                        Todos los remitos, cheques y vehículos del duplicado pasan al principal y el duplicado se <strong>elimina</strong>.
+                        Su nombre queda como alias para reconocerlo en futuras importaciones. Antes se guarda una copia de seguridad automática.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Unificar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
     <script src="/static/js/clientes.js"></script>
+    <script src="{{ url_for('static', filename='js/unificar-clientes.js') }}"></script>
 {% endblock %}

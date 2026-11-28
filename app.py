@@ -41,6 +41,21 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-gomeria-2026-cambiar-en-prod")
 app.config["UPLOAD_DIR"] = os.getenv("UPLOAD_DIR", "uploads")
 
+if os.getenv("SG_TESTING") != "1":
+    try:
+        from services.backup_service import (
+            backup_automatico_diario,
+            obtener_carpeta_backups,
+        )
+
+        respaldo = backup_automatico_diario(
+            obtener_carpeta_backups(app.config), app.config["UPLOAD_DIR"]
+        )
+        if respaldo:
+            logger.info(f"Backup automático diario generado: {respaldo.name}")
+    except Exception as exc:
+        logger.warning(f"No se pudo generar el backup automático diario: {exc}")
+
 
 def modo_activo():
     return session.get("modo_milagritos", False)

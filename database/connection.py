@@ -22,12 +22,19 @@ if not ENV_PATH.exists() and ENV_EJEMPLO.exists():
 
 load_dotenv(ENV_PATH)
 
-# Obtener ruta configurada o usar 'sg_gomeria.db' por defecto
-db_env = os.getenv("DATABASE_PATH", "sg_gomeria.db")
-if os.path.isabs(db_env):
-    DB_PATH = Path(db_env)
+# Obtener ruta configurada o usar %APPDATA%\SG-Gomeria\sg_gomeria.db por defecto en Windows
+db_env = os.getenv("DATABASE_PATH")
+if db_env:
+    DB_PATH = Path(db_env) if os.path.isabs(db_env) else BASE_DIR / db_env
+elif os.getenv("APPDATA"):
+    DB_PATH = Path(os.getenv("APPDATA")) / "SG-Gomeria" / "sg_gomeria.db"
+    # Migración automática segura si la base estaba en la raíz del proyecto
+    db_legacy = BASE_DIR / "sg_gomeria.db"
+    if not DB_PATH.exists() and db_legacy.exists():
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(db_legacy, DB_PATH)
 else:
-    DB_PATH = BASE_DIR / db_env
+    DB_PATH = BASE_DIR / "sg_gomeria.db"
 
 
 def obtener_conexion() -> sqlite3.Connection:

@@ -3,15 +3,18 @@ import logging
 from datetime import datetime
 from flask import (
     Blueprint,
+    current_app,
     jsonify,
     render_template,
     request,
     redirect,
     url_for,
     flash,
+    session,
 )
 from database.connection import obtener_conexion
-from utils.seguridad import login_requerido, registrar_auditoria, modo_activo
+from services.clientes_service import ErrorClientes, unificar_clientes
+from utils.seguridad import login_requerido, solo_admin, registrar_auditoria, modo_activo
 from utils.formateadores import (
     obtener_meses_disponibles,
     validar_y_formatear_cuit,
@@ -209,10 +212,19 @@ def clientes():
     meses_disponibles = obtener_meses_disponibles(cursor)
     detalles_por_trabajo = _obtener_detalles(cursor, remitos)
 
+    # Solo los administradores ven el botón "Unificar": hace falta la lista completa de clientes.
+    todos_clientes = []
+    if session.get("rol") == "admin":
+        todos_clientes = cursor.execute(
+            """SELECT id_cliente, nom_cli, cuit, COALESCE(activo, 1) AS activo
+               FROM clientes ORDER BY nom_cli COLLATE NOCASE"""
+        ).fetchall()
+
     cursor.close()
     conexion.close()
     return render_template(
         "clientes.html",
+        todos_clientes=todos_clientes,
         empresas=empresas,
         remitos=remitos,
         buscar=buscar,
@@ -505,4 +517,38 @@ def alternar_cliente(id_cliente):
     finally:
         conexion.close()
 
+    return redirect(url_for("clientes_bp.clientes"))
+
+@clientes_bp.route("/clientes/unificar", methods=["POST"])
+@login_requerido
+@solo_admin
+def unificar_cliente():
+    """Unifica un cliente duplicado dentro del principal (solo administradores)."""
+    id_duplicado = parse_int_seguro(request.form.get("id_duplicado"))
+    id_principal = parse_int_seguro(request.form.get("id_principal"))
+    try:
+        resultado = unificar_clientes(
+            id_duplicado, id_principal, current_app.config.get("BACKUP_DIR", "backups")
+        )
+    except ErrorClientes as error:
+        flash(str(error), "danger")
+        return redirect(url_for("clientes_bp.clientes"))
+    except Exception:
+        logger.exception("Error inesperado al unificar clientes %s -> %s", id_duplicado, id_principal)
+        flash("Ocurrió un error inesperado al unificar los clientes. No se cambió nada.", "danger")
+        return redirect(url_for("clientes_bp.clientes"))
+
+    registrar_auditoria(
+        "UNIFICACION_CLIENTES",
+        f"'{resultado['duplicado']}' (ID {id_duplicado}) unificado en '{resultado['principal']}' "
+        f"(ID {id_principal}): {resultado['remitos']} remitos, {resultado['cheques']} cheques, "
+        f"{resultado['vehiculos']} vehículos. Backup: {resultado['backup'].name}",
+    )
+    flash(
+        f"«{resultado['duplicado']}» se unificó dentro de «{resultado['principal']}»: "
+        f"{resultado['remitos']} remitos, {resultado['cheques']} cheques y "
+        f"{resultado['vehiculos']} vehículos pasaron al cliente principal. "
+        f"Copia de seguridad: {resultado['backup'].name}.",
+        "success",
+    )
     return redirect(url_for("clientes_bp.clientes"))
