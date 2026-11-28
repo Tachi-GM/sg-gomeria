@@ -3,6 +3,7 @@ from datetime import date, timedelta
 import re
 import sqlite3
 from database.connection import obtener_conexion
+from utils.formateadores import parse_importe_ar
 
 
 class ErrorGomeros(ValueError):
@@ -15,10 +16,11 @@ def inicio_semana(fecha):
 
 
 def _importe(valor):
-    try:
-        numero = int(str(valor).strip())
-    except (TypeError, ValueError) as exc:
-        raise ErrorGomeros("El importe debe ser un número entero de pesos.") from exc
+    """Importe entero en pesos. Acepta el formato argentino: "1.250.000" o "1250000"."""
+    numero = parse_importe_ar(valor, None)
+    if numero is None or numero != int(numero):
+        raise ErrorGomeros("El importe debe ser un número entero de pesos.")
+    numero = int(numero)
     if numero <= 0:
         raise ErrorGomeros("El importe debe ser mayor que cero.")
     return numero
